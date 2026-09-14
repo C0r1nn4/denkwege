@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sync-Test 2</title>
+<style>
+  body { font-family: sans-serif; max-width: 480px; margin: 40px auto; padding: 0 16px; }
+  button { font-size: 16px; padding: 10px 16px; margin: 8px 0; }
+  input, textarea { font-size: 16px; width: 100%; padding: 8px; margin: 4px 0; box-sizing: border-box; }
+  #log { background: #f4f3f0; border-radius: 8px; padding: 12px; min-height: 100px; }
+  #status { font-size: 13px; color: #666; margin-bottom: 12px; }
+  .antwort { padding: 8px; border-bottom: 1px solid #ddd; }
+  .antwort b { color: #0C447C; }
+  nav a { margin-right: 12px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="?rolle=kind">Kind-Ansicht</a>
+  <a href="?rolle=lk">LK-Ansicht</a>
+</nav>
+
+<div id="app"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+  // ==== HIER DEINE WERTE EINTRAGEN ====
+  const SUPABASE_URL = "https://iuqyjqcxftcoxwjqpijr.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1cXlqcWN4ZnRjb3h3anFwaWpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0MDQyNTYsImV4cCI6MjEwNDk4MDI1Nn0.0TNnPtB-_zjR0Op-jalhj4n_pxc5AiFEtaGdQ0G0ev8";
+  // =====================================
+
+  const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // Fester Test-Sitzungscode -- in Meilenstein 3 wird der echt generiert
+  const SITZUNGSCODE = "test123";
+
+  const params = new URLSearchParams(window.location.search);
+  const rolle = params.get('rolle') || 'kind';
+  const app = document.getElementById('app');
+
+  if (rolle === 'kind') {
+    renderKindAnsicht();
+  } else {
+    renderLKAnsicht();
+  }
+
+  function renderKindAnsicht() {
+    app.innerHTML = `
+      <h2>Kind-Ansicht</h2>
+      <div id="status">Bereit</div>
+      <label>Dein Name/Symbol:</label>
+      <input id="name-input" placeholder="z. B. Mika" value="Mika">
+      <label>Deine Erklärung:</label>
+      <textarea id="text-input" rows="3">Ich hab erst 47 und 30 gerechnet...</textarea>
+      <button onclick="sendeAntwort()">Fertig -- abschicken</button>
+    `;
+  }
+
+  async function sendeAntwort() {
+    const name = document.getElementById('name-input').value || "Unbekannt";
+    const text = document.getElementById('text-input').value || "";
+    const status = document.getElementById('status');
+    status.textContent = "Sende...";
+
+    const { error } = await client.from('antworten').insert({
+      sitzungscode: SITZUNGSCODE,
+      kind_name: name,
+      transkript: text
+    });
+
+    status.textContent = error ? ("Fehler: " + error.message) : "✅ Abgeschickt! Die Lehrkraft sieht das jetzt live.";
+  }
+
+  async function renderLKAnsicht() {
+    app.innerHTML = `
+      <h2>LK-Ansicht</h2>
+      <div id="status">Lade bisherige Antworten...</div>
+      <div id="log"></div>
+    `;
+    const log = document.getElementById('log');
+    const status = document.getElementById('status');
+
+    // Bereits vorhandene Antworten dieser Sitzung laden
+    const { data, error } = await client
+      .from('antworten')
+      .select('*')
+      .eq('sitzungscode', SITZUNGSCODE)
+      .order('erstellt_am', { ascending: false });
+
+    if (error) {
+      status.textContent = "Fehler beim Laden: " + error.message;
+      return;
+    }
+    status.textContent = data.length + " Antwort(en) bisher. Wartet auf neue...";
+    data.forEach(zeigeAntwort);
+
+    // Live auf neue Antworten hören
+    client
+      .channel('lk-antworten')
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'antworten', filter: `sitzungscode=eq.${SITZUNGSCODE}` },
+        (payload) => {
+          zeigeAntwort(payload.new);
+          status.textContent = "Neue Antwort live empfangen!";
+        }
+      )
+      .subscribe();
+
+    function zeigeAntwort(a) {
+      const div = document.createElement('div');
+      div.className = 'antwort';
+      div.innerHTML = `<b>${a.kind_name}</b>: ${a.transkript} <br><small>${new Date(a.erstellt_am).toLocaleTimeString()}</small>`;
+      log.prepend(div);
+    }
+  }
+</script>
+
+</body>
+</html>

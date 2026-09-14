@@ -699,13 +699,14 @@ async function finishAnswer(){
 
   if(sitzungscode){
     // Echte Sitzung: an Supabase senden, LK-Gerät sieht es live
-    await sb.from('antworten').insert({
+    const { error } = await sb.from('antworten').insert({
       sitzungscode: sitzungscode,
       kind_name: name,
       symbol_id: state.selectedSymbol ? state.selectedSymbol.id : null,
       transkript: text,
       kategorie: cat
     });
+    if(error) alert('Antwort konnte nicht gespeichert werden: ' + error.message + '\n(Sitzungscode: ' + sitzungscode + ')');
   } else {
     // Kein Sitzungscode vorhanden (Demo-Vorführung ohne echte Sitzung): nur lokal
     state.pool = state.pool.filter(p=>p.name!==name);

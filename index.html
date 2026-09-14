@@ -84,7 +84,18 @@
   <div id="scr-start" class="screen" style="text-align:center; padding-top:40px;">
     <div style="font-size:16px; font-weight:500; margin-bottom:20px;">Wer bist du?</div>
     <button class="btn btn-primary" style="margin-bottom:10px; padding:16px;" onclick="show('lk-login')"><i class="ti ti-chalkboard"></i> Ich bin Lehrkraft</button>
-    <button class="btn" style="padding:16px;" onclick="show('symbolauswahl')"><i class="ti ti-child"></i> Ich bin Schüler:in</button>
+    <button class="btn" style="padding:16px;" onclick="show('code-eingabe')"><i class="ti ti-child"></i> Ich bin Schüler:in</button>
+  </div>
+
+  <!-- CODE-EINGABE (Kind, falls ohne QR-Link angekommen) -->
+  <div id="scr-code-eingabe" class="screen" style="text-align:center; padding-top:40px;">
+    <button class="navbtn" style="margin-bottom:16px;" onclick="show('start')"><i class="ti ti-arrow-left"></i> zurück</button>
+    <div style="font-size:16px; font-weight:500; margin-bottom:14px;">Gib den Code deiner Klasse ein</div>
+    <div class="ts" style="font-size:12px; margin-bottom:14px;">Frag deine Lehrkraft, oder schau auf die Tafel.</div>
+    <input id="code-eingabe-feld" type="text" maxlength="4" placeholder="z. B. AB12"
+      style="width:100%; font-size:28px; text-align:center; letter-spacing:6px; text-transform:uppercase; padding:14px; margin-bottom:14px; border-radius:var(--radius); border:0.5px solid var(--border);">
+    <div id="code-eingabe-fehler" class="ts" style="display:none; color:var(--fill-danger); font-size:12px; margin-bottom:10px;">Diesen Code gibt es nicht -- bitte nochmal bei der Lehrkraft nachfragen.</div>
+    <button class="btn btn-primary" style="padding:14px;" onclick="codeBeitreten()">Beitreten</button>
   </div>
 
   <!-- LK LOGIN -->
@@ -282,8 +293,9 @@
       <button class="navbtn" id="antworten-toggle-tafel" onclick="toggleAntwortenSichtbar()">Aus</button>
     </div>
     <div id="tafel-qr-section" style="display:none; text-align:center; background:var(--surface-2); border-radius:12px; padding:16px; margin-bottom:12px;">
-      <div class="ts" style="font-size:12px; margin-bottom:10px;">Scanne den Code, um zur Symbolauswahl zu kommen</div>
-      <div id="tafel-qr-box" style="display:flex; justify-content:center;"></div>
+      <div class="ts" style="font-size:12px; margin-bottom:10px;">Scanne den Code, oder gib ihn auf deinem Gerät ein:</div>
+      <div id="tafel-qr-box" style="display:flex; justify-content:center; margin-bottom:10px;"></div>
+      <div id="tafel-code-anzeige" style="font-size:24px; font-weight:600; letter-spacing:4px; color:var(--text-accent);">----</div>
     </div>
     <div id="tafel-aufgabe" class="t" style="text-align:center; font-size:20px; font-weight:600; margin-bottom:12px; padding:10px; background:var(--surface-2); border-radius:12px; display:none;">47 + 38</div>
     <div id="tafel-slots"></div>
@@ -416,7 +428,7 @@ Neu</textarea>
 <script>
 // ==== HIER DEINE WERTE EINTRAGEN ====
 const SUPABASE_URL = "https://iuqyjqcxftcoxwjqpijr.supabase.co";
-const SUPABASE_ANON_KEY = "6aa840f8f114337e1d808dc7:Ae7k54A6n8tmFc6ZqZu0sJ6aobcH9DUAq5/PJ2I+Li0=";
+const SUPABASE_ANON_KEY = "6aa840f8f114337e1d808dc7:Ae7k54A6n8tmFc6ZqZu0sJ6aobcH9DUAq5/PJ2I+Li0=";;
 // =====================================
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -527,6 +539,7 @@ function startSitzung(){
   if(!sitzungscode){
     sitzungscode = generateCode();
     history.replaceState(null, '', '?code='+sitzungscode);
+    sb.from('sitzungen').insert({ code: sitzungscode }); // Sitzung real anlegen, damit Kinder den Code prüfen können
   }
   state.pool = []; // echte Sitzung startet mit leerem Pool statt Demo-Daten
   document.getElementById('sitzungscode-anzeige').textContent = sitzungscode;
@@ -702,6 +715,23 @@ async function finishAnswer(){
   document.getElementById('done-name').textContent = name;
 }
 
+async function codeBeitreten(){
+  const eingabe = document.getElementById('code-eingabe-feld').value.trim().toUpperCase();
+  const fehler = document.getElementById('code-eingabe-fehler');
+  fehler.style.display = 'none';
+  if(!eingabe) return;
+
+  const { data, error } = await sb.from('sitzungen').select('code').eq('code', eingabe).maybeSingle();
+  if(error || !data){
+    fehler.style.display = 'block';
+    return;
+  }
+  sitzungscode = eingabe;
+  history.replaceState(null, '', '?geraet=kind&code='+sitzungscode);
+  state.sessionActive = true;
+  show('symbolauswahl');
+}
+
 function switchTab(tab){
   state.activeTab = tab;
   renderDashboard();
@@ -817,6 +847,7 @@ function renderTafelQR(){
   const section = document.getElementById('tafel-qr-section');
   section.style.display = qrAufTafel ? 'block' : 'none';
   if(!qrAufTafel) return;
+  document.getElementById('tafel-code-anzeige').textContent = sitzungscode || "----";
   const box = document.getElementById('tafel-qr-box');
   box.innerHTML = "";
   try {

@@ -1,5 +1,1121 @@
 <!DOCTYPE html>
-<html>
-<head><title>Test</title></head>
-<body><h1>Es funktioniert!</h1></body>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Klick-Prototyp – Adaptives Klassengespräch</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root {
+    --surface-2: #ffffff; --surface-1: #f4f3f0; --surface-0: #e9e8e5;
+    --text-primary: #1a1a1a; --text-secondary: #5a5a56; --text-muted: #8a8a86;
+    --border: rgba(0,0,0,0.14); --border-strong: rgba(0,0,0,0.3); --border-accent: #378ADD;
+    --bg-accent: #E6F1FB; --text-accent: #0C447C; --fill-accent: #378ADD; --on-accent: #fff;
+    --bg-success: #EAF3DE; --text-success: #27500A; --fill-success: #639922; --on-success: #fff;
+    --bg-warning: #FAEEDA; --text-warning: #633806; --fill-warning: #EF9F27;
+    --fill-danger: #E24B4A; --on-danger: #fff; --radius: 8px;
+    --shadow-md: 0 4px 14px rgba(0,0,0,0.14);
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--surface-0); margin: 0; color: var(--text-primary); }
+  .app { max-width: 420px; margin: 0 auto; min-height: 100vh; background: var(--surface-1); padding-bottom: 30px; }
+  .topbar { display:flex; align-items:center; gap:8px; padding: 10px 14px; background: var(--surface-2); border-bottom: 0.5px solid var(--border); position: sticky; top:0; z-index: 10; flex-wrap: wrap; }
+  .topbar b { font-size: 13px; margin-right: auto; }
+  .navbtn { font-size: 10px; padding: 4px 8px; border-radius: var(--radius); border: 0.5px solid var(--border); background: var(--surface-1); cursor: pointer; }
+  .navbtn.active { background: var(--bg-accent); color: var(--text-accent); border-color: var(--border-accent); }
+  .screen { display: none; padding: 16px; }
+  .screen.visible { display: block; }
+  button { font-family: inherit; cursor: pointer; border-radius: var(--radius); }
+  .btn { padding: 10px; border: 0.5px solid var(--border); background: var(--surface-2); width: 100%; font-size: 13px; }
+  .btn-primary { background: var(--fill-accent); color: var(--on-accent); border: none; }
+  .btn-success { background: var(--fill-success); color: var(--on-success); border: none; }
+  .card { background: var(--surface-2); border: 0.5px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 12px; }
+  .t { color: var(--text-primary); } .ts { color: var(--text-secondary); }
+  .c-teal { background: #9FE1CB; } .c-coral { background: #F0997B; } .c-purple { background: #AFA9EC; }
+  .c-gray { background: #D3D1C7; } .c-blue { background: #B5D4F4; } .c-amber { background: #FAC775; }
+  .tag { font-size: 9px; padding: 2px 7px; border-radius: 10px; display:inline-block; }
+  .icon-circle { width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:15px; }
+  h2.scr-title { font-size: 14px; font-weight: 500; margin: 0 0 12px; color: var(--text-secondary); }
+  .row { display:flex; align-items:center; gap:10px; }
+  .grid2 { display:grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap:8px; }
+  .grid4 { display:grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap:8px; }
+  .pool-item { display:flex; align-items:center; gap:8px; padding:8px; border-radius:var(--radius); border:0.5px solid var(--border); background: var(--surface-2); margin-bottom:6px; }
+  .pool-item button { font-size: 10px; padding: 4px 8px; }
+  .slot-empty { border: 1px dashed var(--border-strong); border-radius: var(--radius); padding: 16px; text-align:center; font-size:11px; color:var(--text-muted); }
+  .quote-box { background: var(--surface-1); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 8px; font-size:12px; margin-top:6px; }
+  .banner { background: var(--bg-warning); color: var(--text-warning); font-size:11px; padding:8px; border-radius:var(--radius); margin-bottom:10px; }
+  textarea, .editable { width:100%; font-size:13px; padding:8px; border-radius:var(--radius); border:0.5px solid var(--border); }
+  .modal-bg { position: fixed; inset:0; background: rgba(0,0,0,0.4); display:none; align-items:center; justify-content:center; z-index: 50; }
+  .modal-bg.visible { display:flex; }
+  .modal { background: var(--surface-2); border-radius:12px; padding:16px; width: 90%; max-width: 360px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar" style="flex-direction:column; align-items:stretch; gap:2px;">
+    <div class="row" style="justify-content:space-between;">
+      <b id="topbar-label" style="margin-right:0;">Demo</b>
+      <div class="row" style="gap:6px;">
+        <button class="navbtn" id="role-lk" onclick="switchRole('lk')"><i class="ti ti-chalkboard"></i> Lehrkraft</button>
+        <button class="navbtn" id="role-kind" onclick="switchRole('kind')"><i class="ti ti-child"></i> Kind</button>
+      </div>
+    </div>
+    <div style="font-size:9px; color:var(--text-muted); text-align:right; margin-bottom:4px;">nur zum Vorführen — im echten Tool meldet sich jede Person am eigenen Gerät an</div>
+    <details style="font-size:10px;">
+      <summary style="color:var(--text-muted); cursor:pointer;">Demo-Sprungmenü (nicht Teil des echten Ablaufs — nur zum Vorführen)</summary>
+      <div class="row" style="gap:6px; flex-wrap:wrap; margin-top:6px;">
+        <button class="navbtn" onclick="show('login')">Login</button>
+        <button class="navbtn" onclick="show('pool')">Aufgaben</button>
+        <button class="navbtn" onclick="show('symbolauswahl')">Kind: Symbol</button>
+        <button class="navbtn" onclick="show('dashboard')">LK-Dashboard</button>
+        <button class="navbtn" onclick="show('tafel')">Tafel</button>
+        <button class="navbtn" onclick="show('heatmap')">Heatmap</button>
+        <button class="navbtn" onclick="show('verwaltung')">Verwaltung</button>
+      </div>
+    </details>
+  </div>
+
+  <!-- LOGIN / KLASSENRAUM -->
+  <!-- START: ROLLENWAHL -->
+  <div id="scr-start" class="screen" style="text-align:center; padding-top:40px;">
+    <div style="font-size:16px; font-weight:500; margin-bottom:20px;">Wer bist du?</div>
+    <button class="btn btn-primary" style="margin-bottom:10px; padding:16px;" onclick="show('lk-login')"><i class="ti ti-chalkboard"></i> Ich bin Lehrkraft</button>
+    <button class="btn" style="padding:16px;" onclick="show('symbolauswahl')"><i class="ti ti-child"></i> Ich bin Schüler:in</button>
+  </div>
+
+  <!-- LK LOGIN -->
+  <div id="scr-lk-login" class="screen">
+    <button class="navbtn" style="margin-bottom:10px;" onclick="show('start')"><i class="ti ti-arrow-left"></i> zurück</button>
+    <h2 class="scr-title">Anmelden</h2>
+    <div class="card">
+      <label class="ts" style="font-size:12px;">Nutzername/E-Mail</label>
+      <input type="text" placeholder="lehrkraft@schule.de" style="width:100%; font-size:13px; padding:8px; margin:4px 0 10px; border-radius:var(--radius); border:0.5px solid var(--border);">
+      <label class="ts" style="font-size:12px;">Passwort</label>
+      <input type="password" placeholder="••••••••" style="width:100%; font-size:13px; padding:8px; margin:4px 0 4px; border-radius:var(--radius); border:0.5px solid var(--border);">
+    </div>
+    <button class="btn btn-primary" onclick="show('login')"><i class="ti ti-login"></i> Anmelden (Demo: beliebige Eingabe)</button>
+  </div>
+
+  <div id="scr-login" class="screen">
+    <button class="navbtn" style="margin-bottom:10px;" onclick="show('start')"><i class="ti ti-logout"></i> Abmelden</button>
+    <h2 class="scr-title">Klassenraum wählen</h2>
+    <div class="card row" onclick="show('pool')" style="cursor:pointer;">
+      <div class="icon-circle c-blue"><i class="ti ti-school"></i></div>
+      <div style="flex:1;">
+        <div class="t" style="font-size:14px;">Klasse 3b</div>
+        <div class="ts" style="font-size:11px;">24 Kinder</div>
+      </div>
+      <span id="klasse-3b-sitzplan-badge" class="tag" style="background:var(--bg-warning); color:var(--text-warning); display:none;"><i class="ti ti-alert-triangle" style="font-size:10px;"></i> Sitzplan fehlt</span>
+    </div>
+    <div class="card row" style="opacity:0.5;">
+      <div class="icon-circle c-gray"><i class="ti ti-school"></i></div>
+      <div><div class="t" style="font-size:14px;">Klasse 4a</div><div class="ts" style="font-size:11px;">(Demo: nicht aktiv)</div></div>
+    </div>
+    <button class="btn" onclick="show('verwaltung')"><i class="ti ti-settings"></i> Klassenraum verwalten</button>
+  </div>
+
+  <!-- AUFGABENPOOL -->
+  <div id="scr-pool" class="screen">
+    <button class="navbtn" style="margin-bottom:10px;" onclick="show('login')"><i class="ti ti-arrow-left"></i> Klassenraum-Übersicht</button>
+    <h2 class="scr-title">Aufgabe wählen — Klasse 3b</h2>
+    <div class="card row" onclick="show('aufgabe')" style="cursor:pointer;">
+      <div class="icon-circle c-amber"><i class="ti ti-calculator"></i></div>
+      <div><div class="t" style="font-size:14px;">47 + 38</div><div class="ts" style="font-size:11px;">Kopfrechenstrategien</div></div>
+    </div>
+    <div class="card row" style="opacity:0.5;">
+      <div class="icon-circle c-gray"><i class="ti ti-stack-2"></i></div>
+      <div><div class="t" style="font-size:14px;">Zahlenmauer A</div><div class="ts" style="font-size:11px;">(Demo: nicht aktiv)</div></div>
+    </div>
+  </div>
+
+  <!-- AUFGABE DETAIL -->
+  <div id="scr-aufgabe" class="screen">
+    <button class="navbtn" style="margin-bottom:10px;" onclick="show('pool')"><i class="ti ti-arrow-left"></i> Aufgabenpool</button>
+    <h2 class="scr-title">Aufgabe</h2>
+    <div class="card">
+      <div class="row" style="justify-content:space-between; margin-bottom:8px;">
+        <div>
+          <div class="ts" style="font-size:11px;">Verstehenskern</div>
+          <div class="t" style="font-size:15px; font-weight:500;">Additive Zerlegung beim Kopfrechnen (47 + 38)</div>
+        </div>
+        <i class="ti ti-info-circle" style="font-size:18px; color:var(--text-accent);" onclick="showInfo('Hintergrundmaterial', 'Kurzer Hinweis zu Grundvorstellungen additiver Zerlegung + Link zu Video (Demo).')"></i>
+      </div>
+      <div class="ts" style="font-size:12px;">Alle 24 Kinder: aufnahmefähig (Einwilligung liegt vor). 0 Kinder ohne Einwilligung (Demo).</div>
+    </div>
+    <div id="aufgabe-sitzplan-warning" class="banner" style="display:none;">
+      <i class="ti ti-alert-triangle"></i> Sitzplan noch nicht eingerichtet — die Sitzplatz-Heatmap kann während der Erarbeitung dann nichts anzeigen.
+      <button class="navbtn" style="margin-top:6px;" onclick="show('sitzplan')">Zurück zum Sitzplan →</button>
+    </div>
+    <button class="btn btn-primary" onclick="startSitzung()"><i class="ti ti-player-play"></i> Sitzung starten</button>
+    <div class="ts" style="font-size:11px; margin-top:10px; text-align:center;">→ Kinder arbeiten jetzt parallel an ihren eigenen Geräten (Rolle "Kind" oben)</div>
+  </div>
+
+  <!-- KIND: SYMBOLAUSWAHL -->
+  <div id="scr-symbolauswahl" class="screen" style="text-align:center;">
+    <h2 class="scr-title">Wer bist du?</h2>
+    <div id="symbolauswahl-inaktiv" class="card" style="display:none;">
+      <i class="ti ti-moon" style="font-size:24px; color:var(--text-muted);"></i>
+      <div class="ts" style="font-size:13px; margin-top:8px;">Gerade läuft keine Aufgabe. Warte, bis deine Lehrkraft startet.</div>
+    </div>
+    <div class="grid4" id="symbol-grid" style="margin-bottom:16px;"></div>
+    <div id="symbol-confirm" class="card c-blue" style="display:none;">
+      <div id="symbol-confirm-icon" style="font-size:40px; margin-bottom:8px;"></div>
+      <div style="font-size:13px; margin-bottom:12px;">Bist du das?</div>
+      <div class="row" style="justify-content:center; gap:24px;">
+        <div style="text-align:center;">
+          <button style="width:48px;height:48px;border-radius:50%;border:0.5px solid var(--border-strong);" onclick="cancelSymbol()"><i class="ti ti-x"></i></button>
+          <div class="ts" style="font-size:10px; margin-top:4px;">Nein</div>
+        </div>
+        <div style="text-align:center;">
+          <button style="width:48px;height:48px;border-radius:50%;background:var(--fill-success);color:var(--on-success);border:none;" onclick="confirmSymbol()"><i class="ti ti-check"></i></button>
+          <div class="ts" style="font-size:10px; margin-top:4px;">Ja</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KIND: AUFNAHME -->
+  <div id="scr-aufnahme" class="screen" style="text-align:center;">
+    <div class="card c-blue">
+      <div class="t" style="font-size:26px; font-weight:500; margin-bottom:8px;">47 + 38</div>
+      <div id="aufnahme-anweisung" class="ts" style="font-size:12px; margin-bottom:8px;">Löse und erkläre deinen Rechenweg</div>
+      <div style="width:100%; height:60px; background:var(--surface-2); border-radius:12px; display:flex; align-items:center; justify-content:center; color:var(--text-muted);"><i class="ti ti-photo" style="font-size:22px;"></i></div>
+      <div class="row" style="justify-content:center; gap:6px; margin-top:8px;">
+        <div id="sprachauswahl" class="row" style="justify-content:center; gap:6px; flex-wrap:wrap;"></div>
+      </div>
+    </div>
+    <div class="row" style="justify-content:center; gap:20px; margin: 16px 0;">
+      <div style="text-align:center;">
+        <button id="mode-speak" style="width:48px;height:48px;border-radius:50%;background:var(--fill-accent);color:var(--on-accent);border:none;" onclick="setMode('speak')"><i class="ti ti-microphone"></i></button>
+        <div class="ts" style="font-size:10px; margin-top:4px;">Sprechen</div>
+      </div>
+      <div style="text-align:center;">
+        <button id="mode-type" style="width:48px;height:48px;border-radius:50%;border:0.5px solid var(--border-strong);" onclick="setMode('type')"><i class="ti ti-keyboard"></i></button>
+        <div class="ts" style="font-size:10px; margin-top:4px;">Tippen</div>
+      </div>
+    </div>
+    <div id="record-area" style="text-align:center;">
+      <button id="record-btn" style="width:96px;height:96px;border-radius:50%;background:var(--fill-danger);color:var(--on-danger);border:4px solid var(--surface-2); box-shadow:var(--shadow-md);" onclick="toggleRecord()"><i id="record-icon" class="ti ti-microphone" style="font-size:36px;"></i></button>
+      <div class="ts" id="record-label" style="font-size:11px; margin-top:8px;">Aufnehmen</div>
+    </div>
+    <div id="review-area" style="display:none; border-top:2px dashed var(--border); padding-top:14px; margin-top:16px; text-align:left;">
+      <div class="ts" style="font-size:12px; margin-bottom:8px; text-align:center;">So haben wir dich verstanden — du kannst es auch verbessern</div>
+      <textarea id="transcript-edit" rows="3"></textarea>
+      <div class="row" style="justify-content:center; gap:24px; margin-top:12px;">
+        <div style="text-align:center;">
+          <button style="width:48px;height:48px;border-radius:50%;border:0.5px solid var(--border-strong);" onclick="rerecord()"><i class="ti ti-refresh"></i></button>
+          <div class="ts" style="font-size:10px; margin-top:4px;">Nochmal</div>
+        </div>
+        <div style="text-align:center;">
+          <button style="width:48px;height:48px;border-radius:50%;background:var(--fill-success);color:var(--on-success);border:none;" onclick="finishAnswer()"><i class="ti ti-check"></i></button>
+          <div class="ts" style="font-size:10px; margin-top:4px;">Fertig</div>
+        </div>
+      </div>
+    </div>
+    <div id="done-area" style="display:none; border-top:2px dashed var(--border); padding-top:14px; margin-top:16px;">
+      <div class="card c-teal" style="text-align:center;"><i class="ti ti-check" style="font-size:20px;"></i><div style="font-size:13px; margin-top:6px;">Aufgenommen — <span id="done-name"></span> ist fertig.</div></div>
+      <button class="btn btn-primary" style="margin-top:10px;" onclick="show('symbolauswahl')">Nächstes Kind</button>
+    </div>
+  </div>
+
+  <!-- LK DASHBOARD -->
+  <div id="scr-dashboard" class="screen">
+    <div class="row" style="justify-content:space-between; align-items:flex-start; margin-bottom:12px; padding-bottom:10px; border-bottom:0.5px solid var(--border);">
+      <div>
+        <div class="ts" style="font-size:11px;">Aufgabe</div>
+        <div class="t" style="font-size:14px; font-weight:500;">Kopfrechnen: 47 + 38</div>
+        <div class="ts" style="font-size:11px; margin-top:2px;">Verstehenskern: Additive Zerlegung beim Kopfrechnen</div>
+      </div>
+      <i class="ti ti-info-circle" style="font-size:18px; color:var(--text-accent);"></i>
+    </div>
+    <div class="banner" style="background:var(--bg-success); color:var(--text-success); margin-bottom:10px;">
+      Konfigurieren Sie hier, wie Sie die Plenumsphase gestalten wollen. Rufen Sie die Antworten der Lernenden einzeln oder nacheinander auf, kontrastieren Sie sie oder gestalten Sie die Tafelansicht frei. Eine Variante wird automatisch empfohlen und prototypische Beispielantworten ausgewählt. Sie können jede Auswahl manuell ändern.
+    </div>
+    <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:4px;">
+      <div class="ts" style="font-size:11px;">Wie ins Gespräch einsteigen?</div>
+      <span class="ts" style="font-size:10px; text-decoration:underline; cursor:pointer;" onclick="toggleErklaerung()">Warum diese Empfehlung?</span>
+    </div>
+    <div id="empfehlung-erklaerung" class="ts" style="display:none; font-size:11px; background:var(--bg-accent); color:var(--text-accent); padding:8px; border-radius:var(--radius); margin-bottom:8px;">
+      Der empfohlene Modus + die vorbelegten Antworten ergeben sich aus zwei Schritten: (1) <b>MOST-Filterung</b> — welche Kategorie-Kombination laut Aufgabenanlage als besonders gesprächswürdig markiert ist (hier: schrittweise vs. stellenweise), (2) pro Kategorie wird die Antwort mit der <b>höchsten Klassifikations-Konfidenz</b> vorbelegt. Die Lehrkraft kann das jederzeit überschreiben.
+    </div>
+    <div class="row" style="gap:6px; margin-bottom:14px; overflow-x:auto;">
+      <button class="tabbtn navbtn" data-tab="anknuepfen" onclick="switchTab('anknuepfen')">Anknüpfen</button>
+      <button class="tabbtn navbtn" data-tab="gegenueberstellen" onclick="switchTab('gegenueberstellen')" style="position:relative;">Gegenüberstellen<span style="position:absolute;top:-8px;right:-6px;background:var(--bg-accent);color:var(--text-accent);font-size:8px;padding:1px 4px;border-radius:8px;">empf.</span></button>
+      <button class="tabbtn navbtn" data-tab="sequenzieren" onclick="switchTab('sequenzieren')">Sequenzieren</button>
+      <button class="tabbtn navbtn" data-tab="frei" onclick="switchTab('frei')">Frei</button>
+    </div>
+    <div class="card">
+      <div class="ts" style="font-size:11px;">Impuls-Idee</div>
+      <div class="ts" id="impuls-text" style="font-size:13px; margin-bottom:10px;"></div>
+      <div class="ts" style="font-size:11px; margin-bottom:6px;">Für die Tafel ausgewählt:</div>
+      <div class="grid2" id="slots-area" style="margin-bottom:8px;"></div>
+      <div id="seq-controls" style="display:none; margin-bottom:8px;"></div>
+      <button class="btn" onclick="addSlot()"><i class="ti ti-plus"></i> Weiteres Feld für die Tafel hinzufügen</button>
+    </div>
+    <div class="card c-purple">
+      <div class="ts" style="font-size:11px;"><i class="ti ti-arrows-join-2"></i> Mögliche Anschlussfrage</div>
+      <div class="t" style="font-size:13px;">Bei beiden kommt 85 raus — was passiert bei beiden mit Zehnern und Einern?</div>
+    </div>
+    <details style="margin-bottom:12px;">
+      <summary style="font-size:13px; font-weight:500; cursor:pointer; color:var(--text-secondary);">Alle Kategorien anzeigen/anpassen ▾</summary>
+      <div id="kategorie-legende" style="display:flex; flex-wrap:wrap; gap:8px; margin:10px 0;"></div>
+      <div class="grid2" id="pool-area"></div>
+    </details>
+    <div class="row" style="justify-content:space-between; align-items:center; padding:8px 10px; background:var(--surface-2); border-radius:var(--radius); border:0.5px solid var(--border); margin-top:8px;">
+      <span style="font-size:12px;">Antworten auf der Tafel zeigen</span>
+      <button class="navbtn" id="antworten-toggle" onclick="toggleAntwortenSichtbar()">Aus</button>
+    </div>
+    <button class="btn btn-primary" style="margin-top:8px;" onclick="show('tafel')"><i class="ti ti-presentation"></i> Tafelansicht anzeigen (Erweitern-Modus)</button>
+    <button class="btn" style="margin-top:8px;" onclick="show('heatmap')"><i class="ti ti-map-2"></i> Zurück zum Sitzplan mit Antwortübersicht</button>
+    <button class="btn" style="margin-top:8px; border-color:var(--fill-danger); color:var(--fill-danger);" onclick="endSession()"><i class="ti ti-square-x"></i> Sitzung beenden</button>
+  </div>
+
+  <!-- TAFELANSICHT -->
+  <div id="scr-tafel" class="screen">
+    <div class="banner"><i class="ti ti-projector"></i> Demo: Dies ist die Projektions-Ansicht — im echten Betrieb liefe sie parallel (eigenes Fenster) neben dem LK-Dashboard, kein Hin-und-Zurück-Navigieren nötig.</div>
+    <div class="row" style="justify-content:space-between; align-items:center; padding:8px 10px; background:var(--surface-2); border-radius:var(--radius); border:0.5px solid var(--border); margin-bottom:12px;">
+      <span style="font-size:12px;">Antworten auf der Tafel zeigen</span>
+      <button class="navbtn" id="antworten-toggle-tafel" onclick="toggleAntwortenSichtbar()">Aus</button>
+    </div>
+    <div id="tafel-qr-section" style="display:none; text-align:center; background:var(--surface-2); border-radius:12px; padding:16px; margin-bottom:12px;">
+      <div class="ts" style="font-size:12px; margin-bottom:10px;">Scanne den Code, um zur Symbolauswahl zu kommen</div>
+      <div id="tafel-qr-box" style="display:flex; justify-content:center;"></div>
+    </div>
+    <div id="tafel-aufgabe" class="t" style="text-align:center; font-size:20px; font-weight:600; margin-bottom:12px; padding:10px; background:var(--surface-2); border-radius:12px; display:none;">47 + 38</div>
+    <div id="tafel-slots"></div>
+    <div class="row" style="justify-content:center; gap:8px; margin-top:14px;">
+      <button class="navbtn" onclick="toggleTafelAufgabe()">Aufgabe ein/aus</button>
+      <button class="navbtn" onclick="show('heatmap')"><i class="ti ti-map-2"></i> zum Sitzplan mit Antwortübersicht</button>
+    </div>
+  </div>
+
+  <!-- HEATMAP -->
+  <div id="scr-heatmap" class="screen">
+    <h2 class="scr-title">Sitzplan mit Antwortübersicht — Kinder arbeiten gerade</h2>
+    <div class="card" style="text-align:center; background:var(--bg-accent);">
+      <div class="ts" style="font-size:11px;">Sitzungscode für die Kindgeräte</div>
+      <div id="sitzungscode-anzeige" style="font-size:22px; font-weight:600; letter-spacing:3px; color:var(--text-accent);">----</div>
+    </div>
+    <div id="heatmap-sitzplan-warning" class="banner" style="display:none;">
+      <i class="ti ti-alert-triangle"></i> Es ist noch kein Sitzplan eingerichtet — ohne Sitzplan kann die Heatmap Kinder nicht anzeigen.
+      <button class="navbtn" style="margin-top:6px;" onclick="show('sitzplan')">Zurück zum Sitzplan →</button>
+    </div>
+    <div id="heatmap-missing-notice" class="banner" style="display:none;"></div>
+    <div class="ts" style="text-align:center; font-size:10px; margin-bottom:4px;"><i class="ti ti-podium"></i> Tafel</div>
+    <div id="heatmap-canvas" style="position:relative; width:100%; height:260px; background:var(--surface-2); border:0.5px solid var(--border); border-radius:12px; margin-bottom:8px;"></div>
+    <div id="heatmap-fortschritt" class="row" style="justify-content:center; gap:6px; margin-bottom:8px; font-size:12px;"></div>
+    <div id="heatmap-legende" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;"></div>
+    <button class="btn" id="qr-toggle-btn" style="margin-bottom:8px;" onclick="toggleTafelQR()"><i class="ti ti-qrcode"></i> QR-Code auf Tafel anzeigen</button>
+    <button class="btn btn-primary" onclick="show('dashboard')">Weiter zum Dashboard (Plenum vorbereiten) →</button>
+    <div class="ts" style="font-size:11px; text-align:center; margin-top:6px;">Du musst nicht warten, bis alle fertig sind — schon wenige Antworten reichen für einen guten Einstieg.</div>
+  </div>
+
+  <!-- VERWALTUNG -->
+  <div id="scr-verwaltung" class="screen">
+    <button class="navbtn" style="margin-bottom:10px;" onclick="show('login')"><i class="ti ti-arrow-left"></i> Klassenraum-Übersicht</button>
+    <h2 class="scr-title">Klassenraum-Verwaltung — Klasse 3b</h2>
+    <div class="row" style="gap:8px; margin-bottom:16px;">
+      <button class="btn" onclick="show('sitzplan')"><i class="ti ti-armchair"></i> Sitzplan</button>
+      <button class="btn" onclick="show('lernverlauf')"><i class="ti ti-chart-bar"></i> Verlauf</button>
+    </div>
+    <div class="row" style="justify-content:space-between; align-items:center; padding:10px; background:var(--surface-2); border-radius:var(--radius); margin-bottom:12px; border:0.5px solid var(--border);">
+      <div>
+        <div style="font-size:13px; font-weight:500;">Anonym arbeiten</div>
+        <div class="ts" style="font-size:11px;">Nur Symbole digital — Namen kennt nur die Lehrkraft, auf Papier</div>
+      </div>
+      <button class="navbtn" id="anonym-toggle" onclick="toggleAnonym()">Aus</button>
+    </div>
+    <div class="ts" style="font-size:12px; margin-bottom:4px;" id="kinder-count">Kinder</div>
+    <div class="banner" id="kein-zugang-hinweis" style="display:none;">
+      <i class="ti ti-info-circle"></i> Kinder ohne Einwilligung nehmen nicht digital am Tool teil. Sie bearbeiten die Aufgabe stattdessen schriftlich auf Papier ("Blatt erzeugen").
+    </div>
+    <div id="kinderliste"></div>
+    <button class="btn" id="ausfuell-blatt-btn" style="display:none; margin-top:8px;" onclick="showAusfuellBlatt()"><i class="ti ti-printer"></i> Ausfüll-Blatt drucken (Symbol → Name)</button>
+    <button class="btn" style="margin-top:8px;" onclick="show('schnellanlage')"><i class="ti ti-plus"></i> Kinder anlegen</button>
+    <button class="btn btn-primary" style="margin-top:16px;" onclick="show('pool')"><i class="ti ti-arrow-right"></i> Weiter zur Aufgabenauswahl</button>
+  </div>
+
+  <!-- SCHNELLANLAGE -->
+  <div id="scr-schnellanlage" class="screen">
+    <button class="navbtn" style="margin-bottom:10px;" onclick="show('verwaltung')"><i class="ti ti-arrow-left"></i> Verwaltung</button>
+    <h2 class="scr-title">Kinder anlegen</h2>
+    <div class="ts" style="font-size:12px; margin-bottom:8px;">Ein Name pro Zeile</div>
+    <textarea id="schnellanlage-input" rows="6">Mika
+Lian
+Ben
+Nora
+Tom
+Ida
+Ada
+Neu</textarea>
+    <button class="btn btn-primary" style="margin-top:10px;" onclick="submitSchnellanlage()"><i class="ti ti-check"></i> Übernehmen → weiter zum Sitzplan</button>
+  </div>
+
+  <!-- SITZPLAN -->
+  <div id="scr-sitzplan" class="screen">
+    <h2 class="scr-title">Sitzplan (freie Fläche — bildet jede Raumform ab)</h2>
+    <div class="ts" style="font-size:11px; margin-bottom:8px;" id="sitzplan-hint">Kind unten antippen, dann auf die Fläche tippen, um es zu platzieren.</div>
+    <div class="ts" style="text-align:center; font-size:10px; margin-bottom:4px;"><i class="ti ti-podium"></i> Tafel</div>
+    <div id="sitzplan-canvas" style="position:relative; width:100%; height:260px; background:var(--surface-2); border:0.5px solid var(--border); border-radius:12px; margin-bottom:12px; overflow:hidden;" onclick="canvasClick(event)"></div>
+    <div class="ts" style="font-size:12px; margin-bottom:6px;">Noch zu platzieren</div>
+    <div class="row" id="sitzplan-pool" style="gap:8px; flex-wrap:wrap;"></div>
+    <button class="btn" style="margin-top:16px;" onclick="show('verwaltung')">Fertig → zurück zur Verwaltung</button>
+    <button class="btn btn-primary" style="margin-top:8px;" onclick="show('pool')"><i class="ti ti-arrow-right"></i> Weiter zur Aufgabenauswahl</button>
+  </div>
+
+  <!-- LERNVERLAUF -->
+  <div id="scr-lernverlauf" class="screen">
+    <div class="row" style="margin-bottom:14px;">
+      <div class="icon-circle c-teal">🐻</div><span style="font-size:15px; font-weight:500;">Mika</span>
+    </div>
+    <div class="ts" style="font-size:12px; margin-bottom:6px;">Kopfrechenstrategien</div>
+    <div class="pool-item"><span class="ts" style="font-size:11px; width:56px;">12.09.</span><span style="font-size:12px; flex:1;">47+38</span><span class="tag c-teal">schrittweise</span></div>
+    <div class="pool-item"><span class="ts" style="font-size:11px; width:56px;">05.09.</span><span style="font-size:12px; flex:1;">63+29</span><span class="tag c-teal">schrittweise</span></div>
+    <button class="btn" style="margin-top:8px;" onclick="show('verwaltung')">zurück</button>
+  </div>
+
+</div>
+
+<div class="modal-bg" id="confirm-end-modal">
+  <div class="modal" style="text-align:center;">
+    <i class="ti ti-alert-triangle" style="font-size:28px; color:var(--fill-warning);"></i>
+    <div style="font-size:14px; font-weight:500; margin:8px 0;">Sitzung wirklich beenden?</div>
+    <div class="ts" style="font-size:12px; margin-bottom:14px;">Die Kindgeräte werden deaktiviert und zeigen danach keine aktive Aufgabe mehr.</div>
+    <div class="row" style="gap:8px;">
+      <button class="btn" onclick="document.getElementById('confirm-end-modal').classList.remove('visible')">Abbrechen</button>
+      <button class="btn" style="background:var(--fill-danger); color:var(--on-danger); border:none;" onclick="confirmEndSession()">Ja, beenden</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="info-modal">
+  <div class="modal" id="info-modal-body"></div>
+</div>
+
+<div class="modal-bg" id="detail-modal">
+  <div class="modal" id="detail-body"></div>
+</div>
+
+<div class="modal-bg" id="feedback-modal">
+  <div class="modal">
+    <div style="font-size:14px; font-weight:500; margin-bottom:10px;">Wie wurde die Empfehlung genutzt?</div>
+    <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:10px;">
+      <button class="btn" onclick="closeFeedback()">genau so</button>
+      <button class="btn" onclick="closeFeedback()">abgewandelt</button>
+      <button class="btn" onclick="closeFeedback()">nicht genutzt</button>
+    </div>
+    <textarea placeholder="Warum? (optional)" rows="2"></textarea>
+    <button class="btn btn-primary" style="margin-top:10px;" onclick="closeFeedback()">Fertig</button>
+  </div>
+</div>
+
+<script>
+// ==== HIER DEINE WERTE EINTRAGEN ====
+const SUPABASE_URL = "https://iuqyjqcxftcoxwjqpijr.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1cXlqcWN4ZnRjb3h3anFwaWpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0MDQyNTYsImV4cCI6MjEwNDk4MDI1Nn0.0TNnPtB-_zjR0Op-jalhj4n_pxc5AiFEtaGdQ0G0ev8";
+// =====================================
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+function getUrlParam(name){ return new URLSearchParams(window.location.search).get(name); }
+function generateCode(){
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for(let i=0;i<4;i++) code += chars[Math.floor(Math.random()*chars.length)];
+  return code;
+}
+let sitzungscode = getUrlParam('code') || null;
+const istKindGeraet = getUrlParam('geraet') === 'kind';
+
+async function ladeUndAboniereAntworten(){
+  const { data, error } = await sb.from('antworten').select('*').eq('sitzungscode', sitzungscode).order('erstellt_am');
+  if(!error && data) data.forEach(uebernehmeAntwort);
+  aktualisierenAnsicht();
+  sb.channel('antworten-'+sitzungscode)
+    .on('postgres_changes',
+      { event:'INSERT', schema:'public', table:'antworten', filter:`sitzungscode=eq.${sitzungscode}` },
+      (payload) => { uebernehmeAntwort(payload.new); aktualisierenAnsicht(); }
+    )
+    .subscribe();
+}
+function uebernehmeAntwort(row){
+  state.pool = state.pool.filter(p=>p.name!==row.kind_name);
+  state.pool.push({name: row.kind_name, cat: row.kategorie, quote: row.transkript});
+  if(row.symbol_id) state.heatmapStatus[row.symbol_id] = row.kategorie;
+}
+function aktualisierenAnsicht(){
+  if(document.getElementById('scr-dashboard').classList.contains('visible')) renderDashboard();
+  if(document.getElementById('scr-heatmap').classList.contains('visible')) renderHeatmap();
+}
+
+const CATS = {
+  schrittweise: {label:"schrittweise", color:"c-teal", typ:"tragfähig", def:"Zerlegt in Schritte, addiert nacheinander", nachfrage:"Warum erst 30 dazu, nicht gleich 38?"},
+  stellenweise: {label:"stellenweise", color:"c-coral", typ:"tragfähig", def:"Zehner und Einer getrennt addiert", nachfrage:"Was tust du bei Einern über 10?"},
+  uebertrag: {label:"Übertrag vergessen", color:"c-purple", typ:"Fehlvorstellung", def:"Einer-Summe über 10 nicht übertragen", nachfrage:"Was passiert mit der 1, die übrig bleibt?"},
+  unklar: {label:"unklar", color:"c-gray", typ:null, def:"Keiner Kategorie sicher zuordenbar", nachfrage:""}
+};
+const SYMBOLS = [
+  {id:"mika", icon:"🐻", name:"Mika"}, {id:"lian2", icon:"🦊", name:"Lian"},
+  {id:"frog", icon:"🐸", name:"Ben"}, {id:"turtle", icon:"🐢", name:"Nora"},
+  {id:"bee", icon:"🐝", name:"Tom"}, {id:"dolphin", icon:"🐬", name:"Ida"},
+  {id:"octopus", icon:"🐙", name:"Ada"}, {id:"penguin", icon:"🐧", name:"Neu"}
+];
+
+let state = {
+  pool: [
+    {name:"Mika", cat:"schrittweise", quote:"Ich hab erst 47 und 30 gerechnet, das ist 77, und dann noch die 8 dazu, 85."},
+    {name:"Tom", cat:"schrittweise", quote:"Erst 47+30=77, dann 77+8=85."},
+    {name:"Ida", cat:"schrittweise", quote:"Ich hab in Zehnerschritten gerechnet."},
+    {name:"Lian", cat:"stellenweise", quote:"Zehner mit Zehner, 40 und 30 ist 70. Einer mit Einer, 7 und 8 ist 15. Macht 85."},
+    {name:"Ada", cat:"stellenweise", quote:"Zehner zusammen, Einer zusammen, dann addiert."},
+    {name:"Ben", cat:"uebertrag", quote:"7 und 8 ist 15, ich schreib die 5 und vergess die 1."},
+    {name:"Nora", cat:"unklar", quote:"Ich weiß nicht genau, ich hab's einfach gerechnet."}
+  ],
+  slots: {
+    anknuepfen: ["Mika"],
+    gegenueberstellen: ["Mika","Lian"],
+    sequenzieren: ["Ben","Mika","Lian"],
+    frei: []
+  },
+  activeTab: "gegenueberstellen",
+  visibleCount: { sequenzieren: 0 },
+  poolFilter: null,
+  sessionActive: false,
+  answersVisibleOnTafel: false,
+  heatmapStatus: {mika:"schrittweise", lian2:"stellenweise", frog:"uebertrag", turtle:"unklar", bee:"schrittweise", dolphin:"schrittweise", octopus:"stellenweise", penguin:null},
+  selectedSymbol: null,
+  mode: "speak",
+  isRecording: false
+};
+
+const IMPULS = {
+  anknuepfen: "Wer kann uns erklären, wie er/sie das gerechnet hat?",
+  gegenueberstellen: "Wir schauen uns zwei Wege an, 47+38 zu rechnen — was ist hier unterschiedlich gemacht worden?",
+  sequenzieren: "Wir hören uns drei Wege nacheinander an — vom Ausgangspunkt bis zur vollständigen Lösung.",
+  frei: "(kein automatischer Impuls im Frei-Modus)"
+};
+
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('visible'));
+  document.getElementById('scr-'+id).classList.add('visible');
+  document.getElementById('topbar-label').textContent = {
+    start:"Start", "lk-login":"Anmelden", login:"Login", pool:"Aufgabenpool", aufgabe:"Aufgabe", symbolauswahl:"Kind: wer bist du?",
+    aufnahme:"Kind: Aufnahme", dashboard:"LK-Dashboard", tafel:"Tafelansicht", heatmap:"Sitzplan mit Antwortübersicht",
+    verwaltung:"Verwaltung", schnellanlage:"Kinder anlegen", sitzplan:"Sitzplan", lernverlauf:"Lernverlauf"
+  }[id] || "Demo";
+  const role = (id==='symbolauswahl'||id==='aufnahme') ? 'kind' : 'lk';
+  roleLastScreen[role] = id;
+  document.getElementById('role-lk').classList.toggle('active', role==='lk');
+  document.getElementById('role-kind').classList.toggle('active', role==='kind');
+  if(id==='symbolauswahl') renderSymbols();
+  if(id==='dashboard') renderDashboard();
+  if(id==='tafel') renderTafel();
+  if(id==='heatmap') renderHeatmap();
+  if(id==='verwaltung') renderKinderliste();
+  if(id==='sitzplan') renderSitzplan();
+  if(id==='aufgabe') document.getElementById('aufgabe-sitzplan-warning').style.display = Object.keys(sitzplanState.placed).length>0 ? 'none' : 'block';
+  if(id==='login') document.getElementById('klasse-3b-sitzplan-badge').style.display = Object.keys(sitzplanState.placed).length>0 ? 'none' : 'inline-flex';
+}
+let roleLastScreen = {lk:'login', kind:'symbolauswahl'};
+function switchRole(r){ show(roleLastScreen[r]); }
+
+function startSitzung(){
+  state.sessionActive = true;
+  if(!sitzungscode){
+    sitzungscode = generateCode();
+    history.replaceState(null, '', '?code='+sitzungscode);
+  }
+  state.pool = []; // echte Sitzung startet mit leerem Pool statt Demo-Daten
+  document.getElementById('sitzungscode-anzeige').textContent = sitzungscode;
+  ladeUndAboniereAntworten();
+  show('heatmap');
+}
+
+function renderSymbols(){
+  const g = document.getElementById('symbol-grid');
+  const inactive = document.getElementById('symbolauswahl-inaktiv');
+  if(!state.sessionActive){
+    g.innerHTML = "";
+    document.getElementById('symbol-confirm').style.display='none';
+    inactive.style.display = 'block';
+    return;
+  }
+  inactive.style.display = 'none';
+  g.innerHTML = "";
+  SYMBOLS.forEach(s=>{
+    const b = document.createElement('button');
+    b.className='navbtn'; b.style.aspectRatio='1'; b.style.fontSize='24px'; b.style.borderRadius='16px';
+    b.textContent = s.icon;
+    b.onclick = ()=>selectSymbol(s);
+    g.appendChild(b);
+  });
+  document.getElementById('symbol-confirm').style.display='none';
+}
+function selectSymbol(s){
+  state.selectedSymbol = s;
+  document.getElementById('symbol-confirm').style.display='block';
+  document.getElementById('symbol-confirm-icon').textContent = s.icon;
+}
+function cancelSymbol(){ document.getElementById('symbol-confirm').style.display='none'; }
+function confirmSymbol(){
+  show('aufnahme');
+  document.getElementById('record-area').style.display='block';
+  document.getElementById('review-area').style.display='none';
+  document.getElementById('done-area').style.display='none';
+  document.getElementById('record-btn').style.background='var(--fill-danger)';
+  document.getElementById('record-icon').className='ti ti-microphone';
+  document.getElementById('record-label').textContent='Aufnehmen';
+  state.isRecording=false;
+  renderSprachauswahl();
+  setSprache('de');
+  if(state.selectedSymbol) state.heatmapStatus[state.selectedSymbol.id] = 'laeuft';
+}
+function setMode(m){
+  state.mode=m;
+  document.getElementById('mode-speak').style.background = m==='speak' ? 'var(--fill-accent)' : 'transparent';
+  document.getElementById('mode-speak').style.color = m==='speak' ? 'var(--on-accent)' : 'inherit';
+  document.getElementById('mode-type').style.background = m==='type' ? 'var(--fill-accent)' : 'transparent';
+  document.getElementById('mode-type').style.color = m==='type' ? 'var(--on-accent)' : 'inherit';
+  if(m==='type'){
+    document.getElementById('review-area').style.display='block';
+    document.getElementById('record-area').style.display='none';
+    document.getElementById('transcript-edit').value = '';
+    document.getElementById('transcript-edit').placeholder = 'Antwort hier eintippen...';
+  } else {
+    document.getElementById('record-area').style.display='block';
+    document.getElementById('review-area').style.display='none';
+  }
+}
+function toggleRecord(){
+  state.isRecording = !state.isRecording;
+  const btn = document.getElementById('record-btn');
+  const icon = document.getElementById('record-icon');
+  const label = document.getElementById('record-label');
+  if(state.isRecording){
+    btn.style.background = 'var(--text-muted)';
+    icon.className = 'ti ti-player-stop';
+    label.textContent = 'Stopp';
+  } else {
+    document.getElementById('record-area').style.display='none';
+    document.getElementById('review-area').style.display='block';
+    document.getElementById('transcript-edit').value = "Ich hab erst 47 und 30 gerechnet, das sind 77, und dann noch 8 dazu.";
+  }
+}
+function rerecord(){
+  document.getElementById('review-area').style.display='none';
+  document.getElementById('record-area').style.display= state.mode==='speak' ? 'block' : 'none';
+  document.getElementById('record-btn').style.background='var(--fill-danger)';
+  document.getElementById('record-icon').className='ti ti-microphone';
+  document.getElementById('record-label').textContent='Aufnehmen';
+  state.isRecording=false;
+  if(state.mode==='type'){ document.getElementById('review-area').style.display='block'; document.getElementById('transcript-edit').value=''; }
+}
+async function finishAnswer(){
+  const text = document.getElementById('transcript-edit').value || "(keine Antwort)";
+  const name = state.selectedSymbol ? state.selectedSymbol.name : "Neu";
+  // simulierte Kategorisierung: einfache Stichwort-Heuristik für die Demo
+  // (wird in einem späteren Schritt durch die echte KI-Kategorisierung ersetzt)
+  let cat = "unklar";
+  if(/zehner|stellen/i.test(text)) cat = "stellenweise";
+  else if(/vergess|1 dazu|übertrag/i.test(text)) cat = "uebertrag";
+  else if(/erst|dann|30|dazu/i.test(text)) cat = "schrittweise";
+
+  if(sitzungscode){
+    // Echte Sitzung: an Supabase senden, LK-Gerät sieht es live
+    await sb.from('antworten').insert({
+      sitzungscode: sitzungscode,
+      kind_name: name,
+      symbol_id: state.selectedSymbol ? state.selectedSymbol.id : null,
+      transkript: text,
+      kategorie: cat
+    });
+  } else {
+    // Kein Sitzungscode vorhanden (Demo-Vorführung ohne echte Sitzung): nur lokal
+    state.pool = state.pool.filter(p=>p.name!==name);
+    state.pool.push({name, cat, quote:text});
+    if(state.selectedSymbol) state.heatmapStatus[state.selectedSymbol.id] = cat;
+  }
+  document.getElementById('review-area').style.display='none';
+  document.getElementById('done-area').style.display='block';
+  document.getElementById('done-name').textContent = name;
+}
+
+function switchTab(tab){
+  state.activeTab = tab;
+  renderDashboard();
+}
+function renderDashboard(){
+  document.querySelectorAll('.tabbtn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.tab===state.activeTab);
+  });
+  document.getElementById('impuls-text').textContent = IMPULS[state.activeTab];
+  const slotIds = state.slots[state.activeTab];
+  const area = document.getElementById('slots-area');
+  area.innerHTML = "";
+  const isSeq = state.activeTab === 'sequenzieren';
+  slotIds.forEach((name,i)=>{
+    const child = state.pool.find(p=>p.name===name);
+    const div = document.createElement('div');
+    div.style.cursor = 'pointer';
+    if(child){
+      const cat = CATS[child.cat];
+      const onTafel = !isSeq || i < state.visibleCount.sequenzieren;
+      div.onclick = ()=> openDetail(child.name);
+      div.innerHTML = `<div class="${cat.color}" style="border-radius:var(--radius) var(--radius) 0 0; padding:6px 8px;">
+        <div class="row" style="justify-content:space-between;"><b style="font-size:12px;">${i+1}. ${child.name} · ${cat.label}</b>
+        <span style="display:flex; gap:6px; align-items:center;">
+          ${isSeq ? `<span class="tag" style="background:${onTafel?'var(--bg-success)':'var(--surface-1)'}; color:${onTafel?'var(--text-success)':'var(--text-muted)'};">${onTafel?'auf Tafel':'noch verdeckt'}</span>` : ''}
+          ${i>0 ? `<button class="navbtn" style="padding:4px 6px;" onclick="event.stopPropagation(); moveSlot(${i},-1)"><i class="ti ti-arrow-up" style="font-size:12px;"></i></button>` : ''}
+          ${i<slotIds.length-1 ? `<button class="navbtn" style="padding:4px 6px;" onclick="event.stopPropagation(); moveSlot(${i},1)"><i class="ti ti-arrow-down" style="font-size:12px;"></i></button>` : ''}
+        </span></div></div>
+        <div class="quote-box" style="border-top:none; border-radius:0 0 var(--radius) var(--radius); margin-top:0;">"${child.quote}"</div>
+        <div class="ts" style="font-size:10px; margin-top:4px;"><i class="ti ti-message-circle"></i> ${cat.nachfrage}</div>`;
+    } else {
+      div.className='slot-empty'; div.textContent = 'leere Tafelanzeige — Antwort aus dem Pool antippen';
+      div.onclick = null; div.style.cursor='default';
+    }
+    area.appendChild(div);
+  });
+  const seqControls = document.getElementById('seq-controls');
+  if(isSeq){
+    seqControls.style.display = 'block';
+    seqControls.innerHTML = `
+      <div class="ts" style="font-size:11px; margin-bottom:6px;">${state.visibleCount.sequenzieren} von ${slotIds.length} auf der Tafel sichtbar</div>
+      <div class="row" style="gap:8px;">
+        <button class="btn" onclick="seqStep(-1)"><i class="ti ti-eye-off"></i> vorherige verbergen</button>
+        <button class="btn btn-primary" onclick="seqStep(1)"><i class="ti ti-eye"></i> nächste zuschalten</button>
+      </div>`;
+  } else { seqControls.style.display = 'none'; }
+  renderPool();
+  renderTafel();
+  renderLegende('kategorie-legende', false, true);
+  document.getElementById('antworten-toggle').textContent = state.answersVisibleOnTafel ? 'An' : 'Aus';
+  const tafelBtn = document.getElementById('antworten-toggle-tafel');
+  if(tafelBtn) tafelBtn.textContent = state.answersVisibleOnTafel ? 'An' : 'Aus';
+}
+function seqStep(dir){
+  const max = state.slots.sequenzieren.length;
+  state.visibleCount.sequenzieren = Math.max(0, Math.min(max, state.visibleCount.sequenzieren + dir));
+  renderDashboard();
+}
+function moveSlot(i, dir){
+  const arr = state.slots[state.activeTab];
+  const j = i + dir;
+  if(j<0 || j>=arr.length) return;
+  [arr[i], arr[j]] = [arr[j], arr[i]];
+  renderDashboard();
+}
+function renderSprachauswahl(){
+  const el = document.getElementById('sprachauswahl');
+  el.innerHTML = "";
+  const kindLang = state.selectedSymbol ? childLanguage[state.selectedSymbol.id] : 'de';
+  if(kindLang === 'de'){
+    el.style.display = 'none';
+    return; // kein Umschalter nötig, wenn nur Deutsch zugeordnet ist
+  }
+  el.style.display = 'flex';
+  ['de', kindLang].forEach(lang=>{
+    const b = document.createElement('button');
+    b.className = 'navbtn';
+    b.id = 'sprache-'+lang;
+    b.style.fontSize = '18px';
+    b.textContent = SPRACHEN[lang].flag;
+    b.title = SPRACHEN[lang].label;
+    b.onclick = ()=>setSprache(lang);
+    el.appendChild(b);
+  });
+}
+function setSprache(lang){
+  document.getElementById('aufnahme-anweisung').textContent = SPRACHEN[lang].text || "Löse und erkläre deinen Rechenweg";
+  ['de', lang].forEach(k=>{
+    const btn = document.getElementById('sprache-'+k);
+    if(btn) btn.classList.toggle('active', k===lang);
+  });
+}
+function toggleErklaerung(){
+  const el = document.getElementById('empfehlung-erklaerung');
+  el.style.display = el.style.display==='none' ? 'block' : 'none';
+}
+function showInfo(title, text){
+  document.getElementById('info-modal-body').innerHTML = `
+    <div style="font-size:14px; font-weight:500; margin-bottom:8px;">${title}</div>
+    <div class="ts" style="font-size:13px; line-height:1.5;">${text}</div>
+    <button class="btn btn-primary" style="margin-top:14px;" onclick="document.getElementById('info-modal').classList.remove('visible')">Schließen</button>`;
+  document.getElementById('info-modal').classList.add('visible');
+}
+let qrAufTafel = false;
+function toggleTafelQR(){
+  qrAufTafel = !qrAufTafel;
+  document.getElementById('qr-toggle-btn').innerHTML = qrAufTafel
+    ? '<i class="ti ti-qrcode-off"></i> QR-Code auf Tafel ausblenden'
+    : '<i class="ti ti-qrcode"></i> QR-Code auf Tafel anzeigen';
+  show('tafel');
+}
+function renderTafelQR(){
+  const section = document.getElementById('tafel-qr-section');
+  section.style.display = qrAufTafel ? 'block' : 'none';
+  if(!qrAufTafel) return;
+  const box = document.getElementById('tafel-qr-box');
+  box.innerHTML = "";
+  try {
+    const basisUrl = window.location.origin + window.location.pathname;
+    const beitrittsLink = basisUrl + "?geraet=kind&code=" + sitzungscode;
+    new QRCode(box, { text: beitrittsLink, width: 140, height: 140 });
+  } catch(e){
+    box.innerHTML = '<div class="ts" style="font-size:11px;">(QR-Bibliothek nicht geladen — Demo ohne Internetverbindung)</div>';
+  }
+}
+function addSlot(){
+  const unused = state.pool.find(p=>!state.slots[state.activeTab].includes(p.name));
+  if(unused) state.slots[state.activeTab].push(unused.name);
+  renderDashboard();
+}
+function recode(name, newCat){
+  if(!newCat) return;
+  const child = state.pool.find(p=>p.name===name);
+  if(child) child.cat = newCat;
+  renderDashboard();
+  renderTafel();
+  if(detailChild===name) renderDetail();
+}
+function renderLegende(containerId, includeStatus, filterable){
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  let html = "";
+  if(includeStatus){
+    html += `<span style="font-size:10px; color:var(--text-muted);"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;border:1px dashed var(--border-strong); margin-right:4px;"></span>offen</span>
+      <span style="font-size:10px; color:var(--text-muted);"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--fill-warning); margin-right:4px;"></span>läuft</span>
+      <span style="font-size:10px; color:var(--text-muted);"><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#FBE3C7; margin-right:4px;"></span>keine Einwilligung (schriftlich)</span>`;
+  }
+  if(filterable){
+    const activeAlle = !state.poolFilter;
+    html += `<span onclick="setPoolFilter(null)" style="font-size:10px; cursor:pointer; padding:2px 7px; border-radius:10px; background:${activeAlle?'var(--bg-accent)':'transparent'}; color:${activeAlle?'var(--text-accent)':'var(--text-muted)'};">alle</span>`;
+  }
+  Object.keys(CATS).forEach(k=>{
+    const cat = CATS[k];
+    const active = filterable && state.poolFilter===k;
+    const bg = active ? 'var(--bg-accent)' : 'transparent';
+    const fg = active ? 'var(--text-accent)' : 'var(--text-muted)';
+    const cursor = filterable ? 'cursor:pointer;' : '';
+    const onclick = filterable ? `onclick="setPoolFilter('${k}')"` : '';
+    html += `<span ${onclick} style="font-size:10px; ${cursor} padding:2px 7px; border-radius:10px; background:${bg}; color:${fg};"><span class="${cat.color}" style="display:inline-block;width:10px;height:10px;border-radius:3px; margin-right:4px;"></span>${cat.label}${cat.typ==='Fehlvorstellung'?' (Fehlvorstellung)':''}</span>`;
+  });
+  el.innerHTML = html;
+}
+function setPoolFilter(k){
+  state.poolFilter = (state.poolFilter===k) ? null : k;
+  renderDashboard();
+}
+function renderPool(){
+  const area = document.getElementById('pool-area');
+  if(!area) return;
+  area.innerHTML = "";
+  const visiblePool = state.poolFilter ? state.pool.filter(p=>p.cat===state.poolFilter) : state.pool;
+  visiblePool.forEach(p=>{
+    const cat = CATS[p.cat];
+    const inSlot = state.slots[state.activeTab].includes(p.name);
+    const div = document.createElement('div');
+    div.className = cat.color;
+    div.style.cssText = "border-radius:var(--radius); padding:8px 10px; cursor:pointer;" + (inSlot ? " outline:2px solid var(--border-accent);" : "");
+    div.onclick = ()=> openDetail(p.name);
+    div.innerHTML = `<div class="row" style="justify-content:space-between;"><b style="font-size:12px;">${p.name}${inSlot?' <i class="ti ti-check" style="font-size:10px;"></i>':''}</b><span style="font-size:9px;">${cat.typ==='Fehlvorstellung'?'⚠ ':''}${cat.label}</span></div>
+      <div class="ts" style="font-size:10px; margin-top:2px;">${cat.def}</div>`;
+    area.appendChild(div);
+  });
+}
+
+// --- Detailansicht (Antippen einer Antwort) ---
+let detailChild = null;
+function openDetail(name){
+  detailChild = name;
+  renderDetail();
+  document.getElementById('detail-modal').classList.add('visible');
+}
+function closeDetail(){
+  document.getElementById('detail-modal').classList.remove('visible');
+}
+function renderDetail(){
+  const child = state.pool.find(p=>p.name===detailChild);
+  if(!child) return;
+  const cat = CATS[child.cat];
+  const inSlot = state.slots[state.activeTab].includes(child.name);
+  document.getElementById('detail-body').innerHTML = `
+    <div class="row" style="justify-content:space-between; margin-bottom:8px;">
+      <b style="font-size:14px;">${child.name}</b>
+      <span class="tag ${cat.color}">${cat.typ==='Fehlvorstellung'?'⚠ ':''}${cat.label}</span>
+    </div>
+    <div class="quote-box">"${child.quote}"</div>
+    <div class="ts" style="font-size:11px; margin-top:8px;"><i class="ti ti-bulb"></i> ${cat.nachfrage}</div>
+    <div style="margin-top:12px;">
+      <label class="ts" style="font-size:11px;">Kategorie ändern:</label>
+      <select style="width:100%; font-size:12px; margin-top:4px;" onchange="recode('${child.name}', this.value)">
+        <option value="">(unverändert lassen)</option>
+        ${Object.keys(CATS).map(k=>`<option value="${k}">${CATS[k].label}</option>`).join('')}
+      </select>
+    </div>
+    <button class="btn ${inSlot?'':'btn-primary'}" style="margin-top:14px;" onclick="toggleSlotFromDetail()">
+      ${inSlot ? '<i class="ti ti-x"></i> Von der Tafel entfernen' : '<i class="ti ti-plus"></i> Für die Tafel auswählen ('+state.activeTab+')'}
+    </button>
+    <button class="btn" style="margin-top:8px;" onclick="closeDetail()">Schließen</button>
+  `;
+}
+function toggleSlotFromDetail(){
+  const idx = state.slots[state.activeTab].indexOf(detailChild);
+  if(idx>-1) state.slots[state.activeTab].splice(idx,1);
+  else state.slots[state.activeTab].push(detailChild);
+  renderDetail();
+  renderDashboard();
+}
+function toggleAntwortenSichtbar(){
+  state.answersVisibleOnTafel = !state.answersVisibleOnTafel;
+  const label = state.answersVisibleOnTafel ? 'An' : 'Aus';
+  const btn1 = document.getElementById('antworten-toggle');
+  const btn2 = document.getElementById('antworten-toggle-tafel');
+  if(btn1) btn1.textContent = label;
+  if(btn2) btn2.textContent = label;
+  renderTafel();
+}
+function renderTafel(){
+  renderTafelQR();
+  const area = document.getElementById('tafel-slots');
+  const aufgabeEl = document.getElementById('tafel-aufgabe');
+  if(qrAufTafel){
+    area.innerHTML = "";
+    aufgabeEl.style.display = 'none';
+    return;
+  }
+  if(!state.answersVisibleOnTafel){
+    area.className = '';
+    area.innerHTML = '<div class="ts" style="text-align:center; padding:24px;"><i class="ti ti-eye-off" style="font-size:20px;"></i><div style="margin-top:6px;">Antworten sind noch ausgeblendet</div></div>';
+    return;
+  }
+  area.className = state.activeTab === 'sequenzieren' ? '' : 'grid2';
+  area.innerHTML = "";
+  const slotIds = state.slots[state.activeTab];
+  const isSeq = state.activeTab === 'sequenzieren';
+  slotIds.forEach((name,i)=>{
+    if(isSeq && i >= state.visibleCount.sequenzieren) return;
+    const child = state.pool.find(p=>p.name===name);
+    if(!child) return;
+    const cat = CATS[child.cat];
+    const div = document.createElement('div');
+    div.className = cat.color;
+    div.style.cssText = "border-radius:12px; padding:14px; font-size:14px;" + (isSeq ? " margin-bottom:12px; display:flex; gap:10px; align-items:flex-start;" : "");
+    div.innerHTML = isSeq
+      ? `<div style="font-size:20px; font-weight:600; opacity:0.5; min-width:24px;">${i+1}</div><div>${child.quote}</div>`
+      : child.quote;
+    area.appendChild(div);
+  });
+}
+function toggleTafelAufgabe(){
+  if(qrAufTafel){
+    qrAufTafel = false;
+    document.getElementById('qr-toggle-btn').innerHTML = '<i class="ti ti-qrcode"></i> QR-Code auf Tafel anzeigen';
+  }
+  const el = document.getElementById('tafel-aufgabe');
+  el.style.display = el.style.display==='none' ? 'block' : 'none';
+  renderTafel();
+}
+function renderHeatmap(){
+  const canvas = document.getElementById('heatmap-canvas');
+  const banner = document.getElementById('heatmap-sitzplan-warning');
+  const placedIds = Object.keys(sitzplanState.placed);
+  const anyPlaced = placedIds.length > 0;
+  const missing = SYMBOLS.filter(s=>!sitzplanState.placed[s.id]);
+  banner.style.display = anyPlaced ? 'none' : 'block';
+  const missingNotice = document.getElementById('heatmap-missing-notice');
+  if(anyPlaced && missing.length>0){
+    missingNotice.style.display = 'block';
+    missingNotice.innerHTML = `<i class="ti ti-user-question"></i> Noch nicht im Sitzplan platziert: ${missing.map(m=>m.name).join(', ')} — <span style="text-decoration:underline; cursor:pointer;" onclick="show('sitzplan')">zurück zum Sitzplan</span>`;
+  } else {
+    missingNotice.style.display = 'none';
+  }
+  canvas.innerHTML = "";
+  renderLegende('heatmap-legende', true);
+  const teilnehmend = SYMBOLS.filter(s=>consentState[s.id]);
+  const fertigCount = teilnehmend.filter(s=>{const st=state.heatmapStatus[s.id]; return st && st!=='laeuft';}).length;
+  document.getElementById('heatmap-fortschritt').innerHTML =
+    `<i class="ti ti-check" style="color:var(--text-success);"></i> fertig ${fertigCount}/${teilnehmend.length}
+     <i class="ti ti-info-circle" style="color:var(--text-muted); cursor:pointer;" onclick="showInfo('Fortschritt', 'Zählt nur Kinder mit Einwilligung, die digital am Tool teilnehmen — Kinder ohne Einwilligung bearbeiten die Aufgabe schriftlich und fließen hier nicht ein.')"></i>`;
+  SYMBOLS.forEach(s=>{
+    const pos = sitzplanState.placed[s.id];
+    if(!pos) return;
+    const hasConsent = consentState[s.id];
+    const status = state.heatmapStatus[s.id];
+    const isLaufend = status === 'laeuft';
+    const isFertig = status && !isLaufend;
+    const el = document.createElement('div');
+    el.style.position = 'absolute';
+    el.style.left = pos.x + '%';
+    el.style.top = pos.y + '%';
+    el.style.transform = 'translate(-50%,-50%)';
+    el.style.width = '42px';
+    el.style.height = '42px';
+    el.style.display = 'flex';
+    el.style.flexDirection = 'column';
+    el.style.alignItems = 'center';
+    el.style.justifyContent = 'center';
+    el.style.fontSize = '9px';
+    el.style.textAlign = 'center';
+    el.style.padding = '2px';
+    el.style.position = 'absolute';
+
+    if(!hasConsent){
+      el.style.background = '#FBE3C7';
+      el.style.borderRadius = '8px';
+      el.style.color = 'var(--text-warning)';
+      el.innerHTML = `<i class="ti ti-file-text" style="font-size:14px;"></i><div>${s.name}</div>`;
+    } else if(isFertig){
+      el.className = CATS[status].color;
+      el.style.borderRadius = '8px';
+      el.style.cursor = 'pointer';
+      el.textContent = s.name;
+      el.onclick = ()=> openDetail(s.name);
+    } else if(isLaufend){
+      el.style.background = 'var(--fill-warning)';
+      el.style.borderRadius = '8px';
+      el.style.color = '#fff';
+      el.style.position = 'relative';
+      el.innerHTML = `<div style="position:absolute; top:-14px; font-size:14px; letter-spacing:1px;">•••</div><div>${s.name}</div>`;
+    } else {
+      el.style.background = 'var(--surface-1)';
+      el.style.border = '1px dashed var(--border-strong)';
+      el.style.borderRadius = '50%';
+      el.style.color = 'var(--text-muted)';
+      el.textContent = s.name;
+    }
+    canvas.appendChild(el);
+  });
+}
+let consentState = { mika:true, lian2:true, frog:false, turtle:true, bee:true, dolphin:true, octopus:true, penguin:true };
+let childLanguage = { mika:'de', lian2:'de', frog:'de', turtle:'tr', bee:'de', dolphin:'de', octopus:'uk', penguin:'de' };
+let anonymMode = false;
+const SPRACHEN = {
+  de: { flag: '🇩🇪', label: 'Deutsch', text: null },
+  tr: { flag: '🇹🇷', label: 'Türkisch', text: "Çöz ve nasıl hesapladığını açıkla" },
+  uk: { flag: '🇺🇦', label: 'Ukrainisch', text: "Розв'яжи і поясни свій спосіб обчислення" }
+};
+function toggleAnonym(){
+  anonymMode = !anonymMode;
+  document.getElementById('anonym-toggle').textContent = anonymMode ? 'An' : 'Aus';
+  document.getElementById('ausfuell-blatt-btn').style.display = anonymMode ? 'block' : 'none';
+  renderKinderliste();
+}
+function showAusfuellBlatt(){
+  const rows = SYMBOLS.map(s=>`<div class="row" style="gap:10px; padding:6px 0; border-bottom:0.5px solid var(--border);"><span style="font-size:20px;">${s.icon}</span><span style="flex:1; border-bottom:1px solid var(--border-strong); height:18px;"></span></div>`).join('');
+  document.getElementById('info-modal-body').innerHTML = `
+    <div style="font-size:14px; font-weight:500; margin-bottom:4px;">Ausfüll-Blatt</div>
+    <div class="ts" style="font-size:11px; margin-bottom:10px;">Zum Ausdrucken — von Hand ausfüllen, nicht digital speichern.</div>
+    ${rows}
+    <button class="btn btn-primary" style="margin-top:14px;" onclick="document.getElementById('info-modal').classList.remove('visible')">Schließen</button>`;
+  document.getElementById('info-modal').classList.add('visible');
+}
+function setChildLanguage(id, lang){ childLanguage[id] = lang; }
+function renderKinderliste(){
+  const el = document.getElementById('kinderliste');
+  el.innerHTML = "";
+  document.getElementById('kinder-count').textContent = `Kinder (${SYMBOLS.length}) — Demo mit 8 Beispielkindern, echte Klasse hätte ca. 24`;
+  const anyWithoutConsent = SYMBOLS.some(s=>!consentState[s.id]);
+  document.getElementById('kein-zugang-hinweis').style.display = anyWithoutConsent ? 'block' : 'none';
+  SYMBOLS.forEach(s=>{
+    const hasConsent = consentState[s.id];
+    const div = document.createElement('div');
+    div.className = 'pool-item';
+    div.style.flexWrap = 'wrap';
+    const nameSpan = anonymMode
+      ? `<span class="ts" style="flex:1; font-size:12px;">(anonym)</span>`
+      : `<span style="flex:1; font-size:13px;">${s.name}</span>`;
+    const langSelect = `<select onchange="setChildLanguage('${s.id}', this.value)" style="font-size:11px; padding:2px 4px; border-radius:6px; border:0.5px solid var(--border);">
+        ${Object.keys(SPRACHEN).map(k=>`<option value="${k}" ${childLanguage[s.id]===k?'selected':''}>${SPRACHEN[k].flag} ${SPRACHEN[k].label}</option>`).join('')}
+      </select>`;
+    if(hasConsent){
+      div.innerHTML = `<div class="icon-circle c-teal">${s.icon}</div>${nameSpan}${langSelect}
+        <button class="navbtn" onclick="toggleConsent('${s.id}')" style="font-size:10px;">Einwilligung widerrufen</button>`;
+    } else {
+      div.innerHTML = `<div class="icon-circle c-gray">${s.icon}</div>${nameSpan}
+        <span class="tag" style="background:var(--bg-warning); color:var(--text-warning); margin-right:6px;">keine Einwilligung</span>
+        <button class="navbtn" onclick="toggleConsent('${s.id}')" style="font-size:10px;">rückgängig</button>
+        <button class="navbtn" onclick="showInfo('Blatt erzeugen', 'Demo: erzeugt PDF — Aufgabentext + Bildmaterial + Antwortfeld zum handschriftlichen Bearbeiten.')"><i class="ti ti-printer"></i> Blatt erzeugen</button>`;
+    }
+    el.appendChild(div);
+  });
+}
+function toggleConsent(id){
+  consentState[id] = !consentState[id];
+  renderKinderliste();
+}
+function submitSchnellanlage(){
+  const lines = document.getElementById('schnellanlage-input').value
+    .split("\n").map(s=>s.trim()).filter(s=>s.length>0);
+  lines.forEach((name,i)=>{
+    if(SYMBOLS[i]) SYMBOLS[i].name = name;
+  });
+  show('sitzplan');
+}
+
+function endSession(){ document.getElementById('confirm-end-modal').classList.add('visible'); }
+function confirmEndSession(){
+  document.getElementById('confirm-end-modal').classList.remove('visible');
+  document.getElementById('feedback-modal').classList.add('visible');
+}
+function closeFeedback(){ document.getElementById('feedback-modal').classList.remove('visible'); state.sessionActive = false; show('pool'); }
+
+let sitzplanState = {
+  placed: {},   // leer zu Beginn – alle Kinder starten unten im Pool
+  armed: null
+};
+function renderSitzplan(){
+  const canvas = document.getElementById('sitzplan-canvas');
+  canvas.innerHTML = "";
+  SYMBOLS.forEach(s=>{
+    const pos = sitzplanState.placed[s.id];
+    if(pos){
+      const el = document.createElement('div');
+      el.style.cssText = `position:absolute; left:${pos.x}%; top:${pos.y}%; transform:translate(-50%,-50%); display:flex; flex-direction:column; align-items:center; cursor:pointer;`;
+      el.onclick = (e)=>{ e.stopPropagation(); sitzplanState.armed = s.id; renderSitzplan(); };
+      const border = sitzplanState.armed===s.id ? '2px solid var(--border-accent)' : '1px solid var(--border-strong)';
+      el.innerHTML = `<div style="width:40px; height:40px; border-radius:50%; background:var(--surface-1); border:${border}; display:flex; align-items:center; justify-content:center; font-size:18px;">${s.icon}</div>
+        <div style="font-size:9px; color:var(--text-secondary); margin-top:2px; white-space:nowrap;">${s.name}</div>`;
+      canvas.appendChild(el);
+    }
+  });
+  const pool = document.getElementById('sitzplan-pool');
+  pool.innerHTML = "";
+  SYMBOLS.forEach(s=>{
+    if(sitzplanState.placed[s.id]) return;
+    const b = document.createElement('button');
+    b.className='navbtn';
+    b.style.cssText = "display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 8px; min-width:48px;";
+    if(sitzplanState.armed===s.id) b.classList.add('active');
+    b.innerHTML = `<span style="font-size:20px;">${s.icon}</span><span style="font-size:9px;">${s.name}</span>`;
+    b.onclick = ()=>{ sitzplanState.armed = (sitzplanState.armed===s.id) ? null : s.id; renderSitzplan(); };
+    pool.appendChild(b);
+  });
+  document.getElementById('sitzplan-hint').textContent = sitzplanState.armed
+    ? "Jetzt auf die Fläche tippen, um " + SYMBOLS.find(s=>s.id===sitzplanState.armed).name + " zu platzieren."
+    : "Kind unten antippen, dann auf die Fläche tippen, um es zu platzieren.";
+}
+function canvasClick(e){
+  if(!sitzplanState.armed) return;
+  const rect = e.currentTarget.getBoundingClientRect();
+  const x = ((e.clientX - rect.left) / rect.width) * 100;
+  const y = ((e.clientY - rect.top) / rect.height) * 100;
+  sitzplanState.placed[sitzplanState.armed] = {x: Math.max(5,Math.min(95,x)), y: Math.max(8,Math.min(92,y))};
+  sitzplanState.armed = null;
+  renderSitzplan();
+}
+if(istKindGeraet && sitzungscode){
+  // Kindgerät, das über den QR-Code/Link beigetreten ist:
+  // kein Demo-Menü sichtbar, direkt in die Symbolauswahl der echten Sitzung
+  document.querySelector('.topbar').style.display = 'none';
+  state.sessionActive = true;
+  show('symbolauswahl');
+} else {
+  show('start');
+}
+</script>
+</body>
 </html>

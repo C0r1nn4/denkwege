@@ -641,6 +641,9 @@ async function toggleRecord(){
         if(daten.transkript) text = daten.transkript;
         else if(daten.error) text = "(Fehler von der Spracherkennung: " + daten.error + ")";
         else text = "(Spracherkennung hat nichts erkannt -- bitte nochmal versuchen oder tippen)";
+        if(daten.debug){
+          text += "\n\n[DEBUG: Dauer=" + daten.debug.audio_dauer_sekunden + "s, Größe=" + daten.debug.audio_groesse_bytes + " Bytes, Status=" + daten.debug.letzter_status + "]";
+        }
       } catch(e){
         text = "(Spracherkennung fehlgeschlagen -- bitte nochmal versuchen oder tippen)";
       }

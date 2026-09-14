@@ -589,19 +589,64 @@ function setMode(m){
     document.getElementById('review-area').style.display='none';
   }
 }
-function toggleRecord(){
-  state.isRecording = !state.isRecording;
+let mediaRecorder = null;
+let audioChunks = [];
+let aufnahmeMimeType = 'audio/webm';
+
+async function toggleRecord(){
   const btn = document.getElementById('record-btn');
   const icon = document.getElementById('record-icon');
   const label = document.getElementById('record-label');
-  if(state.isRecording){
-    btn.style.background = 'var(--text-muted)';
-    icon.className = 'ti ti-player-stop';
-    label.textContent = 'Stopp';
+
+  if(!state.isRecording){
+    // Aufnahme starten
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunks = [];
+      // Safari/iPad unterstützt oft kein audio/webm -- Browser das passende Format wählen lassen
+      mediaRecorder = MediaRecorder.isTypeSupported('audio/webm')
+        ? new MediaRecorder(stream, { mimeType: 'audio/webm' })
+        : new MediaRecorder(stream);
+      aufnahmeMimeType = mediaRecorder.mimeType || 'audio/webm';
+      mediaRecorder.ondataavailable = (e) => { if(e.data.size > 0) audioChunks.push(e.data); };
+      mediaRecorder.start();
+      state.isRecording = true;
+      btn.style.background = 'var(--text-muted)';
+      icon.className = 'ti ti-player-stop';
+      label.textContent = 'Stopp';
+    } catch(e){
+      alert('Mikrofon konnte nicht gestartet werden: ' + e.message + '\n\nDu kannst stattdessen auf die Tastatur (⌨) wechseln und tippen.');
+    }
   } else {
-    document.getElementById('record-area').style.display='none';
-    document.getElementById('review-area').style.display='block';
-    document.getElementById('transcript-edit').value = "Ich hab erst 47 und 30 gerechnet, das sind 77, und dann noch 8 dazu.";
+    // Aufnahme stoppen -> transkribieren
+    state.isRecording = false;
+    label.textContent = 'Wird erkannt...';
+    icon.className = 'ti ti-loader-2';
+    mediaRecorder.stop();
+    mediaRecorder.stream.getTracks().forEach(t => t.stop());
+
+    mediaRecorder.onstop = async () => {
+      const audioBlob = new Blob(audioChunks, { type: aufnahmeMimeType });
+      let text = "";
+      try {
+        const antwort = await fetch(SUPABASE_URL + '/functions/v1/transkribieren', {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+            'Content-Type': aufnahmeMimeType
+          },
+          body: audioBlob
+        });
+        const daten = await antwort.json();
+        text = daten.transkript || "";
+        if(!text) text = "(Spracherkennung hat nichts erkannt -- bitte nochmal versuchen oder tippen)";
+      } catch(e){
+        text = "(Spracherkennung fehlgeschlagen -- bitte nochmal versuchen oder tippen)";
+      }
+      document.getElementById('record-area').style.display='none';
+      document.getElementById('review-area').style.display='block';
+      document.getElementById('transcript-edit').value = text;
+    };
   }
 }
 function rerecord(){

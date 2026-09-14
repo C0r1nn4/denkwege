@@ -534,13 +534,15 @@ function show(id){
 let roleLastScreen = {lk:'login', kind:'symbolauswahl'};
 function switchRole(r){ show(roleLastScreen[r]); }
 
-function startSitzung(){
+async function startSitzung(){
   state.sessionActive = true;
   if(!sitzungscode){
     sitzungscode = generateCode();
     history.replaceState(null, '', '?code='+sitzungscode);
-    sb.from('sitzungen').insert({ code: sitzungscode }); // Sitzung real anlegen, damit Kinder den Code prüfen können
   }
+  // Sitzung in der Datenbank sicherstellen -- auch wenn schon ein (alter) Code in der URL stand
+  const { error } = await sb.from('sitzungen').upsert({ code: sitzungscode }, { onConflict: 'code', ignoreDuplicates: true });
+  if(error) alert('Sitzung konnte nicht angelegt werden: ' + error.message);
   state.pool = []; // echte Sitzung startet mit leerem Pool statt Demo-Daten
   document.getElementById('sitzungscode-anzeige').textContent = sitzungscode;
   ladeUndAboniereAntworten();

@@ -638,8 +638,9 @@ async function toggleRecord(){
           body: audioBlob
         });
         const daten = await antwort.json();
-        text = daten.transkript || "";
-        if(!text) text = "(Spracherkennung hat nichts erkannt -- bitte nochmal versuchen oder tippen)";
+        if(daten.transkript) text = daten.transkript;
+        else if(daten.error) text = "(Fehler von der Spracherkennung: " + daten.error + ")";
+        else text = "(Spracherkennung hat nichts erkannt -- bitte nochmal versuchen oder tippen)";
       } catch(e){
         text = "(Spracherkennung fehlgeschlagen -- bitte nochmal versuchen oder tippen)";
       }

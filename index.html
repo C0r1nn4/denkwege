@@ -632,7 +632,7 @@ async function toggleRecord(){
         const antwort = await fetch(SUPABASE_URL + '/functions/v1/transkribieren', {
           method: 'POST',
           headers: {
-            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+            'apikey': SUPABASE_ANON_KEY,
             'Content-Type': aufnahmeMimeType
           },
           body: audioBlob

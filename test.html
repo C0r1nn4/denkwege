@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sync-Test</title>
+<style>
+  body { font-family: sans-serif; max-width: 480px; margin: 40px auto; padding: 0 16px; }
+  button { font-size: 16px; padding: 10px 16px; margin: 8px 0; }
+  #log { background: #f4f3f0; border-radius: 8px; padding: 12px; min-height: 100px; }
+  #status { font-size: 13px; color: #666; }
+  .msg { padding: 4px 0; border-bottom: 1px solid #ddd; }
+</style>
+</head>
+<body>
+
+<h2>Sync-Test</h2>
+<div id="status">Verbinde...</div>
+<button onclick="sendPing()">Nachricht senden</button>
+<div id="log"></div>
+
+<!-- Supabase-Bibliothek laden -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+  // ==== HIER DEINE WERTE EINTRAGEN ====
+  const SUPABASE_URL = "https://iuqyjqcxftcoxwjqpijr.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1cXlqcWN4ZnRjb3h3anFwaWpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0MDQyNTYsImV4cCI6MjEwNDk4MDI1Nn0.0TNnPtB-_zjR0Op-jalhj4n_pxc5AiFEtaGdQ0G0ev8";
+  // =====================================
+
+  const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const log = document.getElementById('log');
+  const status = document.getElementById('status');
+
+  // Ein "Kanal" -- alle, die diese Seite offen haben, hören auf denselben Kanal
+  const channel = client.channel('sync-test-raum');
+
+  channel
+    .on('broadcast', { event: 'ping' }, (payload) => {
+      const div = document.createElement('div');
+      div.className = 'msg';
+      div.textContent = '📩 Empfangen: "' + payload.payload.text + '" um ' + new Date().toLocaleTimeString();
+      log.prepend(div);
+    })
+    .subscribe((state) => {
+      if (state === 'SUBSCRIBED') {
+        status.textContent = '✅ Verbunden! Öffne diese Seite in einem zweiten Fenster/Gerät und klicke dort auf "Nachricht senden".';
+      } else {
+        status.textContent = 'Status: ' + state;
+      }
+    });
+
+  function sendPing() {
+    channel.send({
+      type: 'broadcast',
+      event: 'ping',
+      payload: { text: 'Hallo von ' + new Date().toLocaleTimeString() }
+    });
+    const div = document.createElement('div');
+    div.className = 'msg';
+    div.textContent = '📤 Gesendet um ' + new Date().toLocaleTimeString();
+    log.prepend(div);
+  }
+</script>
+
+</body>
+</html>

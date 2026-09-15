@@ -145,7 +145,7 @@
       <div class="icon-circle c-blue"><i class="ti ti-school"></i></div>
       <div style="flex:1;">
         <div class="t" id="klassenraum-name-anzeige" style="font-size:14px;">Klasse 3b</div>
-        <div class="ts" style="font-size:11px;">24 Kinder</div>
+        <div class="ts" id="klassenraum-anzahl-anzeige" style="font-size:11px;">24 Kinder</div>
       </div>
       <span id="klasse-3b-sitzplan-badge" class="tag" style="background:var(--bg-warning); color:var(--text-warning); display:none;"><i class="ti ti-alert-triangle" style="font-size:10px;"></i> Sitzplan fehlt</span>
     </div>
@@ -179,7 +179,7 @@
         </div>
         <i class="ti ti-info-circle" style="font-size:18px; color:var(--text-accent);" onclick="showInfo('Hintergrundmaterial', 'Kurzer Hinweis zu Grundvorstellungen additiver Zerlegung + Link zu Video (Demo).')"></i>
       </div>
-      <div class="ts" style="font-size:12px;">Alle 24 Kinder: aufnahmefähig (Einwilligung liegt vor). 0 Kinder ohne Einwilligung (Demo).</div>
+      <div class="ts" id="aufgabe-kinder-status" style="font-size:12px;">— Kinder: aufnahmefähig</div>
     </div>
     <div id="aufgabe-sitzplan-warning" class="banner" style="display:none;">
       <i class="ti ti-alert-triangle"></i> Sitzplan noch nicht eingerichtet — die Sitzplatz-Heatmap kann während der Erarbeitung dann nichts anzeigen.
@@ -379,7 +379,7 @@
   <div id="scr-schnellanlage" class="screen">
     <button class="navbtn" style="margin-bottom:10px;" onclick="show('verwaltung')"><i class="ti ti-arrow-left"></i> Verwaltung</button>
     <h2 class="scr-title">Kinder anlegen</h2>
-    <div class="ts" style="font-size:12px; margin-bottom:8px;">Ein Name pro Zeile</div>
+    <div class="ts" style="font-size:12px; margin-bottom:8px;">Ein Name pro Zeile — bis zu 35 Kinder pro Klassenraum</div>
     <textarea id="schnellanlage-input" rows="6">Mika
 Lian
 Ben
@@ -388,6 +388,7 @@ Tom
 Ida
 Ada
 Neu</textarea>
+    <div id="schnellanlage-warnung" class="banner" style="display:none;"></div>
     <button class="btn btn-primary" style="margin-top:10px;" onclick="submitSchnellanlage()"><i class="ti ti-check"></i> Übernehmen → weiter zum Sitzplan</button>
   </div>
 
@@ -511,12 +512,14 @@ const CATS = {
   uebertrag: {label:"Übertrag vergessen", color:"c-purple", typ:"Fehlvorstellung", def:"Einer-Summe über 10 nicht übertragen", nachfrage:"Was passiert mit der 1, die übrig bleibt?"},
   unklar: {label:"unklar", color:"c-gray", typ:null, def:"Keiner Kategorie sicher zuordenbar", nachfrage:""}
 };
-const SYMBOLS = [
-  {id:"mika", icon:"🐻", name:"Mika"}, {id:"lian2", icon:"🦊", name:"Lian"},
-  {id:"frog", icon:"🐸", name:"Ben"}, {id:"turtle", icon:"🐢", name:"Nora"},
-  {id:"bee", icon:"🐝", name:"Tom"}, {id:"dolphin", icon:"🐬", name:"Ida"},
-  {id:"octopus", icon:"🐙", name:"Ada"}, {id:"penguin", icon:"🐧", name:"Neu"}
-];
+const SYMBOLS_POOL = ["🐻","🦊","🐸","🐢","🐝","🐬","🐙","🐧","🦁","🐰","🐼","🐨","🦄","🐮","🐷","🐵","🦉","🦋","🐌","🐳","🦈","🐊","🦒","🦓","🐘","🦔","🦇","🐿️","🦥","🦦","🐺","🐴","🐐","🐑","🐹"];
+const MAX_KINDER = 35; // Obergrenze pro Klassenraum
+// SYMBOLS ist bewusst 'let', nicht 'const' -- submitSchnellanlage() ersetzt die komplette
+// Liste durch die tatsächliche Klassenliste (bis zu MAX_KINDER Einträge), die Demo-Werte
+// hier sind nur der Anfangszustand, bevor eine echte Kinderliste angelegt wurde.
+let SYMBOLS = ["Mika","Lian","Ben","Nora","Tom","Ida","Ada","Neu"].map((name,i) => ({
+  id: "kind"+i, icon: SYMBOLS_POOL[i], name
+}));
 // -- Pseudonymisierung: jedes Kind bekommt bei syncKinderMitSupabase() eine feste,
 // über alle Sitzungen hinweg stabile Supabase-ID (SYMBOLS[i].kindId). Nur diese ID,
 // nicht der Name, landet in der antworten-Tabelle -- siehe finishAnswer().
@@ -583,7 +586,7 @@ let state = {
   poolFilter: null,
   sessionActive: false,
   answersVisibleOnTafel: false,
-  heatmapStatus: {mika:"schrittweise", lian2:"stellenweise", frog:"uebertrag", turtle:"unklar", bee:"schrittweise", dolphin:"schrittweise", octopus:"stellenweise", penguin:null},
+  heatmapStatus: {}, // wird von reinitialisiereKinderZustand() befüllt, sobald SYMBOLS feststeht
   selectedSymbol: null,
   mode: "speak",
   isRecording: false
@@ -615,8 +618,16 @@ function show(id){
   if(id==='heatmap') renderHeatmap();
   if(id==='verwaltung') renderKinderliste();
   if(id==='sitzplan') renderSitzplan();
-  if(id==='aufgabe') document.getElementById('aufgabe-sitzplan-warning').style.display = Object.keys(sitzplanState.placed).length>0 ? 'none' : 'block';
-  if(id==='login') document.getElementById('klasse-3b-sitzplan-badge').style.display = Object.keys(sitzplanState.placed).length>0 ? 'none' : 'inline-flex';
+  if(id==='aufgabe'){
+    document.getElementById('aufgabe-sitzplan-warning').style.display = Object.keys(sitzplanState.placed).length>0 ? 'none' : 'block';
+    const ohneEinwilligung = SYMBOLS.filter(s=>!consentState[s.id]).length;
+    document.getElementById('aufgabe-kinder-status').textContent =
+      `${SYMBOLS.length - ohneEinwilligung} von ${SYMBOLS.length} Kindern aufnahmefähig (Einwilligung liegt vor)${ohneEinwilligung>0 ? `, ${ohneEinwilligung} ohne Einwilligung (schriftliche Aufgabe)` : ''}.`;
+  }
+  if(id==='login'){
+    document.getElementById('klasse-3b-sitzplan-badge').style.display = Object.keys(sitzplanState.placed).length>0 ? 'none' : 'inline-flex';
+    document.getElementById('klassenraum-anzahl-anzeige').textContent = SYMBOLS.length + " Kinder";
+  }
 }
 let roleLastScreen = {lk:'login', kind:'symbolauswahl'};
 function switchRole(r){ show(roleLastScreen[r]); }
@@ -1245,9 +1256,29 @@ function renderHeatmap(){
     canvas.appendChild(el);
   });
 }
-let consentState = { mika:true, lian2:true, frog:false, turtle:true, bee:true, dolphin:true, octopus:true, penguin:true };
-let childLanguage = { mika:'de', lian2:'de', frog:'de', turtle:'tr', bee:'de', dolphin:'de', octopus:'uk', penguin:'de' };
+let consentState = {};
+let childLanguage = {};
 let anonymMode = false;
+// Baut consentState/childLanguage/heatmapStatus/Sitzplan-Platzierungen für die aktuelle
+// SYMBOLS-Liste neu auf. zeigeDemoBeispiele=true setzt ein paar Beispielwerte (ein Kind
+// ohne Einwilligung, zwei mit anderer Erstsprache), damit die Demo-Ansicht ohne eigene
+// Kinderanlage schon etwas zeigt; bei einer echten, per Schnellanlage angelegten Klasse
+// startet jedes Kind mit Einwilligung=ja und Erstsprache=Deutsch (danach in der
+// Klassenraum-Verwaltung individuell anpassbar).
+function reinitialisiereKinderZustand(zeigeDemoBeispiele){
+  consentState = {}; childLanguage = {}; state.heatmapStatus = {};
+  SYMBOLS.forEach(s => {
+    consentState[s.id] = true;
+    childLanguage[s.id] = 'de';
+    state.heatmapStatus[s.id] = null;
+  });
+  if(zeigeDemoBeispiele){
+    if(SYMBOLS[2]) consentState[SYMBOLS[2].id] = false;
+    if(SYMBOLS[3]) childLanguage[SYMBOLS[3].id] = 'tr';
+    if(SYMBOLS[6]) childLanguage[SYMBOLS[6].id] = 'uk';
+  }
+  sitzplanState.placed = {};
+}
 const SPRACHEN = {
   de: { flag: '🇩🇪', label: 'Deutsch', text: null },
   tr: { flag: '🇹🇷', label: 'Türkisch', text: "Çöz ve nasıl hesapladığını açıkla" },
@@ -1272,7 +1303,7 @@ function setChildLanguage(id, lang){ childLanguage[id] = lang; }
 function renderKinderliste(){
   const el = document.getElementById('kinderliste');
   el.innerHTML = "";
-  document.getElementById('kinder-count').textContent = `Kinder (${SYMBOLS.length}) — Demo mit 8 Beispielkindern, echte Klasse hätte ca. 24`;
+  document.getElementById('kinder-count').textContent = `Kinder (${SYMBOLS.length} von max. ${MAX_KINDER})`;
   const anyWithoutConsent = SYMBOLS.some(s=>!consentState[s.id]);
   document.getElementById('kein-zugang-hinweis').style.display = anyWithoutConsent ? 'block' : 'none';
   SYMBOLS.forEach(s=>{
@@ -1303,11 +1334,20 @@ function toggleConsent(id){
   renderKinderliste();
 }
 async function submitSchnellanlage(){
-  const lines = document.getElementById('schnellanlage-input').value
+  let lines = document.getElementById('schnellanlage-input').value
     .split("\n").map(s=>s.trim()).filter(s=>s.length>0);
-  lines.forEach((name,i)=>{
-    if(SYMBOLS[i]) SYMBOLS[i].name = name;
-  });
+  const warnung = document.getElementById('schnellanlage-warnung');
+  if(lines.length > MAX_KINDER){
+    warnung.textContent = `Es sind maximal ${MAX_KINDER} Kinder pro Klassenraum möglich -- nur die ersten ${MAX_KINDER} Namen wurden übernommen.`;
+    warnung.style.display = 'block';
+    lines = lines.slice(0, MAX_KINDER);
+  } else {
+    warnung.style.display = 'none';
+  }
+  // Komplette Liste neu aufbauen (nicht nur vorhandene Einträge umbenennen), damit
+  // auch mehr Kinder als zuvor angelegt werden können, bis MAX_KINDER.
+  SYMBOLS = lines.map((name,i) => ({ id: "kind"+i, icon: SYMBOLS_POOL[i % SYMBOLS_POOL.length], name }));
+  reinitialisiereKinderZustand(false);
   await syncKinderMitSupabase(); // Namen sofort mit Supabase abgleichen, nicht erst beim Sitzungsstart
   show('sitzplan');
 }
@@ -1363,6 +1403,7 @@ function canvasClick(e){
   sitzplanState.armed = null;
   renderSitzplan();
 }
+reinitialisiereKinderZustand(true); // Anfangszustand: Demo-Kinderliste mit ein paar Beispielwerten
 if(istKindGeraet && sitzungscode){
   // Kindgerät, das über den QR-Code/Link beigetreten ist:
   // kein Demo-Menü sichtbar, direkt in die Symbolauswahl der echten Sitzung

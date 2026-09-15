@@ -557,12 +557,18 @@ async function syncKinderMitSupabase(){
   const rows = SYMBOLS.map(s => ({ klassenraum: aktiveKlassenraum, symbol_id: s.id, name: s.name }));
   const { data, error } = await sb.from('kinder')
     .upsert(rows, { onConflict: 'klassenraum,symbol_id' })
-    .select('id, symbol_id');
+    .select('id, symbol_id, einwilligung');
   if(error){ alert('Kinder konnten nicht mit Supabase synchronisiert werden: ' + error.message); return; }
   data.forEach(row => {
     const s = SYMBOLS.find(sym => sym.id === row.symbol_id);
-    if(s) s.kindId = row.id;
+    if(s){
+      s.kindId = row.id;
+      // Die in der Datenbank hinterlegte Einwilligung gewinnt gegenüber dem lokalen
+      // Default -- sonst würde ein Reload/Neu-Login die Einwilligung wieder auf "ja" zurücksetzen.
+      consentState[s.id] = row.einwilligung;
+    }
   });
+  if(document.getElementById('kinderliste')) renderKinderliste();
 }
 
 let state = {
@@ -632,17 +638,36 @@ function show(id){
 let roleLastScreen = {lk:'login', kind:'symbolauswahl'};
 function switchRole(r){ show(roleLastScreen[r]); }
 
+async function generiereFreienCode(){
+  // Verhindert, dass zwei gleichzeitig laufende Klassen unbemerkt denselben 3-Symbol-Code
+  // bekommen (sonst würden Kinder-Antworten der einen Klasse in der anderen landen).
+  // Ein Code, dessen Sitzung bereits beendet ist (beendet_am gesetzt), gilt als frei.
+  for(let versuch=0; versuch<15; versuch++){
+    const kandidat = generateCode();
+    const { data } = await sb.from('sitzungen').select('beendet_am').eq('code', kandidat).maybeSingle();
+    if(!data || data.beendet_am) return kandidat;
+  }
+  return generateCode(); // extrem unwahrscheinlicher Fall -- lieber weitermachen als haengen bleiben
+}
 async function startSitzung(){
   state.sessionActive = true;
+  await syncKinderMitSupabase(); // stellt sicher, dass jedes Kind eine feste ID hat, bevor Antworten reinkommen
+
+  // Einen evtl. aus der URL übernommenen (alten) Code nur weiterverwenden, wenn er
+  // wirklich zu einer noch laufenden Sitzung DIESER Klasse gehört -- sonst immer einen
+  // frischen, kollisionsfreien Code ziehen.
+  if(sitzungscode){
+    const { data } = await sb.from('sitzungen').select('klassenraum,beendet_am').eq('code', sitzungscode).maybeSingle();
+    if(!data || data.beendet_am || data.klassenraum !== aktiveKlassenraum) sitzungscode = null;
+  }
   if(!sitzungscode){
-    sitzungscode = generateCode();
+    sitzungscode = await generiereFreienCode();
     history.replaceState(null, '', '?code='+sitzungscode);
   }
-  await syncKinderMitSupabase(); // stellt sicher, dass jedes Kind eine feste ID hat, bevor Antworten reinkommen
-  // Sitzung in der Datenbank sicherstellen -- auch wenn schon ein (alter) Code in der URL stand
+
   const { error } = await sb.from('sitzungen').upsert(
-    { code: sitzungscode, klassenraum: aktiveKlassenraum, aufgabe_id: AUFGABE_ID },
-    { onConflict: 'code', ignoreDuplicates: true }
+    { code: sitzungscode, klassenraum: aktiveKlassenraum, aufgabe_id: AUFGABE_ID, beendet_am: null },
+    { onConflict: 'code' }
   );
   if(error) alert('Sitzung konnte nicht angelegt werden: ' + error.message);
   state.pool = []; // echte Sitzung startet mit leerem Pool statt Demo-Daten
@@ -858,7 +883,7 @@ async function codeBeitreten(){
   const fehler = document.getElementById('code-eingabe-fehler');
   fehler.style.display = 'none';
 
-  const { data, error } = await sb.from('sitzungen').select('code').eq('code', eingabe).maybeSingle();
+  const { data, error } = await sb.from('sitzungen').select('code').eq('code', eingabe).is('beendet_am', null).maybeSingle();
   if(error || !data){
     fehler.style.display = 'block';
     codeEingabe = [];
@@ -1317,21 +1342,53 @@ function renderKinderliste(){
     const langSelect = `<select onchange="setChildLanguage('${s.id}', this.value)" style="font-size:11px; padding:2px 4px; border-radius:6px; border:0.5px solid var(--border);">
         ${Object.keys(SPRACHEN).map(k=>`<option value="${k}" ${childLanguage[s.id]===k?'selected':''}>${SPRACHEN[k].flag} ${SPRACHEN[k].label}</option>`).join('')}
       </select>`;
+    const loeschButton = `<button class="navbtn" onclick="loescheKindVollstaendig('${s.id}')" style="font-size:10px; color:var(--fill-danger); border-color:var(--fill-danger);"><i class="ti ti-trash"></i> Löschen</button>`;
     if(hasConsent){
       div.innerHTML = `<div class="icon-circle c-teal">${s.icon}</div>${nameSpan}${langSelect}
-        <button class="navbtn" onclick="toggleConsent('${s.id}')" style="font-size:10px;">Einwilligung widerrufen</button>`;
+        <button class="navbtn" onclick="toggleConsent('${s.id}')" style="font-size:10px;">Einwilligung widerrufen</button>${loeschButton}`;
     } else {
       div.innerHTML = `<div class="icon-circle c-gray">${s.icon}</div>${nameSpan}
         <span class="tag" style="background:var(--bg-warning); color:var(--text-warning); margin-right:6px;">keine Einwilligung</span>
         <button class="navbtn" onclick="toggleConsent('${s.id}')" style="font-size:10px;">rückgängig</button>
-        <button class="navbtn" onclick="showInfo('Blatt erzeugen', 'Demo: erzeugt PDF — Aufgabentext + Bildmaterial + Antwortfeld zum handschriftlichen Bearbeiten.')"><i class="ti ti-printer"></i> Blatt erzeugen</button>`;
+        <button class="navbtn" onclick="showInfo('Blatt erzeugen', 'Demo: erzeugt PDF — Aufgabentext + Bildmaterial + Antwortfeld zum handschriftlichen Bearbeiten.')"><i class="ti ti-printer"></i> Blatt erzeugen</button>${loeschButton}`;
     }
     el.appendChild(div);
   });
 }
-function toggleConsent(id){
-  consentState[id] = !consentState[id];
+// Recht auf Löschung (Art. 17 DSGVO): entfernt ein Kind inkl. all seiner bisherigen
+// Antworten unwiderruflich -- z.B. auf Wunsch der Eltern. Setzt die passenden
+// RLS-Delete-Policies auf kinder/antworten voraus (siehe SQL-Migration).
+async function loescheKindVollstaendig(id){
+  const kind = SYMBOLS.find(s=>s.id===id);
+  if(!kind) return;
+  if(!kind.kindId){ alert('Dieses Kind ist noch nicht mit Supabase synchronisiert -- kann daher lokal einfach entfernt werden.'); }
+  else if(!confirm(`${kind.name} wirklich unwiderruflich löschen -- inklusive aller bisherigen Antworten? Das kann nicht rückgängig gemacht werden.`)){
+    return;
+  }
+  if(kind.kindId){
+    const { error: e1 } = await sb.from('antworten').delete().eq('kind_id', kind.kindId);
+    if(e1){ alert('Löschen der Antworten fehlgeschlagen: ' + e1.message); return; }
+    const { error: e2 } = await sb.from('kinder').delete().eq('id', kind.kindId);
+    if(e2){ alert('Löschen des Kindes fehlgeschlagen: ' + e2.message); return; }
+  }
+  SYMBOLS = SYMBOLS.filter(s=>s.id!==id);
+  delete consentState[id]; delete childLanguage[id]; delete state.heatmapStatus[id]; delete sitzplanState.placed[id];
   renderKinderliste();
+}
+async function toggleConsent(id){
+  const neuerWert = !consentState[id];
+  consentState[id] = neuerWert; // optimistisches UI-Update
+  renderKinderliste();
+  const kind = SYMBOLS.find(s=>s.id===id);
+  if(!kind || !kind.kindId) return; // noch nicht synchronisiert -- wird beim naechsten Sync uebernommen
+  const { error } = await sb.from('kinder')
+    .update({ einwilligung: neuerWert, einwilligung_geaendert_am: new Date().toISOString() })
+    .eq('id', kind.kindId);
+  if(error){
+    alert('Einwilligung konnte nicht gespeichert werden: ' + error.message);
+    consentState[id] = !neuerWert; // bei Fehler zuruecksetzen
+    renderKinderliste();
+  }
 }
 async function submitSchnellanlage(){
   let lines = document.getElementById('schnellanlage-input').value
@@ -1353,9 +1410,15 @@ async function submitSchnellanlage(){
 }
 
 function endSession(){ document.getElementById('confirm-end-modal').classList.add('visible'); }
-function confirmEndSession(){
+async function confirmEndSession(){
   document.getElementById('confirm-end-modal').classList.remove('visible');
   document.getElementById('feedback-modal').classList.add('visible');
+  if(sitzungscode){
+    // Markiert die Sitzung als beendet -- Voraussetzung dafür, dass ihr Code später
+    // wieder frei für eine neue Sitzung ist (siehe generiereFreienCode()), und dass
+    // Kindgeräte nicht mehr per Code/altem Link beitreten können.
+    await sb.from('sitzungen').update({ beendet_am: new Date().toISOString() }).eq('code', sitzungscode);
+  }
 }
 function closeFeedback(){ document.getElementById('feedback-modal').classList.remove('visible'); state.sessionActive = false; show('pool'); }
 

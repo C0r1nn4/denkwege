@@ -58,7 +58,7 @@
   textarea, .editable { width:100%; font-size:13px; padding:8px; border-radius:var(--radius); border:0.5px solid var(--border); }
   .modal-bg { position: fixed; inset:0; background: rgba(0,0,0,0.4); display:none; align-items:center; justify-content:center; z-index: 50; }
   .modal-bg.visible { display:flex; }
-  .modal { background: var(--surface-2); border-radius: var(--radius-lg); padding:16px; width: 90%; max-width: 360px; }
+  .modal { background: var(--surface-2); border-radius: var(--radius-lg); padding:16px; width: 90%; max-width: 360px; max-height: 80vh; overflow-y: auto; }
 
   /* ==== Kind-Ansicht: bewusst deutlich größer als die LK-Ansicht — große Symbole
      statt Buchstaben, große Antipp-Flächen, große Schrift. Nur für die drei
@@ -71,11 +71,15 @@
   .kid-big-icon-btn { width: 92px; height: 92px; border-radius: 50%; display:flex; align-items:center; justify-content:center; }
   .kid-record-btn { width: 220px; height: 220px; border-radius: 50%; box-shadow: var(--shadow-md); }
   .kid-mode-btn { width: 92px; height: 92px; border-radius: 50%; }
+  .sticky-header { position: sticky; top: 0; z-index: 10; }
+  .dev-banner { background: var(--fill-warning); color: #201e1d; font-size: 12px; line-height: 1.5; padding: 9px 14px; text-align: center; font-weight: 600; }
 </style>
 </head>
 <body>
 <div class="app">
 
+  <div class="sticky-header">
+  <div class="dev-banner">⚠️ Diese Anwendung befindet sich in der Entwicklung und steht noch nicht zur freien Verfügung. Bitte keine echten Daten von Kindern eingeben.</div>
   <div class="topbar" style="flex-direction:column; align-items:stretch; gap:2px;">
     <div class="row" style="justify-content:space-between;">
       <b id="topbar-label" style="margin-right:0;">Demo</b>
@@ -97,6 +101,7 @@
         <button class="navbtn" onclick="show('verwaltung')">Verwaltung</button>
       </div>
     </details>
+  </div>
   </div>
 
   <!-- LOGIN / KLASSENRAUM -->
@@ -124,31 +129,29 @@
     <button class="navbtn" style="margin-bottom:10px;" onclick="show('start')"><i class="ti ti-arrow-left"></i> zurück</button>
     <h2 class="scr-title">Anmelden</h2>
     <div class="card">
-      <label class="ts" style="font-size:12px;">Nutzername/E-Mail</label>
-      <input type="text" placeholder="lehrkraft@schule.de" style="width:100%; font-size:13px; padding:8px; margin:4px 0 10px; border-radius:var(--radius); border:0.5px solid var(--border);">
+      <label class="ts" style="font-size:12px;">Zugangsname</label>
+      <input id="lk-email" type="text" placeholder="von der Projektleitung erhalten" style="width:100%; font-size:13px; padding:8px; margin:4px 0 10px; border-radius:var(--radius); border:0.5px solid var(--border);">
       <label class="ts" style="font-size:12px;">Passwort</label>
-      <input type="password" placeholder="••••••••" style="width:100%; font-size:13px; padding:8px; margin:4px 0 4px; border-radius:var(--radius); border:0.5px solid var(--border);">
+      <input id="lk-passwort" type="password" placeholder="••••••••" style="width:100%; font-size:13px; padding:8px; margin:4px 0 4px; border-radius:var(--radius); border:0.5px solid var(--border);">
     </div>
-    <button class="btn btn-primary" onclick="show('login')"><i class="ti ti-login"></i> Anmelden (Demo: beliebige Eingabe)</button>
+    <div id="lk-login-fehler" class="ts" style="display:none; color:var(--fill-danger); font-size:12px; margin-bottom:10px;"></div>
+    <button class="btn btn-primary" onclick="lkAnmelden()"><i class="ti ti-login"></i> Anmelden</button>
   </div>
 
   <div id="scr-login" class="screen">
-    <button class="navbtn" style="margin-bottom:10px;" onclick="show('start')"><i class="ti ti-logout"></i> Abmelden</button>
+    <button class="navbtn" style="margin-bottom:10px;" onclick="lkAbmelden()"><i class="ti ti-logout"></i> Abmelden</button>
     <h2 class="scr-title">Klassenraum wählen</h2>
     <div class="card row" onclick="show('pool')" style="cursor:pointer;">
       <div class="icon-circle c-blue"><i class="ti ti-school"></i></div>
       <div style="flex:1;">
-        <div class="t" style="font-size:14px;">Klasse 3b</div>
+        <div class="t" id="klassenraum-name-anzeige" style="font-size:14px;">Klasse 3b</div>
         <div class="ts" style="font-size:11px;">24 Kinder</div>
       </div>
       <span id="klasse-3b-sitzplan-badge" class="tag" style="background:var(--bg-warning); color:var(--text-warning); display:none;"><i class="ti ti-alert-triangle" style="font-size:10px;"></i> Sitzplan fehlt</span>
     </div>
-    <div class="card row" style="opacity:0.5;">
-      <div class="icon-circle c-gray"><i class="ti ti-school"></i></div>
-      <div><div class="t" style="font-size:14px;">Klasse 4a</div><div class="ts" style="font-size:11px;">(Demo: nicht aktiv)</div></div>
-    </div>
     <button class="btn" onclick="show('verwaltung')"><i class="ti ti-settings"></i> Klassenraum verwalten</button>
   </div>
+
 
   <!-- AUFGABENPOOL -->
   <div id="scr-pool" class="screen">
@@ -411,6 +414,12 @@ Neu</textarea>
     <button class="btn" style="margin-top:8px;" onclick="show('verwaltung')">zurück</button>
   </div>
 
+  <div style="text-align:center; padding:22px 16px 8px; font-size:11px; color:var(--text-muted);">
+    <span style="cursor:pointer; text-decoration:underline;" onclick="showRechtliches('impressum')">Impressum</span>
+    &nbsp;·&nbsp;
+    <span style="cursor:pointer; text-decoration:underline;" onclick="showRechtliches('datenschutz')">Datenschutz</span>
+  </div>
+
 </div>
 
 <div class="modal-bg" id="confirm-end-modal">
@@ -511,11 +520,38 @@ const SYMBOLS = [
 // -- Pseudonymisierung: jedes Kind bekommt bei syncKinderMitSupabase() eine feste,
 // über alle Sitzungen hinweg stabile Supabase-ID (SYMBOLS[i].kindId). Nur diese ID,
 // nicht der Name, landet in der antworten-Tabelle -- siehe finishAnswer().
-const KLASSENRAUM = "3b";       // Demo: fest verdrahtet, bis es mehrere Klassenräume in der UI gibt
 const AUFGABE_ID = "kopfrechnen_47_38";
+let aktiveKlassenraum = "3b";    // Fallback fürs Demo-Sprungmenü ohne echten Login; wird nach lkAnmelden() überschrieben
+let aktiverAnzeigename = null;
+
+async function lkAnmelden(){
+  const email = document.getElementById('lk-email').value.trim();
+  const passwort = document.getElementById('lk-passwort').value;
+  const fehler = document.getElementById('lk-login-fehler');
+  fehler.style.display = 'none';
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: passwort });
+  if(error){
+    fehler.textContent = 'Anmeldung fehlgeschlagen -- Zugangsname oder Passwort prüfen.';
+    fehler.style.display = 'block';
+    return;
+  }
+  uebernehmeLogin(data.user);
+  show('login');
+}
+function uebernehmeLogin(user){
+  aktiveKlassenraum = user.user_metadata?.klassenraum || "3b";
+  aktiverAnzeigename = user.user_metadata?.anzeige_name || user.email;
+  document.getElementById('klassenraum-name-anzeige').textContent = "Klasse " + aktiveKlassenraum;
+}
+async function lkAbmelden(){
+  await sb.auth.signOut();
+  aktiveKlassenraum = "3b";
+  aktiverAnzeigename = null;
+  show('start');
+}
 
 async function syncKinderMitSupabase(){
-  const rows = SYMBOLS.map(s => ({ klassenraum: KLASSENRAUM, symbol_id: s.id, name: s.name }));
+  const rows = SYMBOLS.map(s => ({ klassenraum: aktiveKlassenraum, symbol_id: s.id, name: s.name }));
   const { data, error } = await sb.from('kinder')
     .upsert(rows, { onConflict: 'klassenraum,symbol_id' })
     .select('id, symbol_id');
@@ -594,7 +630,7 @@ async function startSitzung(){
   await syncKinderMitSupabase(); // stellt sicher, dass jedes Kind eine feste ID hat, bevor Antworten reinkommen
   // Sitzung in der Datenbank sicherstellen -- auch wenn schon ein (alter) Code in der URL stand
   const { error } = await sb.from('sitzungen').upsert(
-    { code: sitzungscode, klassenraum: KLASSENRAUM, aufgabe_id: AUFGABE_ID },
+    { code: sitzungscode, klassenraum: aktiveKlassenraum, aufgabe_id: AUFGABE_ID },
     { onConflict: 'code', ignoreDuplicates: true }
   );
   if(error) alert('Sitzung konnte nicht angelegt werden: ' + error.message);
@@ -927,6 +963,42 @@ function showInfo(title, text){
     <div class="ts" style="font-size:13px; line-height:1.5;">${text}</div>
     <button class="btn btn-primary" style="margin-top:14px;" onclick="document.getElementById('info-modal').classList.remove('visible')">Schließen</button>`;
   document.getElementById('info-modal').classList.add('visible');
+}
+// Platzhalter-Texte -- KEINE rechtsgültigen Dokumente. Vor Veröffentlichung mit echten
+// Angaben füllen und von der/dem Datenschutzbeauftragten der TU Dortmund prüfen lassen
+// (gerade wegen Sprachaufnahmen von Kindern, vgl. Projektentwurf Kap. 6).
+const RECHTLICHE_TEXTE = {
+  impressum: `
+    <b>Angaben gemäß § 5 DDG</b><br><br>
+    [Vorname Nachname, ggf. Titel]<br>
+    Technische Universität Dortmund<br>
+    [Institut / Lehrstuhl]<br>
+    [Straße Hausnummer]<br>
+    [PLZ Ort]<br><br>
+    <b>Kontakt</b><br>
+    E-Mail: [dienstliche E-Mail-Adresse]<br>
+    Telefon: [optional]<br><br>
+    <b>Verantwortlich für den Inhalt dieser Seite</b><br>
+    [wie oben]<br><br>
+    <span style="color:var(--fill-danger); font-weight:600;">Platzhalter -- vor Veröffentlichung durch echte, dienstliche Angaben ersetzen. Bitte vorab bei der TU Dortmund klären, ob für ein Angebot auf einer privaten Domain (statt einer *.tu-dortmund.de-Adresse) zusätzliche oder abweichende Vorgaben gelten.</span>`,
+  datenschutz: `
+    <b>Hinweis zum aktuellen Stand</b><br>
+    Diese Anwendung befindet sich in der Entwicklung. Es werden aktuell <b>keine echten personenbezogenen Daten von Kindern</b> verarbeitet -- alle sichtbaren Namen, Antworten und Sitzungscodes sind Test-/Demodaten. Eine vollständige, geprüfte Datenschutzerklärung folgt vor dem ersten echten Einsatz mit Schüler:innen.<br><br>
+    <b>Verantwortlicher (Platzhalter)</b><br>
+    [Name], TU Dortmund, [Institut]<br>
+    Kontakt: [dienstliche E-Mail]<br><br>
+    <b>Geplante Datenkategorien</b> (sobald echter Einsatz beginnt)<br>
+    Audioaufnahmen und/oder Texteingaben von Kindern, daraus abgeleitete Transkripte/Kategorisierungen, pseudonyme Kind-Kennungen, Klassenraum-/Sitzungsmetadaten.<br><br>
+    <b>Eingesetzte externe Dienste</b><br>
+    <b>Supabase</b> (Hosting/Datenbank für Sitzungsdaten und Antworten).<br><br>
+    <b>Gladia</b> (Gladia SAS, Frankreich) für die Spracherkennung. Gladia bietet EU-Datenresidenz an, diese ist aber laut Anbieter nicht automatisch aktiv, sondern muss konfiguriert werden -- vor Einsatz prüfen/einstellen und die von Gladia angebotene Auftragsverarbeitungsvereinbarung abschließen.<br><br>
+    <b>KI:connect.nrw</b> (betrieben von der RWTH Aachen im Auftrag des Landes NRW) für die Kategorisierung der Antworten, mit dem Modell gpt-oss-120b, das laut Anbieterangabe vollständig auf Servern in NRW läuft. Für die Nutzung mit personenbezogenen Daten braucht die TU Dortmund zusätzlich zum allgemeinen Kooperationsvertrag einen eigenen, hochschulspezifischen Auftragsverarbeitungsvertrag mit der RWTH Aachen -- bitte vor echtem Einsatz bei der/dem KI:connect.nrw-Koordinator:in der TU Dortmund erfragen, ob dieser für unser Institut bereits vorliegt. An manchen Hochschulen ist die Eingabe personenbezogener Daten in KI:connect bis dahin ausdrücklich untersagt.<br><br>
+    Für jeden dieser drei Dienste ist vor echtem Einsatz ein Auftragsverarbeitungsvertrag (Art. 28 DSGVO) zu prüfen bzw. abzuschließen.<br><br>
+    <span style="color:var(--fill-danger); font-weight:600;">Platzhalter-Gerüst, keine rechtsgültige Datenschutzerklärung. Vor Veröffentlichung von der/dem Datenschutzbeauftragten der TU Dortmund prüfen und freigeben lassen -- insbesondere wegen der besonderen Schutzbedürftigkeit von Kinderdaten und geplanter Sprachaufnahmen.</span>`
+};
+function showRechtliches(art){
+  const titel = art === 'impressum' ? 'Impressum' : 'Datenschutzhinweise';
+  showInfo(titel, RECHTLICHE_TEXTE[art]);
 }
 let qrAufTafel = false;
 function toggleTafelQR(){
@@ -1298,7 +1370,16 @@ if(istKindGeraet && sitzungscode){
   state.sessionActive = true;
   show('symbolauswahl');
 } else {
-  show('start');
+  // LK-Gerät: falls noch eine gültige Anmeldung besteht (z.B. nach Reload), direkt
+  // zur Klassenraum-Ansicht statt erneut nach Zugangsname/Passwort zu fragen.
+  sb.auth.getSession().then(({ data }) => {
+    if(data.session && data.session.user){
+      uebernehmeLogin(data.session.user);
+      show('login');
+    } else {
+      show('start');
+    }
+  });
 }
 </script>
 </body>

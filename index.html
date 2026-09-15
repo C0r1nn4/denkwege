@@ -4,44 +4,52 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Klick-Prototyp – Adaptives Klassengespräch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
   :root {
-    --surface-2: #ffffff; --surface-1: #f4f3f0; --surface-0: #e9e8e5;
-    --text-primary: #1a1a1a; --text-secondary: #5a5a56; --text-muted: #8a8a86;
-    --border: rgba(0,0,0,0.14); --border-strong: rgba(0,0,0,0.3); --border-accent: #378ADD;
-    --bg-accent: #E6F1FB; --text-accent: #0C447C; --fill-accent: #378ADD; --on-accent: #fff;
-    --bg-success: #EAF3DE; --text-success: #27500A; --fill-success: #639922; --on-success: #fff;
+    /* Organic-Design-System: warme Creme-/Terrakotta-/Olivton-Palette statt Blau/Grau.
+       Gleiche Variablennamen wie vorher -- der komplette JS-Code (der teils direkt
+       var(--fill-accent) etc. in style.background schreibt) muss dadurch nicht angefasst werden. */
+    --surface-2: #fffaf1; --surface-1: #f2e6d3; --surface-0: #ecdcc0;
+    --text-primary: #201e1d; --text-secondary: #5c5348; --text-muted: #8c8175;
+    --border: rgba(32,30,29,0.14); --border-strong: rgba(32,30,29,0.32); --border-accent: #c67139;
+    --bg-accent: #fbe7d8; --text-accent: #7a3d16; --fill-accent: #c67139; --on-accent: #fff;
+    --bg-success: #eef6df; --text-success: #3d4a28; --fill-success: #7c8f5c; --on-success: #fff;
     --bg-warning: #FAEEDA; --text-warning: #633806; --fill-warning: #EF9F27;
-    --fill-danger: #E24B4A; --on-danger: #fff; --radius: 8px;
-    --shadow-md: 0 4px 14px rgba(0,0,0,0.14);
-    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    --fill-danger: #E24B4A; --on-danger: #fff; --radius: 12px; --radius-lg: 18px;
+    --shadow-md: 0 4px 16px rgba(46,43,37,0.18);
+    --font-body: "Figtree", -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-heading: "Caprasimo", var(--font-body);
+    font-family: var(--font-body);
   }
   * { box-sizing: border-box; }
-  body { background: var(--surface-0); margin: 0; color: var(--text-primary); }
-  .app { max-width: 420px; margin: 0 auto; min-height: 100vh; background: var(--surface-1); padding-bottom: 30px; }
+  body { background: var(--surface-0); margin: 0; color: var(--text-primary); font-size: 15px; }
+  .app { max-width: 680px; margin: 0 auto; min-height: 100vh; background: var(--surface-1); padding-bottom: 30px; }
   .topbar { display:flex; align-items:center; gap:8px; padding: 10px 14px; background: var(--surface-2); border-bottom: 0.5px solid var(--border); position: sticky; top:0; z-index: 10; flex-wrap: wrap; }
   .topbar b { font-size: 13px; margin-right: auto; }
-  .navbtn { font-size: 10px; padding: 4px 8px; border-radius: var(--radius); border: 0.5px solid var(--border); background: var(--surface-1); cursor: pointer; }
+  .navbtn { font-size: 12px; padding: 7px 12px; border-radius: var(--radius); border: 0.5px solid var(--border); background: var(--surface-1); cursor: pointer; }
   .navbtn.active { background: var(--bg-accent); color: var(--text-accent); border-color: var(--border-accent); }
-  .screen { display: none; padding: 16px; }
+  .screen { display: none; padding: 20px; }
   .screen.visible { display: block; }
   button { font-family: inherit; cursor: pointer; border-radius: var(--radius); }
-  .btn { padding: 10px; border: 0.5px solid var(--border); background: var(--surface-2); width: 100%; font-size: 13px; }
+  .btn { padding: 14px 16px; border: 0.5px solid var(--border); background: var(--surface-2); width: 100%; font-size: 15px; }
   .btn-primary { background: var(--fill-accent); color: var(--on-accent); border: none; }
   .btn-success { background: var(--fill-success); color: var(--on-success); border: none; }
-  .card { background: var(--surface-2); border: 0.5px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 12px; }
+  .card { background: var(--surface-2); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 14px; }
   .t { color: var(--text-primary); } .ts { color: var(--text-secondary); }
   .c-teal { background: #9FE1CB; } .c-coral { background: #F0997B; } .c-purple { background: #AFA9EC; }
   .c-gray { background: #D3D1C7; } .c-blue { background: #B5D4F4; } .c-amber { background: #FAC775; }
-  .tag { font-size: 9px; padding: 2px 7px; border-radius: 10px; display:inline-block; }
+  .tag { font-size: 10px; padding: 3px 9px; border-radius: 10px; display:inline-block; }
   .icon-circle { width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:15px; }
-  h2.scr-title { font-size: 14px; font-weight: 500; margin: 0 0 12px; color: var(--text-secondary); }
+  h2.scr-title { font-family: var(--font-heading); font-weight: 400; font-size: 19px; margin: 0 0 14px; color: var(--text-secondary); letter-spacing: 0.01em; }
   .row { display:flex; align-items:center; gap:10px; }
   .grid2 { display:grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap:8px; }
-  .grid4 { display:grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap:8px; }
+  .grid4 { display:grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap:16px; }
   .pool-item { display:flex; align-items:center; gap:8px; padding:8px; border-radius:var(--radius); border:0.5px solid var(--border); background: var(--surface-2); margin-bottom:6px; }
   .pool-item button { font-size: 10px; padding: 4px 8px; }
   .slot-empty { border: 1px dashed var(--border-strong); border-radius: var(--radius); padding: 16px; text-align:center; font-size:11px; color:var(--text-muted); }
@@ -50,7 +58,19 @@
   textarea, .editable { width:100%; font-size:13px; padding:8px; border-radius:var(--radius); border:0.5px solid var(--border); }
   .modal-bg { position: fixed; inset:0; background: rgba(0,0,0,0.4); display:none; align-items:center; justify-content:center; z-index: 50; }
   .modal-bg.visible { display:flex; }
-  .modal { background: var(--surface-2); border-radius:12px; padding:16px; width: 90%; max-width: 360px; }
+  .modal { background: var(--surface-2); border-radius: var(--radius-lg); padding:16px; width: 90%; max-width: 360px; }
+
+  /* ==== Kind-Ansicht: bewusst deutlich größer als die LK-Ansicht — große Symbole
+     statt Buchstaben, große Antipp-Flächen, große Schrift. Nur für die drei
+     kindgerichteten Screens skaliert; LK-Dashboard bleibt kompakt/informationsdicht. */
+  #scr-symbolauswahl, #scr-aufnahme, #scr-code-eingabe { padding: 28px 20px; }
+  #scr-symbolauswahl h2.scr-title, #scr-code-eingabe > div:nth-child(2) { font-size: 30px; font-family: var(--font-heading); font-weight: 400; color: var(--text-primary); }
+  .kid-symbol-btn { aspect-ratio: 1; border-radius: 50%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; background: var(--surface-2); border: 2px solid var(--border); box-shadow: var(--shadow-md); }
+  .kid-symbol-btn .emoji { font-size: 44px; }
+  .kid-symbol-btn .name { font-size: 14px; font-weight: 600; color: var(--text-secondary); }
+  .kid-big-icon-btn { width: 92px; height: 92px; border-radius: 50%; display:flex; align-items:center; justify-content:center; }
+  .kid-record-btn { width: 220px; height: 220px; border-radius: 50%; box-shadow: var(--shadow-md); }
+  .kid-mode-btn { width: 92px; height: 92px; border-radius: 50%; }
 </style>
 </head>
 <body>
@@ -87,15 +107,16 @@
     <button class="btn" style="padding:16px;" onclick="show('code-eingabe')"><i class="ti ti-child"></i> Ich bin Schüler:in</button>
   </div>
 
-  <!-- CODE-EINGABE (Kind, falls ohne QR-Link angekommen) -->
-  <div id="scr-code-eingabe" class="screen" style="text-align:center; padding-top:40px;">
+  <!-- CODE-EINGABE (Kind, falls ohne QR-Link angekommen) — Symbole statt Buchstaben tippen,
+       damit auch Kinder mitmachen können, die noch nicht sicher lesen/schreiben. -->
+  <div id="scr-code-eingabe" class="screen" style="text-align:center; padding-top:30px;">
     <button class="navbtn" style="margin-bottom:16px;" onclick="show('start')"><i class="ti ti-arrow-left"></i> zurück</button>
-    <div style="font-size:16px; font-weight:500; margin-bottom:14px;">Gib den Code deiner Klasse ein</div>
-    <div class="ts" style="font-size:12px; margin-bottom:14px;">Frag deine Lehrkraft, oder schau auf die Tafel.</div>
-    <input id="code-eingabe-feld" type="text" maxlength="4" placeholder="z. B. AB12"
-      style="width:100%; font-size:28px; text-align:center; letter-spacing:6px; text-transform:uppercase; padding:14px; margin-bottom:14px; border-radius:var(--radius); border:0.5px solid var(--border);">
-    <div id="code-eingabe-fehler" class="ts" style="display:none; color:var(--fill-danger); font-size:12px; margin-bottom:10px;">Diesen Code gibt es nicht -- bitte nochmal bei der Lehrkraft nachfragen.</div>
-    <button class="btn btn-primary" style="padding:14px;" onclick="codeBeitreten()">Beitreten</button>
+    <div style="font-size:26px; font-family:var(--font-heading); font-weight:400; margin-bottom:10px;">Tippe die drei Bilder</div>
+    <div class="ts" style="font-size:16px; margin-bottom:20px;">Sie stehen in dieser Reihenfolge auf der Tafel.</div>
+    <div id="code-eingabe-slots" class="row" style="justify-content:center; gap:18px; margin-bottom:20px;"></div>
+    <div id="code-eingabe-fehler" class="ts" style="display:none; color:var(--fill-danger); font-size:15px; margin-bottom:14px;">Das passt noch nicht — probiere es nochmal.</div>
+    <div id="code-eingabe-grid" style="display:grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap:14px; margin-bottom:18px;"></div>
+    <button class="btn" style="padding:14px;" onclick="codeEingabeZurueck()"><i class="ti ti-backspace"></i> Letztes Bild löschen</button>
   </div>
 
   <!-- LK LOGIN -->
@@ -173,17 +194,17 @@
       <div class="ts" style="font-size:13px; margin-top:8px;">Gerade läuft keine Aufgabe. Warte, bis deine Lehrkraft startet.</div>
     </div>
     <div class="grid4" id="symbol-grid" style="margin-bottom:16px;"></div>
-    <div id="symbol-confirm" class="card c-blue" style="display:none;">
-      <div id="symbol-confirm-icon" style="font-size:40px; margin-bottom:8px;"></div>
-      <div style="font-size:13px; margin-bottom:12px;">Bist du das?</div>
-      <div class="row" style="justify-content:center; gap:24px;">
+    <div id="symbol-confirm" class="card c-blue" style="display:none; text-align:center;">
+      <div id="symbol-confirm-icon" style="font-size:88px; margin-bottom:10px;"></div>
+      <div style="font-size:24px; font-weight:600; margin-bottom:18px;">Bist du das?</div>
+      <div class="row" style="justify-content:center; gap:40px;">
         <div style="text-align:center;">
-          <button style="width:48px;height:48px;border-radius:50%;border:0.5px solid var(--border-strong);" onclick="cancelSymbol()"><i class="ti ti-x"></i></button>
-          <div class="ts" style="font-size:10px; margin-top:4px;">Nein</div>
+          <button class="kid-big-icon-btn" style="border:2px solid var(--border-strong); background:var(--surface-2);" onclick="cancelSymbol()"><i class="ti ti-x" style="font-size:36px;"></i></button>
+          <div class="ts" style="font-size:14px; margin-top:6px;">Nein</div>
         </div>
         <div style="text-align:center;">
-          <button style="width:48px;height:48px;border-radius:50%;background:var(--fill-success);color:var(--on-success);border:none;" onclick="confirmSymbol()"><i class="ti ti-check"></i></button>
-          <div class="ts" style="font-size:10px; margin-top:4px;">Ja</div>
+          <button class="kid-big-icon-btn" style="background:var(--fill-success);color:var(--on-success);border:none;" onclick="confirmSymbol()"><i class="ti ti-check" style="font-size:40px;"></i></button>
+          <div class="ts" style="font-size:14px; margin-top:6px;">Ja</div>
         </div>
       </div>
     </div>
@@ -192,44 +213,44 @@
   <!-- KIND: AUFNAHME -->
   <div id="scr-aufnahme" class="screen" style="text-align:center;">
     <div class="card c-blue">
-      <div class="t" style="font-size:26px; font-weight:500; margin-bottom:8px;">47 + 38</div>
-      <div id="aufnahme-anweisung" class="ts" style="font-size:12px; margin-bottom:8px;">Löse und erkläre deinen Rechenweg</div>
-      <div style="width:100%; height:60px; background:var(--surface-2); border-radius:12px; display:flex; align-items:center; justify-content:center; color:var(--text-muted);"><i class="ti ti-photo" style="font-size:22px;"></i></div>
-      <div class="row" style="justify-content:center; gap:6px; margin-top:8px;">
-        <div id="sprachauswahl" class="row" style="justify-content:center; gap:6px; flex-wrap:wrap;"></div>
+      <div class="t" style="font-size:44px; font-weight:600; margin-bottom:10px;">47 + 38</div>
+      <div id="aufnahme-anweisung" class="ts" style="font-size:18px; margin-bottom:10px;">Löse und erkläre deinen Rechenweg</div>
+      <div style="width:100%; height:80px; background:var(--surface-2); border-radius:16px; display:flex; align-items:center; justify-content:center; color:var(--text-muted);"><i class="ti ti-photo" style="font-size:30px;"></i></div>
+      <div class="row" style="justify-content:center; gap:10px; margin-top:10px;">
+        <div id="sprachauswahl" class="row" style="justify-content:center; gap:10px; flex-wrap:wrap;"></div>
       </div>
     </div>
-    <div class="row" style="justify-content:center; gap:20px; margin: 16px 0;">
+    <div class="row" style="justify-content:center; gap:32px; margin: 22px 0;">
       <div style="text-align:center;">
-        <button id="mode-speak" style="width:48px;height:48px;border-radius:50%;background:var(--fill-accent);color:var(--on-accent);border:none;" onclick="setMode('speak')"><i class="ti ti-microphone"></i></button>
-        <div class="ts" style="font-size:10px; margin-top:4px;">Sprechen</div>
+        <button id="mode-speak" class="kid-mode-btn" style="background:var(--fill-accent);color:var(--on-accent);border:none;" onclick="setMode('speak')"><i class="ti ti-microphone" style="font-size:32px;"></i></button>
+        <div class="ts" style="font-size:14px; margin-top:6px;">Sprechen</div>
       </div>
       <div style="text-align:center;">
-        <button id="mode-type" style="width:48px;height:48px;border-radius:50%;border:0.5px solid var(--border-strong);" onclick="setMode('type')"><i class="ti ti-keyboard"></i></button>
-        <div class="ts" style="font-size:10px; margin-top:4px;">Tippen</div>
+        <button id="mode-type" class="kid-mode-btn" style="border:0.5px solid var(--border-strong);" onclick="setMode('type')"><i class="ti ti-keyboard" style="font-size:32px;"></i></button>
+        <div class="ts" style="font-size:14px; margin-top:6px;">Tippen</div>
       </div>
     </div>
     <div id="record-area" style="text-align:center;">
-      <button id="record-btn" style="width:96px;height:96px;border-radius:50%;background:var(--fill-danger);color:var(--on-danger);border:4px solid var(--surface-2); box-shadow:var(--shadow-md);" onclick="toggleRecord()"><i id="record-icon" class="ti ti-microphone" style="font-size:36px;"></i></button>
-      <div class="ts" id="record-label" style="font-size:11px; margin-top:8px;">Aufnehmen</div>
+      <button id="record-btn" class="kid-record-btn" style="background:var(--fill-danger);color:var(--on-danger);border:6px solid var(--surface-2);" onclick="toggleRecord()"><i id="record-icon" class="ti ti-microphone" style="font-size:76px;"></i></button>
+      <div class="ts" id="record-label" style="font-size:18px; font-weight:600; margin-top:14px;">Aufnehmen</div>
     </div>
-    <div id="review-area" style="display:none; border-top:2px dashed var(--border); padding-top:14px; margin-top:16px; text-align:left;">
-      <div class="ts" style="font-size:12px; margin-bottom:8px; text-align:center;">So haben wir dich verstanden — du kannst es auch verbessern</div>
-      <textarea id="transcript-edit" rows="3"></textarea>
-      <div class="row" style="justify-content:center; gap:24px; margin-top:12px;">
+    <div id="review-area" style="display:none; border-top:2px dashed var(--border); padding-top:18px; margin-top:20px; text-align:left;">
+      <div class="ts" style="font-size:16px; margin-bottom:10px; text-align:center;">So haben wir dich verstanden — du kannst es auch verbessern</div>
+      <textarea id="transcript-edit" rows="4" style="font-size:20px; padding:14px; min-height:130px;"></textarea>
+      <div class="row" style="justify-content:center; gap:32px; margin-top:16px;">
         <div style="text-align:center;">
-          <button style="width:48px;height:48px;border-radius:50%;border:0.5px solid var(--border-strong);" onclick="rerecord()"><i class="ti ti-refresh"></i></button>
-          <div class="ts" style="font-size:10px; margin-top:4px;">Nochmal</div>
+          <button class="kid-mode-btn" style="border:0.5px solid var(--border-strong);" onclick="rerecord()"><i class="ti ti-refresh" style="font-size:32px;"></i></button>
+          <div class="ts" style="font-size:14px; margin-top:6px;">Nochmal</div>
         </div>
         <div style="text-align:center;">
-          <button style="width:48px;height:48px;border-radius:50%;background:var(--fill-success);color:var(--on-success);border:none;" onclick="finishAnswer()"><i class="ti ti-check"></i></button>
-          <div class="ts" style="font-size:10px; margin-top:4px;">Fertig</div>
+          <button class="kid-mode-btn" style="background:var(--fill-success);color:var(--on-success);border:none;" onclick="finishAnswer()"><i class="ti ti-check" style="font-size:32px;"></i></button>
+          <div class="ts" style="font-size:14px; margin-top:6px;">Fertig</div>
         </div>
       </div>
     </div>
-    <div id="done-area" style="display:none; border-top:2px dashed var(--border); padding-top:14px; margin-top:16px;">
-      <div class="card c-teal" style="text-align:center;"><i class="ti ti-check" style="font-size:20px;"></i><div style="font-size:13px; margin-top:6px;">Aufgenommen — <span id="done-name"></span> ist fertig.</div></div>
-      <button class="btn btn-primary" style="margin-top:10px;" onclick="show('symbolauswahl')">Nächstes Kind</button>
+    <div id="done-area" style="display:none; border-top:2px dashed var(--border); padding-top:18px; margin-top:20px;">
+      <div class="card c-teal" style="text-align:center;"><i class="ti ti-check" style="font-size:40px;"></i><div style="font-size:19px; margin-top:8px;">Aufgenommen — <span id="done-name"></span> ist fertig.</div></div>
+      <button class="btn btn-primary" style="margin-top:14px; padding:18px;" onclick="show('symbolauswahl')">Nächstes Kind</button>
     </div>
   </div>
 
@@ -295,7 +316,7 @@
     <div id="tafel-qr-section" style="display:none; text-align:center; background:var(--surface-2); border-radius:12px; padding:16px; margin-bottom:12px;">
       <div class="ts" style="font-size:12px; margin-bottom:10px;">Scanne den Code, oder gib ihn auf deinem Gerät ein:</div>
       <div id="tafel-qr-box" style="display:flex; justify-content:center; margin-bottom:10px;"></div>
-      <div id="tafel-code-anzeige" style="font-size:24px; font-weight:600; letter-spacing:4px; color:var(--text-accent);">----</div>
+      <div id="tafel-code-anzeige" style="font-size:52px; font-weight:600; letter-spacing:10px; color:var(--text-accent);">⭐⭐⭐</div>
     </div>
     <div id="tafel-aufgabe" class="t" style="text-align:center; font-size:20px; font-weight:600; margin-bottom:12px; padding:10px; background:var(--surface-2); border-radius:12px; display:none;">47 + 38</div>
     <div id="tafel-slots"></div>
@@ -310,7 +331,7 @@
     <h2 class="scr-title">Sitzplan mit Antwortübersicht — Kinder arbeiten gerade</h2>
     <div class="card" style="text-align:center; background:var(--bg-accent);">
       <div class="ts" style="font-size:11px;">Sitzungscode für die Kindgeräte</div>
-      <div id="sitzungscode-anzeige" style="font-size:22px; font-weight:600; letter-spacing:3px; color:var(--text-accent);">----</div>
+      <div id="sitzungscode-anzeige" style="font-size:26px; font-weight:600; letter-spacing:6px; color:var(--text-accent);">⭐⭐⭐</div>
     </div>
     <div id="heatmap-sitzplan-warning" class="banner" style="display:none;">
       <i class="ti ti-alert-triangle"></i> Es ist noch kein Sitzplan eingerichtet — ohne Sitzplan kann die Heatmap Kinder nicht anzeigen.
@@ -433,14 +454,24 @@ const SUPABASE_ANON_KEY = "sb_publishable_WOnHYkefrIzOY-tigGqPKg_Dvjf73Gc";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 function getUrlParam(name){ return new URLSearchParams(window.location.search).get(name); }
+
+// Sitzungscode als 3 Symbole statt 4 Buchstaben -- Kinder, die noch nicht sicher
+// lesen/schreiben, tippen Bilder statt Buchstaben. Gespeichert/verglichen wird
+// weiterhin ein einfacher String (Ziffern 0-9), nur die Anzeige ist symbolisch.
+const JOIN_SYMBOLS = [
+  {digit:'0', icon:'⭐'}, {digit:'1', icon:'🔴'}, {digit:'2', icon:'🟡'}, {digit:'3', icon:'🟢'}, {digit:'4', icon:'🔵'},
+  {digit:'5', icon:'🟣'}, {digit:'6', icon:'🟠'}, {digit:'7', icon:'⬛'}, {digit:'8', icon:'⬜'}, {digit:'9', icon:'🔺'}
+];
+function symbolFuerDigit(d){ return (JOIN_SYMBOLS.find(s=>s.digit===d) || {icon:'❓'}).icon; }
+function codeAlsSymbole(code){ return (code||"").split('').map(symbolFuerDigit).join(''); }
 function generateCode(){
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "";
-  for(let i=0;i<4;i++) code += chars[Math.floor(Math.random()*chars.length)];
+  for(let i=0;i<3;i++) code += JOIN_SYMBOLS[Math.floor(Math.random()*JOIN_SYMBOLS.length)].digit;
   return code;
 }
 let sitzungscode = getUrlParam('code') || null;
 const istKindGeraet = getUrlParam('geraet') === 'kind';
+let codeEingabe = []; // getippte Ziffern (max. 3), bevor gegen Supabase geprüft wird
 
 async function ladeUndAboniereAntworten(){
   const { data, error } = await sb.from('antworten').select('*').eq('sitzungscode', sitzungscode).order('erstellt_am');
@@ -454,8 +485,10 @@ async function ladeUndAboniereAntworten(){
     .subscribe();
 }
 function uebernehmeAntwort(row){
-  state.pool = state.pool.filter(p=>p.name!==row.kind_name);
-  state.pool.push({name: row.kind_name, cat: row.kategorie, quote: row.transkript});
+  const symbolEntry = SYMBOLS.find(s => s.kindId === row.kind_id);
+  const name = symbolEntry ? symbolEntry.name : "Unbekannt";
+  state.pool = state.pool.filter(p=>p.name!==name);
+  state.pool.push({name, cat: row.kategorie, quote: row.transkript});
   if(row.symbol_id) state.heatmapStatus[row.symbol_id] = row.kategorie;
 }
 function aktualisierenAnsicht(){
@@ -475,6 +508,23 @@ const SYMBOLS = [
   {id:"bee", icon:"🐝", name:"Tom"}, {id:"dolphin", icon:"🐬", name:"Ida"},
   {id:"octopus", icon:"🐙", name:"Ada"}, {id:"penguin", icon:"🐧", name:"Neu"}
 ];
+// -- Pseudonymisierung: jedes Kind bekommt bei syncKinderMitSupabase() eine feste,
+// über alle Sitzungen hinweg stabile Supabase-ID (SYMBOLS[i].kindId). Nur diese ID,
+// nicht der Name, landet in der antworten-Tabelle -- siehe finishAnswer().
+const KLASSENRAUM = "3b";       // Demo: fest verdrahtet, bis es mehrere Klassenräume in der UI gibt
+const AUFGABE_ID = "kopfrechnen_47_38";
+
+async function syncKinderMitSupabase(){
+  const rows = SYMBOLS.map(s => ({ klassenraum: KLASSENRAUM, symbol_id: s.id, name: s.name }));
+  const { data, error } = await sb.from('kinder')
+    .upsert(rows, { onConflict: 'klassenraum,symbol_id' })
+    .select('id, symbol_id');
+  if(error){ alert('Kinder konnten nicht mit Supabase synchronisiert werden: ' + error.message); return; }
+  data.forEach(row => {
+    const s = SYMBOLS.find(sym => sym.id === row.symbol_id);
+    if(s) s.kindId = row.id;
+  });
+}
 
 let state = {
   pool: [
@@ -522,6 +572,7 @@ function show(id){
   roleLastScreen[role] = id;
   document.getElementById('role-lk').classList.toggle('active', role==='lk');
   document.getElementById('role-kind').classList.toggle('active', role==='kind');
+  if(id==='code-eingabe'){ codeEingabe = []; renderCodeEingabe(); }
   if(id==='symbolauswahl') renderSymbols();
   if(id==='dashboard') renderDashboard();
   if(id==='tafel') renderTafel();
@@ -540,11 +591,15 @@ async function startSitzung(){
     sitzungscode = generateCode();
     history.replaceState(null, '', '?code='+sitzungscode);
   }
+  await syncKinderMitSupabase(); // stellt sicher, dass jedes Kind eine feste ID hat, bevor Antworten reinkommen
   // Sitzung in der Datenbank sicherstellen -- auch wenn schon ein (alter) Code in der URL stand
-  const { error } = await sb.from('sitzungen').upsert({ code: sitzungscode }, { onConflict: 'code', ignoreDuplicates: true });
+  const { error } = await sb.from('sitzungen').upsert(
+    { code: sitzungscode, klassenraum: KLASSENRAUM, aufgabe_id: AUFGABE_ID },
+    { onConflict: 'code', ignoreDuplicates: true }
+  );
   if(error) alert('Sitzung konnte nicht angelegt werden: ' + error.message);
   state.pool = []; // echte Sitzung startet mit leerem Pool statt Demo-Daten
-  document.getElementById('sitzungscode-anzeige').textContent = sitzungscode;
+  document.getElementById('sitzungscode-anzeige').textContent = codeAlsSymbole(sitzungscode);
   ladeUndAboniereAntworten();
   show('heatmap');
 }
@@ -562,8 +617,8 @@ function renderSymbols(){
   g.innerHTML = "";
   SYMBOLS.forEach(s=>{
     const b = document.createElement('button');
-    b.className='navbtn'; b.style.aspectRatio='1'; b.style.fontSize='24px'; b.style.borderRadius='16px';
-    b.textContent = s.icon;
+    b.className='kid-symbol-btn';
+    b.innerHTML = `<span class="emoji">${s.icon}</span><span class="name">${s.name}</span>`;
     b.onclick = ()=>selectSymbol(s);
     g.appendChild(b);
   });
@@ -698,10 +753,11 @@ async function finishAnswer(){
   }
 
   if(sitzungscode){
-    // Echte Sitzung: an Supabase senden, LK-Gerät sieht es live
+    // Echte Sitzung: an Supabase senden, LK-Gerät sieht es live.
+    // Bewusst KEIN Klarname hier -- nur die pseudonyme kind_id (Kap. 4.4/2.13 Nutzerfluss-Dokument).
     const { error } = await sb.from('antworten').insert({
       sitzungscode: sitzungscode,
-      kind_name: name,
+      kind_id: state.selectedSymbol ? state.selectedSymbol.kindId : null,
       symbol_id: state.selectedSymbol ? state.selectedSymbol.id : null,
       transkript: text,
       kategorie: cat
@@ -718,20 +774,54 @@ async function finishAnswer(){
   document.getElementById('done-name').textContent = name;
 }
 
+function renderCodeEingabe(){
+  document.getElementById('code-eingabe-fehler').style.display = 'none';
+  const slots = document.getElementById('code-eingabe-slots');
+  slots.innerHTML = "";
+  for(let i=0;i<3;i++){
+    const gefuellt = codeEingabe[i] !== undefined;
+    const div = document.createElement('div');
+    div.style.cssText = `width:76px; height:76px; border-radius:20px; display:flex; align-items:center; justify-content:center; font-size:38px; background:${gefuellt?'var(--bg-accent)':'var(--surface-2)'}; border:3px solid ${gefuellt?'var(--border-accent)':'var(--border)'};`;
+    div.textContent = gefuellt ? symbolFuerDigit(codeEingabe[i]) : '';
+    slots.appendChild(div);
+  }
+  const grid = document.getElementById('code-eingabe-grid');
+  grid.innerHTML = "";
+  JOIN_SYMBOLS.forEach(s=>{
+    const b = document.createElement('button');
+    b.className = 'kid-symbol-btn';
+    b.style.aspectRatio = '1';
+    b.innerHTML = `<span class="emoji" style="font-size:34px;">${s.icon}</span>`;
+    b.onclick = ()=>codeEingabeTap(s.digit);
+    grid.appendChild(b);
+  });
+}
+async function codeEingabeTap(digit){
+  if(codeEingabe.length>=3) return;
+  codeEingabe.push(digit);
+  renderCodeEingabe();
+  if(codeEingabe.length===3) await codeBeitreten();
+}
+function codeEingabeZurueck(){
+  codeEingabe.pop();
+  renderCodeEingabe();
+}
 async function codeBeitreten(){
-  const eingabe = document.getElementById('code-eingabe-feld').value.trim().toUpperCase();
+  const eingabe = codeEingabe.join('');
   const fehler = document.getElementById('code-eingabe-fehler');
   fehler.style.display = 'none';
-  if(!eingabe) return;
 
   const { data, error } = await sb.from('sitzungen').select('code').eq('code', eingabe).maybeSingle();
   if(error || !data){
     fehler.style.display = 'block';
+    codeEingabe = [];
+    renderCodeEingabe();
     return;
   }
   sitzungscode = eingabe;
   history.replaceState(null, '', '?geraet=kind&code='+sitzungscode);
   state.sessionActive = true;
+  codeEingabe = [];
   show('symbolauswahl');
 }
 
@@ -850,7 +940,7 @@ function renderTafelQR(){
   const section = document.getElementById('tafel-qr-section');
   section.style.display = qrAufTafel ? 'block' : 'none';
   if(!qrAufTafel) return;
-  document.getElementById('tafel-code-anzeige').textContent = sitzungscode || "----";
+  document.getElementById('tafel-code-anzeige').textContent = sitzungscode ? codeAlsSymbole(sitzungscode) : "⭐⭐⭐";
   const box = document.getElementById('tafel-qr-box');
   box.innerHTML = "";
   try {
@@ -1140,12 +1230,13 @@ function toggleConsent(id){
   consentState[id] = !consentState[id];
   renderKinderliste();
 }
-function submitSchnellanlage(){
+async function submitSchnellanlage(){
   const lines = document.getElementById('schnellanlage-input').value
     .split("\n").map(s=>s.trim()).filter(s=>s.length>0);
   lines.forEach((name,i)=>{
     if(SYMBOLS[i]) SYMBOLS[i].name = name;
   });
+  await syncKinderMitSupabase(); // Namen sofort mit Supabase abgleichen, nicht erst beim Sitzungsstart
   show('sitzplan');
 }
 

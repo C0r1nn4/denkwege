@@ -281,22 +281,23 @@
       <i class="ti ti-info-circle" style="font-size:18px; color:var(--text-accent);"></i>
     </div>
     <div class="banner" style="background:var(--bg-success); color:var(--text-success); margin-bottom:10px;">
-      Konfigurieren Sie hier, wie Sie die Plenumsphase gestalten wollen. Rufen Sie die Antworten der Lernenden einzeln oder nacheinander auf, kontrastieren Sie sie oder gestalten Sie die Tafelansicht frei. Eine Variante wird automatisch empfohlen und prototypische Beispielantworten ausgewählt. Sie können jede Auswahl manuell ändern.
+      Hier bereiten Sie das Plenumsgespräch vor: zwei Antworten vergleichen, mehrere der Reihe nach besprechen, oder die Tafel frei gestalten. Anknüpfen an eine einzelne tragfähige, aber noch unpräzise Antwort ist kein eigener Tab mehr — dafür markiert die Übersicht (Sitzplan) die passenden Kandidaten direkt.
     </div>
     <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:4px;">
       <div class="ts" style="font-size:11px;">Wie ins Gespräch einsteigen?</div>
       <span class="ts" style="font-size:10px; text-decoration:underline; cursor:pointer;" onclick="toggleErklaerung()">Warum diese Empfehlung?</span>
     </div>
     <div id="empfehlung-erklaerung" class="ts" style="display:none; font-size:11px; background:var(--bg-accent); color:var(--text-accent); padding:8px; border-radius:var(--radius); margin-bottom:8px;">
-      Der empfohlene Modus + die vorbelegten Antworten ergeben sich aus zwei Schritten: (1) <b>MOST-Filterung</b> — welche Kategorie-Kombination laut Aufgabenanlage als besonders gesprächswürdig markiert ist und gerade unter den eingegangenen Antworten vorkommt, (2) pro Kategorie wird die zuerst eingegangene passende Antwort vorbelegt (eine Konfidenz-basierte Auswahl liefert die Kategorisierung aktuell nicht). Die Lehrkraft kann das jederzeit überschreiben.
+      Der empfohlene Tab + die vorbelegten Antworten ergeben sich aus zwei Schritten: (1) <b>MOST-Filterung</b> — welche Kategorie-Kombinationen laut Aufgabenanlage als besonders gesprächswürdig markiert sind und gerade unter den eingegangenen Antworten vorkommen (es können mehrere gleichzeitig sein — dann erscheint oben eine Auswahlleiste), (2) pro Kategorie wird die zuerst eingegangene passende Antwort vorbelegt (eine Konfidenz-basierte Auswahl liefert die Kategorisierung aktuell nicht). Die Lehrkraft kann das jederzeit überschreiben.
     </div>
     <div class="row" style="gap:6px; margin-bottom:14px; overflow-x:auto;">
-      <button class="tabbtn navbtn" data-tab="anknuepfen" onclick="switchTab('anknuepfen')" style="position:relative;">Anknüpfen<span class="empf-badge" data-tab-badge="anknuepfen" style="display:none; position:absolute;top:-8px;right:-6px;background:var(--bg-accent);color:var(--text-accent);font-size:8px;padding:1px 4px;border-radius:8px;">empf.</span></button>
-      <button class="tabbtn navbtn" data-tab="gegenueberstellen" onclick="switchTab('gegenueberstellen')" style="position:relative;">Gegenüberstellen<span class="empf-badge" data-tab-badge="gegenueberstellen" style="display:none; position:absolute;top:-8px;right:-6px;background:var(--bg-accent);color:var(--text-accent);font-size:8px;padding:1px 4px;border-radius:8px;">empf.</span></button>
-      <button class="tabbtn navbtn" data-tab="sequenzieren" onclick="switchTab('sequenzieren')" style="position:relative;">Sequenzieren<span class="empf-badge" data-tab-badge="sequenzieren" style="display:none; position:absolute;top:-8px;right:-6px;background:var(--bg-accent);color:var(--text-accent);font-size:8px;padding:1px 4px;border-radius:8px;">empf.</span></button>
+      <button class="tabbtn navbtn" data-tab="vergleichen" onclick="switchTab('vergleichen')" style="position:relative;">Vergleichen<span class="empf-badge" data-tab-badge="vergleichen" style="display:none; position:absolute;top:-8px;right:-6px;background:var(--bg-accent);color:var(--text-accent);font-size:8px;padding:1px 4px;border-radius:8px;">empf.</span></button>
+      <button class="tabbtn navbtn" data-tab="reihenfolge" onclick="switchTab('reihenfolge')" style="position:relative;">Der Reihe nach<span class="empf-badge" data-tab-badge="reihenfolge" style="display:none; position:absolute;top:-8px;right:-6px;background:var(--bg-accent);color:var(--text-accent);font-size:8px;padding:1px 4px;border-radius:8px;">empf.</span></button>
       <button class="tabbtn navbtn" data-tab="frei" onclick="switchTab('frei')">Frei</button>
     </div>
+    <div id="vergleichs-auswahl" style="display:none; margin-bottom:8px;"></div>
     <div class="card">
+      <div id="vergleichs-art-label" class="ts" style="display:none; font-size:11px; font-weight:600; color:var(--text-accent); margin-bottom:6px;"></div>
       <div class="ts" style="font-size:11px;">Impuls-Idee</div>
       <div class="ts" id="impuls-text" style="font-size:13px; margin-bottom:10px;"></div>
       <div class="ts" style="font-size:11px; margin-bottom:6px;">Für die Tafel ausgewählt:</div>
@@ -354,10 +355,30 @@
       <button class="navbtn" style="margin-top:6px;" onclick="show('sitzplan')">Zurück zum Sitzplan →</button>
     </div>
     <div id="heatmap-missing-notice" class="banner" style="display:none;"></div>
-    <div class="ts" style="text-align:center; font-size:10px; margin-bottom:4px;"><i class="ti ti-podium"></i> Tafel</div>
+
+    <!-- [NEU] Prioritäts-Leiste: Verteilung der drei didaktischen Funktionen auf einen
+         Blick, in Alltagssprache statt Fachbegriffen. Antippen filtert Sitzplan+Liste. -->
+    <div id="prioritaets-leiste" style="display:flex; flex-direction:column; gap:6px; margin-bottom:14px;"></div>
+
+    <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:4px;">
+      <span class="ts" style="font-size:10px;"><i class="ti ti-podium"></i> Tafel</span>
+      <button class="navbtn" id="rohtext-toggle-btn" style="font-size:10px; padding:5px 9px;" onclick="toggleRohtextLayer()"><i class="ti ti-message-2"></i> Antworten im Sitzplan lesen</button>
+    </div>
     <div id="heatmap-canvas" style="position:relative; width:100%; height:260px; background:var(--surface-2); border:0.5px solid var(--border); border-radius:12px; margin-bottom:8px;"></div>
     <div id="heatmap-fortschritt" class="row" style="justify-content:center; gap:6px; margin-bottom:8px; font-size:12px;"></div>
-    <div id="heatmap-legende" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;"></div>
+    <div id="heatmap-legende" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;"></div>
+
+    <!-- [NEU] Liste: jede Antwort ohne Antippen vollständig lesbar (Text, nicht nur Farbe). -->
+    <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <div style="font-size:13px; font-weight:500;">Alle Antworten</div>
+      <select id="liste-sortierung" class="navbtn" style="font-size:11px;" onchange="renderAntwortenliste()">
+        <option value="funktion">nach Handlungsbedarf</option>
+        <option value="kategorie">nach Kategorie</option>
+        <option value="name">nach Name</option>
+      </select>
+    </div>
+    <div id="antworten-liste" style="margin-bottom:12px;"></div>
+
     <button class="btn" id="qr-toggle-btn" style="margin-bottom:8px;" onclick="toggleTafelQR()"><i class="ti ti-qrcode"></i> QR-Code auf Tafel anzeigen</button>
     <button class="btn btn-primary" onclick="show('dashboard')">Weiter zum Dashboard (Plenum vorbereiten) →</button>
     <div class="ts" style="font-size:11px; text-align:center; margin-top:6px;">Du musst nicht warten, bis alle fertig sind — schon wenige Antworten reichen für einen guten Einstieg.</div>
@@ -530,15 +551,39 @@ function aktualisierenAnsicht(){
 // Werte komplett, wenn eine neue Aufgaben-Datei geladen wird. Die Werte hier sind
 // der Anfangszustand ("Zahlen bündeln und entbündeln"), bis eine andere Aufgabe
 // geladen wird.
+// [NEU] `praezision` ist ein eigenes, vom Fachdidaktik-Team explizit vergebenes Feld
+// (nur bei typ:"tragfähige Strategie" relevant) -- NICHT aus "begründet/unbegründet"
+// oder anderen Feldern abgeleitet. Ob eine tragfähige Kategorie ein bereits ausgereiftes
+// ("praezise") oder ein noch unterwegs befindliches Verständnis ("unpraezise")
+// repräsentiert, ist ein inhaltliches Urteil über die Kategorie selbst.
 let CATS = {
-  korrekt_begruendet: {label:"richtig, begründet", color:"c-teal", typ:"tragfähige Strategie", gueltig_fuer:null, def:"Zahl 6625 korrekt UND eine Stellenwert- oder Bündelungsregel wird erkennbar als Begründung genannt.", nachfrage:"Warum musstest du die 42 Zehner überhaupt umwandeln?"},
-  korrekt_unbegruendet: {label:"richtig, unbegründet", color:"c-mint", typ:"tragfähige Strategie", gueltig_fuer:null, def:"Zahl 6625 korrekt, aber keine erkennbare inhaltliche Begründung.", nachfrage:"Wie bist du auf die 6625 gekommen? Was ist mit den 42 Zehnern passiert?"},
+  korrekt_begruendet: {label:"richtig, begründet", color:"c-teal", typ:"tragfähige Strategie", praezision:"praezise", gueltig_fuer:null, def:"Zahl 6625 korrekt UND eine Stellenwert- oder Bündelungsregel wird erkennbar als Begründung genannt.", nachfrage:"Warum musstest du die 42 Zehner überhaupt umwandeln?"},
+  korrekt_unbegruendet: {label:"richtig, unbegründet", color:"c-mint", typ:"tragfähige Strategie", praezision:"unpraezise", gueltig_fuer:null, def:"Zahl 6625 korrekt, aber keine erkennbare inhaltliche Begründung -- das Verständnis ist noch nicht ausdifferenziert genug, um es zu artikulieren.", nachfrage:"Wie bist du auf die 6625 gekommen? Was ist mit den 42 Zehnern passiert?"},
   fehler_unbundled: {label:"Fehler: nicht entbündelt (62425)", color:"c-coral", typ:"Fehlvorstellung", gueltig_fuer:null, def:"42 Zehner werden unverändert/roh in die Zehnerspalte übernommen, keine Regruppierung stattgefunden.", nachfrage:"Darf in einem Kästchen der Stellenwerttafel mehr als eine Ziffer stehen?"},
   fehler_stellenwert_ignoriert: {label:"Fehler: Stellenwert ignoriert (6247)", color:"c-purple", typ:"Fehlvorstellung", gueltig_fuer:null, def:"Die '2' von 42 wird fälschlich als Einer-Ziffer gedeutet und zu den 5 Einern addiert.", nachfrage:"Was bedeutet die '2' in '42 Zehner' — ist das eine Einer-Ziffer?"},
   fehler_mit_buendelungsversuch: {label:"Fehler, mit Bündelungsansatz", color:"c-amber", typ:"Fehlvorstellung", gueltig_fuer:null, def:"Andere falsche Endzahl, aber im Text wird erkennbar eine Bündelungs- oder Stellenwertregel artikuliert.", nachfrage:"Deine Erklärung zur Umwandlung klingt richtig — wo genau ist beim Rechnen etwas schiefgelaufen?"},
   fehler_ohne_erklaerung: {label:"Fehler ohne Begründung", color:"c-rose", typ:"Fehlvorstellung", gueltig_fuer:null, def:"Andere falsche Endzahl, ohne dass eine inhaltliche Begründung erkennbar ist.", nachfrage:"Wie bist du vorgegangen? Erzähl mal Schritt für Schritt."},
   keine_bearbeitung: {label:"keine Bearbeitung", color:"c-gray", typ:null, gueltig_fuer:null, def:"Kein Eintrag / keine Antwort vorhanden.", nachfrage:""},
   unklar: {label:"unklar", color:"c-gray", typ:null, gueltig_fuer:null, def:"Keiner Kategorie sicher zuordenbar", nachfrage:""}
+};
+
+// [NEU] Didaktische Funktion einer Kategorie -- Konsequenz aus der Taxonomie, keine eigene
+// Pflege nötig: typ:"Fehlvorstellung" -> konfrontieren; typ:"tragfähige Strategie" +
+// praezision:"unpraezise" -> anknuepfen; typ:"tragfähige Strategie" + praezision:"praezise"
+// -> vergleichen (aber nur ein KANDIDAT -- ob es wirklich etwas zu vergleichen gibt, hängt
+// davon ab, ob eine zweite, andersartige praezise Kategorie ebenfalls vorkommt, s.
+// berechneVergleichsKombinationen()). Housekeeping-Kategorien (typ:null) -> kein Tag.
+function didaktischeFunktion(katId){
+  const cat = CATS[katId];
+  if(!cat || !cat.typ) return null;
+  if(cat.typ === 'Fehlvorstellung') return 'konfrontieren';
+  if(cat.typ === 'tragfähige Strategie') return cat.praezision === 'unpraezise' ? 'anknuepfen' : 'vergleichen';
+  return null;
+}
+const DIDAKTISCHE_FUNKTION_META = {
+  konfrontieren: { icon:'⚡', kurz:'konfrontieren', lang:'nicht tragfähig — mit Gegenbeispiel konfrontieren' },
+  anknuepfen:    { icon:'⚓', kurz:'anknüpfen', lang:'tragfähig, aber unpräzise — daran anknüpfen' },
+  vergleichen:   { icon:'⚖', kurz:'vergleichen', lang:'tragfähig und präzise — möglicher Vergleichskandidat' }
 };
 const SYMBOLS_POOL = ["🐻","🦊","🐸","🐢","🐝","🐬","🐙","🐧","🦁","🐰","🐼","🐨","🦄","🐮","🐷","🐵","🦉","🦋","🐌","🐳","🦈","🐊","🦒","🦓","🐘","🦔","🦇","🐿️","🦥","🦦","🐺","🐴","🐐","🐑","🐹"];
 const MAX_KINDER = 35; // Obergrenze pro Klassenraum
@@ -572,8 +617,17 @@ let aktiverAnzeigename = null;
 // ============================================================
 const KATEGORIE_FARBEN = ['c-teal', 'c-mint', 'c-coral', 'c-purple', 'c-amber', 'c-rose', 'c-blue'];
 const FARBE_HOUSEKEEPING = 'c-gray';
-const MODUS_NORMALISIERUNG = { konfrontieren: 'gegenueberstellen' };
-const ERLAUBTE_MODI = ['anknuepfen', 'gegenueberstellen', 'sequenzieren', 'frei'];
+// [NEU/überarbeitet] Nur noch drei Board-Modi. "Anknüpfen" ist kein Board-Modus mehr --
+// es betrifft immer nur eine einzelne Antwort (kein Vergleich/keine Reihenfolge nötig)
+// und wird stattdessen in der Übersicht (Sitzplan/Heatmap) direkt an der jeweiligen
+// Antwort gezeigt, s. ANKNUEPFEN_IMPULSE unten. "konfrontieren" und "gegenueberstellen"
+// sind für die Lehrkraft kaum unterscheidbare Fachbegriffe und laufen daher als EIN Tab
+// ("vergleichen"); welche Art von Vergleich gerade vorliegt (Fehlvorstellung vs.
+// tragfähig, oder zwei unterschiedliche tragfähige Wege) wird live aus den Kategorien in
+// den Slots abgelesen, s. vergleichsArt(). "sequenzieren" heißt für die Lehrkraft
+// "reihenfolge".
+const MODUS_NORMALISIERUNG = { konfrontieren: 'vergleichen', gegenueberstellen: 'vergleichen', sequenzieren: 'reihenfolge' };
+const ERLAUBTE_MODI = ['vergleichen', 'reihenfolge', 'frei'];
 
 function ladeAufgabe(config) {
   const fehler = [];
@@ -626,8 +680,12 @@ function ladeAufgabe(config) {
       color = KATEGORIE_FARBEN[farbIndex++];
     }
 
+    if (k.kategorietyp === 'tragfähige Strategie' && k.praezision && !['praezise','unpraezise'].includes(k.praezision)) {
+      fehler.push(`Kategorie "${k.kategorie_id}": praezision muss "praezise" oder "unpraezise" sein, nicht "${k.praezision}".`);
+    }
+
     CATS[k.kategorie_id] = {
-      label: k.bezeichnung, color, typ: k.kategorietyp ?? null,
+      label: k.bezeichnung, color, typ: k.kategorietyp ?? null, praezision: k.praezision ?? null,
       gueltig_fuer: k.gueltig_fuer ?? null, def: k.kurzdefinition, nachfrage: k.nachfrage_impuls ?? null
     };
   });
@@ -642,11 +700,25 @@ function ladeAufgabe(config) {
     return { kombination: m.kombination, gespraechswuerdig: !!m.gespraechswuerdig };
   });
 
-  const TEXTBAUSTEINE = (a.textbausteine || []).map(t => {
+  // [NEU] "anknuepfen"-Textbausteine sind kein Board-Modus mehr -- sie brauchen genau
+  // eine kategorie_id (Anknüpfen betrifft immer nur eine einzelne Antwort) und landen in
+  // ANKNUEPFEN_IMPULSE statt in TEXTBAUSTEINE, für die Anzeige direkt in der Übersicht.
+  const TEXTBAUSTEINE = [];
+  const ANKNUEPFEN_IMPULSE = {};
+  (a.textbausteine || []).forEach(t => {
+    if (t.modus === 'anknuepfen') {
+      pruefeKombination(t.kombination, 'textbausteine (modus "anknuepfen")');
+      if (!t.kombination || t.kombination.length !== 1) {
+        fehler.push(`textbausteine (modus "anknuepfen"): braucht genau eine kategorie_id, nicht ${(t.kombination||[]).length}.`);
+        return;
+      }
+      ANKNUEPFEN_IMPULSE[t.kombination[0]] = { einstiegssatz: (t.einstiegssatz || '').trim(), verbindungsfrage: t.verbindungsfrage ? t.verbindungsfrage.trim() : null };
+      return;
+    }
     const modus = MODUS_NORMALISIERUNG[t.modus] || t.modus;
     if (!ERLAUBTE_MODI.includes(modus)) fehler.push(`textbausteine: unbekannter modus "${t.modus}".`);
     pruefeKombination(t.kombination, `textbausteine (modus "${t.modus}")`);
-    return { modus, kombination: t.kombination, einstiegssatz: (t.einstiegssatz || '').trim(), verbindungsfrage: t.verbindungsfrage ? t.verbindungsfrage.trim() : null };
+    TEXTBAUSTEINE.push({ modus, kombination: t.kombination, einstiegssatz: (t.einstiegssatz || '').trim(), verbindungsfrage: t.verbindungsfrage ? t.verbindungsfrage.trim() : null });
   });
 
   const AUFGABE_UEBERSETZUNGEN = (a.uebersetzungen || []).map(u => ({ sprache: u.sprache, text: u.text }));
@@ -659,7 +731,7 @@ function ladeAufgabe(config) {
   if (fehler.length) return { fehler };
 
   return {
-    fehler: [], AUFGABE_ID, HAT_WAHL, RICHTIGE_ANTWORT, CATS, TEXTBAUSTEINE, MOST_MARKIERUNGEN, AUFGABE_UEBERSETZUNGEN,
+    fehler: [], AUFGABE_ID, HAT_WAHL, RICHTIGE_ANTWORT, CATS, TEXTBAUSTEINE, ANKNUEPFEN_IMPULSE, MOST_MARKIERUNGEN, AUFGABE_UEBERSETZUNGEN,
     aufgabentext: a.aufgabentext, verstehenskern: a.verstehenskern, hintergrundmaterial: a.hintergrundmaterial || null,
     aufgabenformat: a.aufgabenformat || null, druckbare_version: !!a.druckbare_version,
     klassifikations_prompt: (a.taxonomie && a.taxonomie.klassifikations_prompt) || null,
@@ -677,6 +749,7 @@ function aktiviereAufgabe(config) {
   RICHTIGE_ANTWORT = ergebnis.RICHTIGE_ANTWORT;
   CATS = ergebnis.CATS;
   TEXTBAUSTEINE = ergebnis.TEXTBAUSTEINE;
+  ANKNUEPFEN_IMPULSE = ergebnis.ANKNUEPFEN_IMPULSE;
   MOST_MARKIERUNGEN = ergebnis.MOST_MARKIERUNGEN;
   AUFGABE_UEBERSETZUNGEN = ergebnis.AUFGABE_UEBERSETZUNGEN;
   AUFGABE_TEXT = ergebnis.aufgabentext || "";
@@ -690,8 +763,8 @@ function aktiviereAufgabe(config) {
   // Neue Sitzung/Demo-Zustand für die neue Aufgabe -- alte Demo-Antworten/Slots aus der
   // vorigen Aufgabe passen nicht mehr zu den neuen Kategorien.
   state.pool = [];
-  state.slots = { anknuepfen: [], gegenueberstellen: [], sequenzieren: [], frei: [] };
-  state.visibleCount.sequenzieren = 0;
+  state.slots = { vergleichen: [], reihenfolge: [], frei: [] };
+  state.visibleCount.reihenfolge = 0;
   state.automatischBefuellt = true;
 
   wendeAufgabeAufUIAn();
@@ -827,14 +900,13 @@ let state = {
     {name:"Nora", cat:"fehler_ohne_erklaerung", quote:"42 + 5 = 47."}
   ],
   slots: {
-    anknuepfen: ["Mika"],
-    gegenueberstellen: ["Mika","Lian"],
-    sequenzieren: ["Ada","Ben","Lian","Mika"],
+    vergleichen: ["Mika","Lian"],
+    reihenfolge: ["Ada","Ben","Lian","Mika"],
     frei: []
   },
-  activeTab: "gegenueberstellen",
+  activeTab: "vergleichen",
   automatischBefuellt: true, // solange true, überschreibt aktualisiereEmpfehlung() die Slots automatisch
-  visibleCount: { sequenzieren: 0 },
+  visibleCount: { reihenfolge: 0 },
   poolFilter: null,
   sessionActive: false,
   answersVisibleOnTafel: false,
@@ -845,39 +917,30 @@ let state = {
   aktuelleWahl: null // "ja"/"nein"/null -- nur relevant bei HAT_WAHL, pro Kind neu gesetzt in confirmSymbol()
 };
 
-// Aus den textbausteine-Einträgen der Aufgaben-YAML übernommen (ein Eintrag pro
-// existierendem Tab). WICHTIG: "gegenueberstellen" hat in der YAML zwei mögliche
-// Kombinationen (korrekt_begruendet+fehler_mit_buendelungsversuch UND
-// fehler_unbundled+fehler_stellenwert_ignoriert) -- die App kann aktuell nur EINEN
-// festen Impuls pro Tab zeigen, nicht abhängig davon, welche Antworten gerade im
-// Slot liegen. Hier ist die erste Kombination hinterlegt; die zweite geht sonst
-// verloren. Der Modus "konfrontieren" aus der YAML existiert als Tab in der App
-// noch gar nicht -- sein Textbaustein ("Beide kommen auf 6625 -- aber nur eine
-// Erklärung sagt uns, warum das stimmt.") ist dadurch aktuell nirgends nutzbar.
-// 1:1 aus der Aufgaben-YAML übernommen (textbausteine + most_markierungen). "Konfrontieren"
-// wird -- wie festgelegt -- als Teil von "gegenueberstellen" behandelt, kein eigener Tab.
-// Mehrere Einträge pro Modus sind jetzt möglich: waehleTextbaustein() sucht anhand der
-// Kategorien, die gerade in den Slots liegen, den passendsten Eintrag statt eines
-// einzigen festen Textes pro Tab.
+// [überarbeitet] Nur noch drei Board-Modi (vergleichen/reihenfolge/frei). "Anknüpfen"
+// ist kein Board-Modus mehr -- sein einziger Eintrag (Kombination aus genau einer
+// Kategorie) steht jetzt in ANKNUEPFEN_IMPULSE und wird direkt in der Übersicht neben
+// der betreffenden Antwort gezeigt, nicht mehr auf einem eigenen Tab. "Vergleichen"
+// kann jetzt MEHRERE gleichzeitig verfügbare Kombinationen haben (s. berechneVergleichsKombinationen());
+// waehleTextbaustein() sucht darin den zu den aktuellen Slot-Kategorien passenden Eintrag.
 let TEXTBAUSTEINE = [
-  { modus: "gegenueberstellen", kombination: ["korrekt_begruendet","fehler_mit_buendelungsversuch"],
+  { modus: "vergleichen", kombination: ["korrekt_begruendet","fehler_mit_buendelungsversuch"],
     einstiegssatz: "Zwei Kinder haben unterschiedliche Ergebnisse — schauen wir uns an, wie sie zur Umwandlung der 42 Zehner gekommen sind.",
     verbindungsfrage: "Was ist an beiden Erklärungen zur Bündelung gleich, was ist unterschiedlich — und wo trennen sich die Wege?" },
-  { modus: "gegenueberstellen", kombination: ["korrekt_unbegruendet","korrekt_begruendet"], // in der YAML noch "konfrontieren"
-    einstiegssatz: "Beide kommen auf 6625 — aber nur eine Erklärung sagt uns, warum das stimmt.",
-    verbindungsfrage: "Kannst du erklären, warum aus den 42 Zehnern 4 Hunderter und 2 Zehner werden?" },
-  { modus: "gegenueberstellen", kombination: ["fehler_unbundled","fehler_stellenwert_ignoriert"],
+  { modus: "vergleichen", kombination: ["fehler_unbundled","fehler_stellenwert_ignoriert"],
     einstiegssatz: "Wir schauen uns zwei falsche Lösungswege an — was ist hier mit den 42 Zehnern jeweils passiert?",
     verbindungsfrage: "Bei wem wurde die 42 gar nicht verändert, und bei wem wurde sie falsch aufgeteilt?" },
-  { modus: "anknuepfen", kombination: ["korrekt_begruendet"],
-    einstiegssatz: "Wer kann uns erklären, was mit den 42 Zehnern passiert ist?", verbindungsfrage: null },
-  { modus: "sequenzieren", kombination: ["fehler_unbundled","fehler_stellenwert_ignoriert","fehler_mit_buendelungsversuch","korrekt_begruendet"],
+  { modus: "reihenfolge", kombination: ["fehler_unbundled","fehler_stellenwert_ignoriert","fehler_mit_buendelungsversuch","korrekt_begruendet"],
     einstiegssatz: "Wir hören uns nacheinander vier verschiedene Wege an, mit den 42 Zehnern umzugehen.",
     verbindungsfrage: "Welcher Weg überzeugt euch am meisten — und warum?" }
 ];
+// [NEU] Anknüpfen-Impuls pro (unpräziser, tragfähiger) Kategorie -- keine Slots, kein
+// Tab, wird direkt in der Übersicht bei den betreffenden Kindern angezeigt.
+let ANKNUEPFEN_IMPULSE = {
+  korrekt_unbegruendet: { einstiegssatz: "6625 stimmt schon — kannst du erklären, was du mit den 42 Zehnern gemacht hast?", verbindungsfrage: null }
+};
 let MOST_MARKIERUNGEN = [
   { kombination: ["korrekt_begruendet","fehler_mit_buendelungsversuch"], gespraechswuerdig: true },
-  { kombination: ["korrekt_unbegruendet","korrekt_begruendet"], gespraechswuerdig: true },
   { kombination: ["fehler_unbundled","fehler_stellenwert_ignoriert"], gespraechswuerdig: true }
 ];
 
@@ -898,33 +961,67 @@ function waehleTextbaustein(modus){
   return treffer;
 }
 
+// [NEU] Welche Art von Vergleich eine Kategorie-Kombination darstellt -- rein aus
+// kategorietyp/praezision der beteiligten Kategorien abgeleitet, keine eigene Pflege.
+// Bewusst in Alltagssprache formuliert (nicht "Konfrontieren"/"Gegenüberstellen"), s.
+// Diskussion zur Verständlichkeit für die Lehrkraft.
+function vergleichsArt(kombination){
+  const typen = kombination.map(k => CATS[k] && CATS[k].typ);
+  if(typen.every(t => t === 'Fehlvorstellung')){
+    return { art:'nicht_tragfaehig', label:'zwei unterschiedliche, aber beide nicht tragfähige Wege' };
+  }
+  if(typen.some(t => t === 'Fehlvorstellung') && typen.some(t => t === 'tragfähige Strategie')){
+    return { art:'kontrast', label:'eine nicht tragfähige und eine tragfähige Antwort' };
+  }
+  return { art:'divergenz', label:'zwei tragfähige, aber unterschiedliche Wege' };
+}
+
+// [NEU] Alle aktuell verfügbaren Vergleichs-Kombinationen: gesprächswürdig laut
+// Aufgabenanlage UND tatsächlich unter den eingegangenen Antworten vollständig vorhanden.
+// Kann mehr als einen Treffer liefern (z.B. gleichzeitig ein Fehlvorstellungs-Kontrast UND
+// ein Vergleich zweier verschiedener tragfähiger Wege) -- die Lehrkraft wählt dann im
+// "vergleichen"-Tab zwischen den Kandidaten, s. renderVergleichsAuswahl().
+function berechneVergleichsKombinationen(){
+  return MOST_MARKIERUNGEN
+    .filter(m => m.gespraechswuerdig)
+    .filter(m => m.kombination.every(kat => state.pool.some(p=>p.cat===kat)))
+    .map(m => ({ kombination: m.kombination, ...vergleichsArt(m.kombination) }));
+}
+
 // MOST-Empfehlung: prüft, welche gesprächswürdigen Kombinationen unter den bisher
 // eingegangenen, kategorisierten Antworten VOLLSTÄNDIG vorhanden sind (mindestens eine
 // Antwort pro benötigter Kategorie), und befüllt -- solange die Lehrkraft noch nicht
 // manuell eingegriffen hat (state.automatischBefuellt) -- den passenden Tab automatisch.
 // Eine Konfidenz-basierte Auswahl gibt es nicht (die Kategorisierung liefert keinen
 // Konfidenzwert), daher wird je Kategorie schlicht die zuerst eingegangene Antwort genommen.
+let vergleichsKombinationen = [];
 function aktualisiereEmpfehlung(){
+  vergleichsKombinationen = berechneVergleichsKombinationen();
   let empfohlenerModus = null;
-  for(const m of MOST_MARKIERUNGEN){
-    if(!m.gespraechswuerdig) continue;
-    const vollstaendig = m.kombination.every(kat => state.pool.some(p=>p.cat===kat));
-    if(vollstaendig){
-      const tb = TEXTBAUSTEINE.find(t => t.kombination.length===m.kombination.length && t.kombination.every(k=>m.kombination.includes(k)));
-      if(tb){ empfohlenerModus = tb.modus; 
-        if(state.automatischBefuellt){
-          state.slots[tb.modus] = m.kombination.map(kat => {
-            const antwort = state.pool.find(p=>p.cat===kat);
-            return antwort ? antwort.name : null;
-          }).filter(Boolean);
-        }
-        break; // erste passende MOST-Markierung gewinnt (Reihenfolge wie in der Aufgabenanlage)
-      }
+  if(vergleichsKombinationen.length > 0){
+    empfohlenerModus = 'vergleichen';
+    if(state.automatischBefuellt){
+      wendeVergleichsKombinationAn(vergleichsKombinationen[0]);
     }
+  } else {
+    // Kein Vergleichs-Kandidat vorhanden (z.B. noch keine gegensätzlichen Antworten
+    // eingegangen, oder die Aufgabe sieht für die vorliegende Kategorie-Kombination gar
+    // keinen Vergleich vor) -- Reihenfolge bleibt als Fallback verfügbar, wird aber nicht
+    // automatisch als "empfohlen" markiert, weil es dafür (anders als beim Vergleichen)
+    // keine MOST-Markierung gibt.
   }
   document.querySelectorAll('.empf-badge').forEach(b=>{
     b.style.display = (empfohlenerModus && b.dataset.tabBadge===empfohlenerModus) ? 'inline-block' : 'none';
   });
+}
+// Befüllt die Slots des "vergleichen"-Tabs mit den (zuerst eingegangenen) Antworten der
+// übergebenen Kombination. Wird sowohl von der Auto-Empfehlung als auch von der manuellen
+// Auswahlleiste (renderVergleichsAuswahl) aufgerufen.
+function wendeVergleichsKombinationAn(kombi){
+  state.slots.vergleichen = kombi.kombination.map(kat => {
+    const antwort = state.pool.find(p=>p.cat===kat);
+    return antwort ? antwort.name : null;
+  }).filter(Boolean);
 }
 
 function show(id){
@@ -1274,10 +1371,43 @@ function switchTab(tab){
   state.activeTab = tab;
   renderDashboard();
 }
+// [NEU] Auswahlleiste im "vergleichen"-Tab, wenn mehrere Vergleichs-Kombinationen
+// gleichzeitig verfügbar sind (z.B. ein Fehlvorstellungs-Kontrast UND ein Vergleich
+// zweier unterschiedlicher tragfähiger Wege). Bei nur einer verfügbaren Kombination
+// bleibt die Leiste unsichtbar -- die eine Kombination ist dann einfach vorbelegt.
+function renderVergleichsAuswahl(){
+  const el = document.getElementById('vergleichs-auswahl');
+  if(state.activeTab !== 'vergleichen' || vergleichsKombinationen.length < 2){
+    el.style.display = 'none'; el.innerHTML = ''; return;
+  }
+  el.style.display = 'flex'; el.style.flexWrap = 'wrap'; el.style.gap = '6px';
+  const aktuelleKats = state.slots.vergleichen.map(name => { const p = state.pool.find(x=>x.name===name); return p ? p.cat : null; }).filter(Boolean);
+  el.innerHTML = vergleichsKombinationen.map(vk=>{
+    const aktiv = vk.kombination.length===aktuelleKats.length && vk.kombination.every(k=>aktuelleKats.includes(k));
+    const namen = vk.kombination.map(k=>CATS[k].label).join(' ↔ ');
+    return `<button class="navbtn ${aktiv?'active':''}" style="font-size:11px; text-align:left;" onclick='waehleVergleichsKombination(${JSON.stringify(vk.kombination)})'>${namen}</button>`;
+  }).join('');
+}
+function waehleVergleichsKombination(kombination){
+  const vk = vergleichsKombinationen.find(v => v.kombination.length===kombination.length && v.kombination.every(k=>kombination.includes(k)));
+  if(!vk) return;
+  wendeVergleichsKombinationAn(vk);
+  state.automatischBefuellt = false;
+  renderDashboard();
+}
 function renderDashboard(){
   document.querySelectorAll('.tabbtn').forEach(b=>{
     b.classList.toggle('active', b.dataset.tab===state.activeTab);
   });
+  renderVergleichsAuswahl();
+  const artLabel = document.getElementById('vergleichs-art-label');
+  if(state.activeTab === 'vergleichen' && state.slots.vergleichen.length >= 2){
+    const kats = state.slots.vergleichen.map(name => { const p = state.pool.find(x=>x.name===name); return p ? p.cat : null; }).filter(Boolean);
+    artLabel.style.display = 'block';
+    artLabel.textContent = 'Ihr vergleicht: ' + vergleichsArt(kats).label;
+  } else {
+    artLabel.style.display = 'none';
+  }
   const textbaustein = waehleTextbaustein(state.activeTab);
   document.getElementById('impuls-text').textContent = textbaustein ? textbaustein.einstiegssatz : "(kein automatischer Impuls im Frei-Modus)";
   const anschlussCard = document.getElementById('anschlussfrage-card');
@@ -1290,14 +1420,14 @@ function renderDashboard(){
   const slotIds = state.slots[state.activeTab];
   const area = document.getElementById('slots-area');
   area.innerHTML = "";
-  const isSeq = state.activeTab === 'sequenzieren';
+  const isSeq = state.activeTab === 'reihenfolge';
   slotIds.forEach((name,i)=>{
     const child = state.pool.find(p=>p.name===name);
     const div = document.createElement('div');
     div.style.cursor = 'pointer';
     if(child){
       const cat = CATS[child.cat];
-      const onTafel = !isSeq || i < state.visibleCount.sequenzieren;
+      const onTafel = !isSeq || i < state.visibleCount.reihenfolge;
       div.onclick = ()=> openDetail(child.name);
       div.innerHTML = `<div class="${cat.color}" style="border-radius:var(--radius) var(--radius) 0 0; padding:6px 8px;">
         <div class="row" style="justify-content:space-between;"><b style="font-size:12px;">${i+1}. ${child.name} · ${cat.label}</b>
@@ -1318,7 +1448,7 @@ function renderDashboard(){
   if(isSeq){
     seqControls.style.display = 'block';
     seqControls.innerHTML = `
-      <div class="ts" style="font-size:11px; margin-bottom:6px;">${state.visibleCount.sequenzieren} von ${slotIds.length} auf der Tafel sichtbar</div>
+      <div class="ts" style="font-size:11px; margin-bottom:6px;">${state.visibleCount.reihenfolge} von ${slotIds.length} auf der Tafel sichtbar</div>
       <div class="row" style="gap:8px;">
         <button class="btn" onclick="seqStep(-1)"><i class="ti ti-eye-off"></i> vorherige verbergen</button>
         <button class="btn btn-primary" onclick="seqStep(1)"><i class="ti ti-eye"></i> nächste zuschalten</button>
@@ -1332,8 +1462,8 @@ function renderDashboard(){
   if(tafelBtn) tafelBtn.textContent = state.answersVisibleOnTafel ? 'An' : 'Aus';
 }
 function seqStep(dir){
-  const max = state.slots.sequenzieren.length;
-  state.visibleCount.sequenzieren = Math.max(0, Math.min(max, state.visibleCount.sequenzieren + dir));
+  const max = state.slots.reihenfolge.length;
+  state.visibleCount.reihenfolge = Math.max(0, Math.min(max, state.visibleCount.reihenfolge + dir));
   renderDashboard();
 }
 function moveSlot(i, dir){
@@ -1496,7 +1626,9 @@ function renderPool(){
     div.className = cat.color;
     div.style.cssText = "border-radius:var(--radius); padding:8px 10px; cursor:pointer;" + (inSlot ? " outline:2px solid var(--border-accent);" : "");
     div.onclick = ()=> openDetail(p.name);
-    div.innerHTML = `<div class="row" style="justify-content:space-between;"><b style="font-size:12px;">${p.name}${inSlot?' <i class="ti ti-check" style="font-size:10px;"></i>':''}</b><span style="font-size:9px;">${cat.typ==='Fehlvorstellung'?'⚠ ':''}${cat.label}</span></div>
+    const fn = didaktischeFunktion(p.cat);
+    const fnIcon = fn ? DIDAKTISCHE_FUNKTION_META[fn].icon+' ' : '';
+    div.innerHTML = `<div class="row" style="justify-content:space-between;"><b style="font-size:12px;">${p.name}${inSlot?' <i class="ti ti-check" style="font-size:10px;"></i>':''}</b><span style="font-size:9px;">${fnIcon}${cat.label}</span></div>
       <div class="ts" style="font-size:10px; margin-top:2px;">${cat.def}</div>`;
     area.appendChild(div);
   });
@@ -1571,12 +1703,12 @@ function renderTafel(){
     area.innerHTML = '<div class="ts" style="text-align:center; padding:24px;"><i class="ti ti-eye-off" style="font-size:20px;"></i><div style="margin-top:6px;">Antworten sind noch ausgeblendet</div></div>';
     return;
   }
-  area.className = state.activeTab === 'sequenzieren' ? '' : 'grid2';
+  area.className = state.activeTab === 'reihenfolge' ? '' : 'grid2';
   area.innerHTML = "";
   const slotIds = state.slots[state.activeTab];
-  const isSeq = state.activeTab === 'sequenzieren';
+  const isSeq = state.activeTab === 'reihenfolge';
   slotIds.forEach((name,i)=>{
-    if(isSeq && i >= state.visibleCount.sequenzieren) return;
+    if(isSeq && i >= state.visibleCount.reihenfolge) return;
     const child = state.pool.find(p=>p.name===name);
     if(!child) return;
     const cat = CATS[child.cat];
@@ -1598,6 +1730,67 @@ function toggleTafelAufgabe(){
   el.style.display = el.style.display==='none' ? 'block' : 'none';
   renderTafel();
 }
+// [NEU] Verteilung der drei didaktischen Funktionen über alle bisher eingegangenen
+// Antworten -- Grundlage für die Prioritäts-Leiste. "vergleichen" zählt nur dann als
+// "bereit", wenn tatsächlich MINDESTENS ZWEI unterschiedliche präzise-tragfähige
+// Kategorien vorkommen (sonst gibt es noch nichts, das man gegenüberstellen könnte).
+function berechnePrioritaeten(){
+  const gruppen = { konfrontieren:[], anknuepfen:[], vergleichen:[], offen:[] };
+  state.pool.forEach(p=>{
+    const fn = didaktischeFunktion(p.cat);
+    if(fn) gruppen[fn].push(p); else gruppen.offen.push(p);
+  });
+  const praeziseKats = [...new Set(gruppen.vergleichen.map(p=>p.cat))];
+  return { gruppen, vergleichBereit: praeziseKats.length >= 2 };
+}
+let prioritaetsFilter = null; // null | 'konfrontieren' | 'anknuepfen' | 'vergleichen' | 'offen'
+function setPrioritaetsFilter(key){
+  prioritaetsFilter = (prioritaetsFilter===key) ? null : key;
+  renderHeatmap();
+}
+function gehoertZuPrioritaetsgruppe(name, key){
+  const p = state.pool.find(x=>x.name===name);
+  if(key==='offen') return !p || !didaktischeFunktion(p.cat);
+  return p && didaktischeFunktion(p.cat)===key;
+}
+function renderPrioritaetsLeiste(){
+  const el = document.getElementById('prioritaets-leiste');
+  if(!el) return;
+  const { gruppen, vergleichBereit } = berechnePrioritaeten();
+  const chips = [
+    { key:'konfrontieren', n:gruppen.konfrontieren.length,
+      text:'nicht tragfähig — mit einer tragfähigen Antwort vergleichen', dot:'var(--fill-danger)' },
+    { key:'anknuepfen', n:gruppen.anknuepfen.length,
+      text:'tragfähig, aber unpräzise — daran anknüpfen', dot:'var(--fill-warning)' },
+    { key:'vergleichen', n: vergleichBereit ? gruppen.vergleichen.length : 0,
+      text: vergleichBereit ? 'tragfähig, aber unterschiedlich — Wege vergleichen'
+            : (gruppen.vergleichen.length>0 ? 'tragfähig — bisher nur eine Sichtweise, noch nichts zu vergleichen' : 'tragfähig und präzise'),
+      dot:'var(--fill-success)' },
+    { key:'offen', n:gruppen.offen.length, text:'noch offen / unklar', dot:'var(--text-muted)' }
+  ];
+  el.innerHTML = chips.map(c=>{
+    const aktiv = prioritaetsFilter === c.key;
+    return `<div onclick="setPrioritaetsFilter('${c.key}')" style="cursor:pointer; display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:var(--radius); border:0.5px solid ${aktiv?'var(--border-accent)':'var(--border)'}; background:${aktiv?'var(--bg-accent)':'var(--surface-2)'};">
+      <span style="min-width:18px; text-align:center; font-weight:700; font-size:14px;">${c.n}</span>
+      <span style="width:8px; height:8px; border-radius:50%; background:${c.dot}; flex-shrink:0;"></span>
+      <span style="font-size:11px; color:var(--text-secondary);">${c.text}</span>
+    </div>`;
+  }).join('');
+}
+
+// [NEU] Rohtext-Layer: zeigt statt der Farbpunkte kleine Kärtchen mit dem vollen
+// Antwort-Zitat, ohne Antippen. Verzichtet bewusst auf pixelgenaue Sitzplan-Position
+// (dafür müsste man Kollisionen zwischen eng sitzenden Kärtchen auflösen) und snappt
+// stattdessen auf ein grobes Zeilen-Raster in der ungefähren Sitzordnung -- reicht zum
+// "auf einen Blick lesen", die exakt positionierte Kompaktansicht bleibt parallel verfügbar.
+let rohtextLayerAktiv = false;
+function toggleRohtextLayer(){
+  rohtextLayerAktiv = !rohtextLayerAktiv;
+  document.getElementById('rohtext-toggle-btn').innerHTML = rohtextLayerAktiv
+    ? '<i class="ti ti-message-off"></i> Kompaktansicht'
+    : '<i class="ti ti-message-2"></i> Antworten im Sitzplan lesen';
+  renderHeatmap();
+}
 function renderHeatmap(){
   const canvas = document.getElementById('heatmap-canvas');
   const banner = document.getElementById('heatmap-sitzplan-warning');
@@ -1614,11 +1807,58 @@ function renderHeatmap(){
   }
   canvas.innerHTML = "";
   renderLegende('heatmap-legende', true);
+  renderPrioritaetsLeiste();
+  renderAntwortenliste();
   const teilnehmend = SYMBOLS.filter(s=>consentState[s.id]);
   const fertigCount = teilnehmend.filter(s=>{const st=state.heatmapStatus[s.id]; return st && st!=='laeuft';}).length;
   document.getElementById('heatmap-fortschritt').innerHTML =
     `<i class="ti ti-check" style="color:var(--text-success);"></i> fertig ${fertigCount}/${teilnehmend.length}
      <i class="ti ti-info-circle" style="color:var(--text-muted); cursor:pointer;" onclick="showInfo('Fortschritt', 'Zählt nur Kinder mit Einwilligung, die digital am Tool teilnehmen — Kinder ohne Einwilligung bearbeiten die Aufgabe schriftlich und fließen hier nicht ein.')"></i>`;
+
+  if(rohtextLayerAktiv){
+    canvas.style.height = 'auto';
+    canvas.style.minHeight = '260px';
+    canvas.style.display = 'flex';
+    canvas.style.flexWrap = 'wrap';
+    canvas.style.alignContent = 'flex-start';
+    canvas.style.gap = '6px';
+    canvas.style.padding = '8px';
+    const geordnet = SYMBOLS
+      .filter(s=>sitzplanState.placed[s.id])
+      .filter(s=>!prioritaetsFilter || gehoertZuPrioritaetsgruppe(s.name, prioritaetsFilter))
+      .sort((a,b)=>{
+        const pa = sitzplanState.placed[a.id], pb = sitzplanState.placed[b.id];
+        const rasterA = Math.round(pa.y/18), rasterB = Math.round(pb.y/18); // grobe "Reihe" statt exakter y-Position
+        if(rasterA !== rasterB) return rasterA - rasterB;
+        return pa.x - pb.x; // innerhalb der Reihe nach x sortiert
+      });
+    geordnet.forEach(s=>{
+      const hasConsent = consentState[s.id];
+      const eintrag = state.pool.find(p=>p.name===s.name);
+      const card = document.createElement('div');
+      card.style.cssText = "width:150px; border-radius:var(--radius); padding:8px; font-size:11px; line-height:1.35;";
+      if(!hasConsent){
+        card.style.background = '#FBE3C7'; card.style.color = 'var(--text-warning)';
+        card.innerHTML = `<b>${s.name}</b><div style="margin-top:2px;">schriftlich, ohne digitales Tool</div>`;
+      } else if(eintrag){
+        const cat = CATS[eintrag.cat];
+        card.className = cat.color;
+        card.style.cursor = 'pointer';
+        card.onclick = ()=> openDetail(s.name);
+        card.innerHTML = `<b>${s.name}</b><div style="margin-top:2px;">${eintrag.quote}</div>`;
+      } else {
+        card.style.background = 'var(--surface-1)'; card.style.border = '1px dashed var(--border-strong)'; card.style.color = 'var(--text-muted)';
+        card.innerHTML = `<b>${s.name}</b><div style="margin-top:2px;">noch keine Antwort</div>`;
+      }
+      canvas.appendChild(card);
+    });
+    return;
+  }
+
+  canvas.style.height = '260px';
+  canvas.style.minHeight = '';
+  canvas.style.display = 'block';
+  canvas.style.padding = '0';
   SYMBOLS.forEach(s=>{
     const pos = sitzplanState.placed[s.id];
     if(!pos) return;
@@ -1626,6 +1866,7 @@ function renderHeatmap(){
     const status = state.heatmapStatus[s.id];
     const isLaufend = status === 'laeuft';
     const isFertig = status && !isLaufend;
+    const gedimmt = prioritaetsFilter && !gehoertZuPrioritaetsgruppe(s.name, prioritaetsFilter);
     const el = document.createElement('div');
     el.style.position = 'absolute';
     el.style.left = pos.x + '%';
@@ -1641,6 +1882,7 @@ function renderHeatmap(){
     el.style.textAlign = 'center';
     el.style.padding = '2px';
     el.style.position = 'absolute';
+    el.style.opacity = gedimmt ? '0.25' : '1';
 
     if(!hasConsent){
       el.style.background = '#FBE3C7';
@@ -1668,6 +1910,51 @@ function renderHeatmap(){
     }
     canvas.appendChild(el);
   });
+}
+
+// [NEU] Liste aller Antworten -- jede Antwort direkt als Text lesbar, kein Antippen
+// nötig. Sortierbar nach Handlungsbedarf (didaktische Funktion), Kategorie oder Name;
+// respektiert denselben Prioritäts-Filter wie der Sitzplan.
+function renderAntwortenliste(){
+  const el = document.getElementById('antworten-liste');
+  const sortSelect = document.getElementById('liste-sortierung');
+  if(!el || !sortSelect) return;
+  const sortierung = sortSelect.value;
+  const rang = { konfrontieren:0, anknuepfen:1, vergleichen:2 };
+  let eintraege = SYMBOLS.map(s=>({ symbol:s, antwort: state.pool.find(p=>p.name===s.name) || null }))
+    .filter(e => !prioritaetsFilter || gehoertZuPrioritaetsgruppe(e.symbol.name, prioritaetsFilter));
+  eintraege.sort((a,b)=>{
+    if(sortierung==='name') return a.symbol.name.localeCompare(b.symbol.name);
+    if(sortierung==='kategorie'){
+      const ka = a.antwort ? a.antwort.cat : 'zzz', kb = b.antwort ? b.antwort.cat : 'zzz';
+      return ka.localeCompare(kb);
+    }
+    const fa = a.antwort ? (rang[didaktischeFunktion(a.antwort.cat)] ?? 3) : 4;
+    const fb = b.antwort ? (rang[didaktischeFunktion(b.antwort.cat)] ?? 3) : 4;
+    return fa - fb;
+  });
+  el.innerHTML = eintraege.map(e=>{
+    const hasConsent = consentState[e.symbol.id];
+    if(!hasConsent){
+      return `<div class="pool-item"><span style="width:10px; height:10px; border-radius:3px; background:#FBE3C7; flex-shrink:0;"></span><b style="font-size:12px; width:64px; flex-shrink:0;">${e.symbol.name}</b><span class="ts" style="font-size:11px;">schriftlich bearbeitet (ohne digitales Tool)</span></div>`;
+    }
+    if(!e.antwort){
+      return `<div class="pool-item"><span style="width:10px; height:10px; border-radius:3px; border:1px dashed var(--border-strong); flex-shrink:0;"></span><b style="font-size:12px; width:64px; flex-shrink:0;">${e.symbol.name}</b><span class="ts" style="font-size:11px;">noch keine Antwort</span></div>`;
+    }
+    const cat = CATS[e.antwort.cat];
+    const fn = didaktischeFunktion(e.antwort.cat);
+    const fnMeta = fn ? DIDAKTISCHE_FUNKTION_META[fn] : null;
+    return `<div class="pool-item" style="cursor:pointer; align-items:flex-start;" onclick="openDetail('${e.antwort.name}')">
+      <span class="${cat.color}" style="width:10px; height:10px; border-radius:3px; margin-top:4px; flex-shrink:0;"></span>
+      <div style="flex:1;">
+        <div class="row" style="justify-content:space-between; gap:6px;">
+          <b style="font-size:12px;">${e.symbol.name} · ${cat.label}</b>
+          ${fnMeta ? `<span class="ts" style="font-size:10px; white-space:nowrap;" title="${fnMeta.lang}">${fnMeta.icon} ${fnMeta.kurz}</span>` : ''}
+        </div>
+        <div style="font-size:12px; margin-top:2px;">${e.antwort.quote}</div>
+      </div>
+    </div>`;
+  }).join('');
 }
 let consentState = {};
 let childLanguage = {};

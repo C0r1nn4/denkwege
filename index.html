@@ -1352,7 +1352,7 @@ function renderSprachauswahl(){
   });
 }
 function setSprache(lang){
-  document.getElementById('aufnahme-anweisung').textContent = uebersetzungFuerSprache(lang) || "Wie würdest du das in die Stellenwerttafel und als Zahl schreiben? Erkläre.";
+  document.getElementById('aufnahme-anweisung').textContent = uebersetzungFuerSprache(lang) || AUFGABE_TEXT;
   ['de', lang].forEach(k=>{
     const btn = document.getElementById('sprache-'+k);
     if(btn) btn.classList.toggle('active', k===lang);

@@ -276,12 +276,12 @@
       <span class="ts" style="font-size:10px; text-decoration:underline; cursor:pointer;" onclick="toggleErklaerung()">Warum diese Empfehlung?</span>
     </div>
     <div id="empfehlung-erklaerung" class="ts" style="display:none; font-size:11px; background:var(--bg-accent); color:var(--text-accent); padding:8px; border-radius:var(--radius); margin-bottom:8px;">
-      Der empfohlene Modus + die vorbelegten Antworten ergeben sich aus zwei Schritten: (1) <b>MOST-Filterung</b> — welche Kategorie-Kombination laut Aufgabenanlage als besonders gesprächswürdig markiert ist (hier: richtig begründet vs. Fehler mit Bündelungsansatz), (2) pro Kategorie wird die Antwort mit der <b>höchsten Klassifikations-Konfidenz</b> vorbelegt. Die Lehrkraft kann das jederzeit überschreiben.
+      Der empfohlene Modus + die vorbelegten Antworten ergeben sich aus zwei Schritten: (1) <b>MOST-Filterung</b> — welche Kategorie-Kombination laut Aufgabenanlage als besonders gesprächswürdig markiert ist und gerade unter den eingegangenen Antworten vorkommt, (2) pro Kategorie wird die zuerst eingegangene passende Antwort vorbelegt (eine Konfidenz-basierte Auswahl liefert die Kategorisierung aktuell nicht). Die Lehrkraft kann das jederzeit überschreiben.
     </div>
     <div class="row" style="gap:6px; margin-bottom:14px; overflow-x:auto;">
-      <button class="tabbtn navbtn" data-tab="anknuepfen" onclick="switchTab('anknuepfen')">Anknüpfen</button>
-      <button class="tabbtn navbtn" data-tab="gegenueberstellen" onclick="switchTab('gegenueberstellen')" style="position:relative;">Gegenüberstellen<span style="position:absolute;top:-8px;right:-6px;background:var(--bg-accent);color:var(--text-accent);font-size:8px;padding:1px 4px;border-radius:8px;">empf.</span></button>
-      <button class="tabbtn navbtn" data-tab="sequenzieren" onclick="switchTab('sequenzieren')">Sequenzieren</button>
+      <button class="tabbtn navbtn" data-tab="anknuepfen" onclick="switchTab('anknuepfen')" style="position:relative;">Anknüpfen<span class="empf-badge" data-tab-badge="anknuepfen" style="display:none; position:absolute;top:-8px;right:-6px;background:var(--bg-accent);color:var(--text-accent);font-size:8px;padding:1px 4px;border-radius:8px;">empf.</span></button>
+      <button class="tabbtn navbtn" data-tab="gegenueberstellen" onclick="switchTab('gegenueberstellen')" style="position:relative;">Gegenüberstellen<span class="empf-badge" data-tab-badge="gegenueberstellen" style="display:none; position:absolute;top:-8px;right:-6px;background:var(--bg-accent);color:var(--text-accent);font-size:8px;padding:1px 4px;border-radius:8px;">empf.</span></button>
+      <button class="tabbtn navbtn" data-tab="sequenzieren" onclick="switchTab('sequenzieren')" style="position:relative;">Sequenzieren<span class="empf-badge" data-tab-badge="sequenzieren" style="display:none; position:absolute;top:-8px;right:-6px;background:var(--bg-accent);color:var(--text-accent);font-size:8px;padding:1px 4px;border-radius:8px;">empf.</span></button>
       <button class="tabbtn navbtn" data-tab="frei" onclick="switchTab('frei')">Frei</button>
     </div>
     <div class="card">
@@ -292,9 +292,9 @@
       <div id="seq-controls" style="display:none; margin-bottom:8px;"></div>
       <button class="btn" onclick="addSlot()"><i class="ti ti-plus"></i> Weiteres Feld für die Tafel hinzufügen</button>
     </div>
-    <div class="card c-purple">
+    <div class="card c-purple" id="anschlussfrage-card" style="display:none;">
       <div class="ts" style="font-size:11px;"><i class="ti ti-arrows-join-2"></i> Mögliche Anschlussfrage</div>
-      <div class="t" style="font-size:13px;">Was ist an beiden Erklärungen zur Bündelung gleich, was ist unterschiedlich — und wo trennen sich die Wege?</div>
+      <div class="t" id="anschlussfrage-text" style="font-size:13px;"></div>
     </div>
     <details style="margin-bottom:12px;">
       <summary style="font-size:13px; font-weight:500; cursor:pointer; color:var(--text-secondary);">Alle Kategorien anzeigen/anpassen ▾</summary>
@@ -503,6 +503,7 @@ function uebernehmeAntwort(row){
   if(row.symbol_id) state.heatmapStatus[row.symbol_id] = row.kategorie;
 }
 function aktualisierenAnsicht(){
+  aktualisiereEmpfehlung();
   if(document.getElementById('scr-dashboard').classList.contains('visible')) renderDashboard();
   if(document.getElementById('scr-heatmap').classList.contains('visible')) renderHeatmap();
 }
@@ -605,6 +606,7 @@ let state = {
     frei: []
   },
   activeTab: "gegenueberstellen",
+  automatischBefuellt: true, // solange true, überschreibt aktualisiereEmpfehlung() die Slots automatisch
   visibleCount: { sequenzieren: 0 },
   poolFilter: null,
   sessionActive: false,
@@ -624,12 +626,78 @@ let state = {
 // verloren. Der Modus "konfrontieren" aus der YAML existiert als Tab in der App
 // noch gar nicht -- sein Textbaustein ("Beide kommen auf 6625 -- aber nur eine
 // Erklärung sagt uns, warum das stimmt.") ist dadurch aktuell nirgends nutzbar.
-const IMPULS = {
-  anknuepfen: "Wer kann uns erklären, was mit den 42 Zehnern passiert ist?",
-  gegenueberstellen: "Zwei Kinder haben unterschiedliche Ergebnisse — schauen wir uns an, wie sie zur Umwandlung der 42 Zehner gekommen sind.",
-  sequenzieren: "Wir hören uns nacheinander vier verschiedene Wege an, mit den 42 Zehnern umzugehen.",
-  frei: "(kein automatischer Impuls im Frei-Modus)"
-};
+// 1:1 aus der Aufgaben-YAML übernommen (textbausteine + most_markierungen). "Konfrontieren"
+// wird -- wie festgelegt -- als Teil von "gegenueberstellen" behandelt, kein eigener Tab.
+// Mehrere Einträge pro Modus sind jetzt möglich: waehleTextbaustein() sucht anhand der
+// Kategorien, die gerade in den Slots liegen, den passendsten Eintrag statt eines
+// einzigen festen Textes pro Tab.
+const TEXTBAUSTEINE = [
+  { modus: "gegenueberstellen", kombination: ["korrekt_begruendet","fehler_mit_buendelungsversuch"],
+    einstiegssatz: "Zwei Kinder haben unterschiedliche Ergebnisse — schauen wir uns an, wie sie zur Umwandlung der 42 Zehner gekommen sind.",
+    verbindungsfrage: "Was ist an beiden Erklärungen zur Bündelung gleich, was ist unterschiedlich — und wo trennen sich die Wege?" },
+  { modus: "gegenueberstellen", kombination: ["korrekt_unbegruendet","korrekt_begruendet"], // in der YAML noch "konfrontieren"
+    einstiegssatz: "Beide kommen auf 6625 — aber nur eine Erklärung sagt uns, warum das stimmt.",
+    verbindungsfrage: "Kannst du erklären, warum aus den 42 Zehnern 4 Hunderter und 2 Zehner werden?" },
+  { modus: "gegenueberstellen", kombination: ["fehler_unbundled","fehler_stellenwert_ignoriert"],
+    einstiegssatz: "Wir schauen uns zwei falsche Lösungswege an — was ist hier mit den 42 Zehnern jeweils passiert?",
+    verbindungsfrage: "Bei wem wurde die 42 gar nicht verändert, und bei wem wurde sie falsch aufgeteilt?" },
+  { modus: "anknuepfen", kombination: ["korrekt_begruendet"],
+    einstiegssatz: "Wer kann uns erklären, was mit den 42 Zehnern passiert ist?", verbindungsfrage: null },
+  { modus: "sequenzieren", kombination: ["fehler_unbundled","fehler_stellenwert_ignoriert","fehler_mit_buendelungsversuch","korrekt_begruendet"],
+    einstiegssatz: "Wir hören uns nacheinander vier verschiedene Wege an, mit den 42 Zehnern umzugehen.",
+    verbindungsfrage: "Welcher Weg überzeugt euch am meisten — und warum?" }
+];
+const MOST_MARKIERUNGEN = [
+  { kombination: ["korrekt_begruendet","fehler_mit_buendelungsversuch"], gespraechswuerdig: true },
+  { kombination: ["korrekt_unbegruendet","korrekt_begruendet"], gespraechswuerdig: true },
+  { kombination: ["fehler_unbundled","fehler_stellenwert_ignoriert"], gespraechswuerdig: true }
+];
+
+// Sucht unter den TEXTBAUSTEINE-Einträgen eines Modus denjenigen, dessen Kombination am
+// besten zu den Kategorien passt, die gerade in state.slots[modus] liegen: zuerst exakte
+// Mengengleichheit, sonst der erste Eintrag, dessen Kombination komplett enthalten ist,
+// sonst schlicht der erste Eintrag des Modus.
+function waehleTextbaustein(modus){
+  const kandidaten = TEXTBAUSTEINE.filter(tb => tb.modus === modus);
+  if(kandidaten.length === 0) return null;
+  const aktuelleKats = (state.slots[modus] || [])
+    .map(name => { const p = state.pool.find(x=>x.name===name); return p ? p.cat : null; })
+    .filter(Boolean);
+  const gleicheMenge = (a,b) => a.length===b.length && a.every(x=>b.includes(x));
+  let treffer = kandidaten.find(tb => gleicheMenge(tb.kombination, aktuelleKats));
+  if(!treffer) treffer = kandidaten.find(tb => tb.kombination.every(k => aktuelleKats.includes(k)));
+  if(!treffer) treffer = kandidaten[0];
+  return treffer;
+}
+
+// MOST-Empfehlung: prüft, welche gesprächswürdigen Kombinationen unter den bisher
+// eingegangenen, kategorisierten Antworten VOLLSTÄNDIG vorhanden sind (mindestens eine
+// Antwort pro benötigter Kategorie), und befüllt -- solange die Lehrkraft noch nicht
+// manuell eingegriffen hat (state.automatischBefuellt) -- den passenden Tab automatisch.
+// Eine Konfidenz-basierte Auswahl gibt es nicht (die Kategorisierung liefert keinen
+// Konfidenzwert), daher wird je Kategorie schlicht die zuerst eingegangene Antwort genommen.
+function aktualisiereEmpfehlung(){
+  let empfohlenerModus = null;
+  for(const m of MOST_MARKIERUNGEN){
+    if(!m.gespraechswuerdig) continue;
+    const vollstaendig = m.kombination.every(kat => state.pool.some(p=>p.cat===kat));
+    if(vollstaendig){
+      const tb = TEXTBAUSTEINE.find(t => t.kombination.length===m.kombination.length && t.kombination.every(k=>m.kombination.includes(k)));
+      if(tb){ empfohlenerModus = tb.modus; 
+        if(state.automatischBefuellt){
+          state.slots[tb.modus] = m.kombination.map(kat => {
+            const antwort = state.pool.find(p=>p.cat===kat);
+            return antwort ? antwort.name : null;
+          }).filter(Boolean);
+        }
+        break; // erste passende MOST-Markierung gewinnt (Reihenfolge wie in der Aufgabenanlage)
+      }
+    }
+  }
+  document.querySelectorAll('.empf-badge').forEach(b=>{
+    b.style.display = (empfohlenerModus && b.dataset.tabBadge===empfohlenerModus) ? 'inline-block' : 'none';
+  });
+}
 
 function show(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('visible'));
@@ -645,7 +713,7 @@ function show(id){
   document.getElementById('role-kind').classList.toggle('active', role==='kind');
   if(id==='code-eingabe'){ codeEingabe = []; renderCodeEingabe(); }
   if(id==='symbolauswahl') renderSymbols();
-  if(id==='dashboard') renderDashboard();
+  if(id==='dashboard'){ aktualisiereEmpfehlung(); renderDashboard(); }
   if(id==='tafel') renderTafel();
   if(id==='heatmap') renderHeatmap();
   if(id==='verwaltung') renderKinderliste();
@@ -697,6 +765,7 @@ async function startSitzung(){
   );
   if(error) alert('Sitzung konnte nicht angelegt werden: ' + error.message);
   state.pool = []; // echte Sitzung startet mit leerem Pool statt Demo-Daten
+  state.automatischBefuellt = true; // frische Sitzung -- Empfehlung darf die Slots wieder automatisch befüllen
   document.getElementById('sitzungscode-anzeige').textContent = codeAlsSymbole(sitzungscode);
   ladeUndAboniereAntworten();
   show('heatmap');
@@ -957,7 +1026,15 @@ function renderDashboard(){
   document.querySelectorAll('.tabbtn').forEach(b=>{
     b.classList.toggle('active', b.dataset.tab===state.activeTab);
   });
-  document.getElementById('impuls-text').textContent = IMPULS[state.activeTab];
+  const textbaustein = waehleTextbaustein(state.activeTab);
+  document.getElementById('impuls-text').textContent = textbaustein ? textbaustein.einstiegssatz : "(kein automatischer Impuls im Frei-Modus)";
+  const anschlussCard = document.getElementById('anschlussfrage-card');
+  if(textbaustein && textbaustein.verbindungsfrage){
+    anschlussCard.style.display = 'block';
+    document.getElementById('anschlussfrage-text').textContent = textbaustein.verbindungsfrage;
+  } else {
+    anschlussCard.style.display = 'none';
+  }
   const slotIds = state.slots[state.activeTab];
   const area = document.getElementById('slots-area');
   area.innerHTML = "";
@@ -1012,30 +1089,32 @@ function moveSlot(i, dir){
   const j = i + dir;
   if(j<0 || j>=arr.length) return;
   [arr[i], arr[j]] = [arr[j], arr[i]];
+  state.automatischBefuellt = false;
   renderDashboard();
 }
 function renderSprachauswahl(){
   const el = document.getElementById('sprachauswahl');
   el.innerHTML = "";
   const kindLang = state.selectedSymbol ? childLanguage[state.selectedSymbol.id] : 'de';
-  if(kindLang === 'de'){
+  if(kindLang === 'de' || !uebersetzungFuerSprache(kindLang)){
     el.style.display = 'none';
-    return; // kein Umschalter nötig, wenn nur Deutsch zugeordnet ist
+    return; // kein Umschalter nötig, wenn nur Deutsch zugeordnet ist (oder keine Übersetzung vorliegt)
   }
   el.style.display = 'flex';
   ['de', kindLang].forEach(lang=>{
+    const meta = SPRACH_META[lang] || { flag: '🌐', label: lang };
     const b = document.createElement('button');
     b.className = 'navbtn';
     b.id = 'sprache-'+lang;
     b.style.fontSize = '18px';
-    b.textContent = SPRACHEN[lang].flag;
-    b.title = SPRACHEN[lang].label;
+    b.textContent = meta.flag;
+    b.title = meta.label;
     b.onclick = ()=>setSprache(lang);
     el.appendChild(b);
   });
 }
 function setSprache(lang){
-  document.getElementById('aufnahme-anweisung').textContent = SPRACHEN[lang].text || "Wie würdest du das in die Stellenwerttafel und als Zahl schreiben? Erkläre.";
+  document.getElementById('aufnahme-anweisung').textContent = uebersetzungFuerSprache(lang) || "Wie würdest du das in die Stellenwerttafel und als Zahl schreiben? Erkläre.";
   ['de', lang].forEach(k=>{
     const btn = document.getElementById('sprache-'+k);
     if(btn) btn.classList.toggle('active', k===lang);
@@ -1114,6 +1193,7 @@ function renderTafelQR(){
 function addSlot(){
   const unused = state.pool.find(p=>!state.slots[state.activeTab].includes(p.name));
   if(unused) state.slots[state.activeTab].push(unused.name);
+  state.automatischBefuellt = false; // manueller Eingriff -- Empfehlung überschreibt ab jetzt nichts mehr
   renderDashboard();
 }
 function recode(name, newCat){
@@ -1209,6 +1289,7 @@ function toggleSlotFromDetail(){
   const idx = state.slots[state.activeTab].indexOf(detailChild);
   if(idx>-1) state.slots[state.activeTab].splice(idx,1);
   else state.slots[state.activeTab].push(detailChild);
+  state.automatischBefuellt = false;
   renderDetail();
   renderDashboard();
 }
@@ -1356,14 +1437,31 @@ function reinitialisiereKinderZustand(zeigeDemoBeispiele){
   }
   sitzplanState.placed = {};
 }
-const SPRACHEN = {
-  de: { flag: '🇩🇪', label: 'Deutsch', text: null },
-  // Übersetzungen aus der Aufgaben-YAML übernommen. ACHTUNG (steht auch so in der YAML):
-  // die Stellenwert-Kürzel (T/H/Z/E in der jeweiligen Sprache) sind noch nicht mit den
-  // tatsächlichen Spaltenbeschriftungen einer Stellenwerttafel abgeglichen -- vor Einsatz prüfen.
-  tr: { flag: '🇹🇷', label: 'Türkisch', text: "6 T, 2 H, 42 Z, 5 E sayısını basamak değerleri tablosuna nasıl yazarsın ve sayı olarak nasıl gösterirsin? Açıkla." },
-  uk: { flag: '🇺🇦', label: 'Ukrainisch', text: "Як би ти записав число 6 Т 2 С 42 Д 5 О у таблицю розрядів і у вигляді числа? Поясни." }
+// Sprach-Metadaten (Flagge/Name) sind aufgabenunabhängig und werden bei Bedarf um weitere
+// Sprachcodes ergänzt -- unabhängig davon, welche Sprachen eine einzelne Aufgabe übersetzt hat.
+const SPRACH_META = {
+  de: { flag: '🇩🇪', label: 'Deutsch' },
+  tr: { flag: '🇹🇷', label: 'Türkisch' },
+  uk: { flag: '🇺🇦', label: 'Ukrainisch' },
+  en: { flag: '🇬🇧', label: 'Englisch' },
+  ru: { flag: '🇷🇺', label: 'Russisch' },
+  ar: { flag: '🇸🇦', label: 'Arabisch' }
 };
+// Übersetzungen aus der "uebersetzungen"-Liste der Aufgaben-YAML 1:1 übernommen. ACHTUNG
+// (steht auch so in der YAML): die Stellenwert-Kürzel (T/H/Z/E in der jeweiligen Sprache)
+// sind noch nicht mit den tatsächlichen Spaltenbeschriftungen einer Stellenwerttafel in der
+// App abgeglichen -- vor Einsatz prüfen/korrigieren.
+const AUFGABE_UEBERSETZUNGEN = [
+  { sprache: "tr", text: "6 T, 2 H, 42 Z, 5 E sayısını basamak değerleri tablosuna nasıl yazarsın ve sayı olarak nasıl gösterirsin? Açıkla." },
+  { sprache: "en", text: "How would you write the number 6 Th 2 H 42 T 5 O in the place value table and as a number? Explain." },
+  { sprache: "ru", text: "Как бы ты записал число 6 Т 2 С 42 Д 5 Е в таблицу разрядов и в виде числа? Объясни." },
+  { sprache: "uk", text: "Як би ти записав число 6 Т 2 С 42 Д 5 О у таблицю розрядів і у вигляді числа? Поясни." },
+  { sprache: "ar", text: "كيف تكتب العدد 6 آ 2 م 42 ع 5 ح في جدول القيمة المكانية وكرقم؟ اشرح." }
+];
+function uebersetzungFuerSprache(lang){
+  const eintrag = AUFGABE_UEBERSETZUNGEN.find(u=>u.sprache===lang);
+  return eintrag ? eintrag.text : null;
+}
 function toggleAnonym(){
   anonymMode = !anonymMode;
   document.getElementById('anonym-toggle').textContent = anonymMode ? 'An' : 'Aus';
@@ -1394,8 +1492,9 @@ function renderKinderliste(){
     const nameSpan = anonymMode
       ? `<span class="ts" style="flex:1; font-size:12px;">(anonym)</span>`
       : `<span style="flex:1; font-size:13px;">${s.name}</span>`;
+    const verfuegbareSprachen = ['de', ...AUFGABE_UEBERSETZUNGEN.map(u=>u.sprache)];
     const langSelect = `<select onchange="setChildLanguage('${s.id}', this.value)" style="font-size:11px; padding:2px 4px; border-radius:6px; border:0.5px solid var(--border);">
-        ${Object.keys(SPRACHEN).map(k=>`<option value="${k}" ${childLanguage[s.id]===k?'selected':''}>${SPRACHEN[k].flag} ${SPRACHEN[k].label}</option>`).join('')}
+        ${verfuegbareSprachen.map(k=>`<option value="${k}" ${childLanguage[s.id]===k?'selected':''}>${(SPRACH_META[k]||{flag:'🌐'}).flag} ${(SPRACH_META[k]||{label:k}).label}</option>`).join('')}
       </select>`;
     const loeschButton = `<button class="navbtn" onclick="loescheKindVollstaendig('${s.id}')" style="font-size:10px; color:var(--fill-danger); border-color:var(--fill-danger);"><i class="ti ti-trash"></i> Löschen</button>`;
     if(hasConsent){

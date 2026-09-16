@@ -557,6 +557,7 @@ let RICHTIGE_ANTWORT = null;       // NEU -- "ja"/"nein"/null, nur relevant wenn
 let KLASSIFIKATIONS_PROMPT = "Ordne die folgende Kindererklärung genau einer der unten stehenden Kategorien zu (anhand von Bezeichnung + Kurzdefinition + Referenzbeispielen). Antworte ausschließlich mit der kategorie_id.";
 let KLASSIFIKATIONS_PROMPT_JA = null;
 let KLASSIFIKATIONS_PROMPT_NEIN = null;
+let AKTUELLE_AUFGABE_KONFIGURATION = null; // die roh hochgeladene Aufgabe, wird bei Sitzungsstart in sitzungen.aufgabe_konfiguration gespeichert, damit Kindgeräte sie automatisch übernehmen können
 let AUFGABE_TEXT = "Wie würdest du die Zahl 6 T 2 H 42 Z 5 E in die Stellenwerttafel und als Zahl schreiben? Erkläre.";
 let AUFGABE_VERSTEHENSKERN = "Bündeln und Entbündeln von Zahlen";
 let AUFGABE_FORMAT = "Zahlen bündeln und entbündeln";
@@ -684,6 +685,7 @@ function aktiviereAufgabe(config) {
   KLASSIFIKATIONS_PROMPT = ergebnis.klassifikations_prompt || KLASSIFIKATIONS_PROMPT;
   KLASSIFIKATIONS_PROMPT_JA = ergebnis.klassifikations_prompt_ja;
   KLASSIFIKATIONS_PROMPT_NEIN = ergebnis.klassifikations_prompt_nein;
+  AKTUELLE_AUFGABE_KONFIGURATION = config; // wird bei Sitzungsstart mitgespeichert, s. startSitzung()
 
   // Neue Sitzung/Demo-Zustand für die neue Aufgabe -- alte Demo-Antworten/Slots aus der
   // vorigen Aufgabe passen nicht mehr zu den neuen Kategorien.
@@ -801,6 +803,17 @@ async function ladeKinderlisteFuerSitzung(code){
   SYMBOLS = data.map(row => ({ id: row.symbol_id, icon: row.icon, name: row.name, kindId: row.id }));
   reinitialisiereKinderZustand(false);
   return true;
+}
+
+// Für Kind-Geräte: lädt die von der Lehrkraft hochgeladene Aufgabe automatisch mit,
+// über denselben Code-geschützten Weg wie die Kinderliste. Kein Fehler und keine
+// Rückmeldung, wenn keine (oder keine gültige) Konfiguration hinterlegt ist -- dann
+// bleibt einfach die im Kind-Gerät eingebaute Standardaufgabe aktiv, die zur Standard-
+// Konfiguration auf dem LK-Gerät passt.
+async function ladeAufgabeFuerSitzung(code){
+  const { data, error } = await sb.rpc('hole_aufgabe_fuer_code', { p_code: code });
+  if(error || !data) return;
+  aktiviereAufgabe(data);
 }
 
 let state = {
@@ -975,7 +988,7 @@ async function startSitzung(){
   }
 
   const { error } = await sb.from('sitzungen').upsert(
-    { code: sitzungscode, klassenraum: aktiveKlassenraum, aufgabe_id: AUFGABE_ID, beendet_am: null },
+    { code: sitzungscode, klassenraum: aktiveKlassenraum, aufgabe_id: AUFGABE_ID, beendet_am: null, aufgabe_konfiguration: AKTUELLE_AUFGABE_KONFIGURATION },
     { onConflict: 'code' }
   );
   if(error) alert('Sitzung konnte nicht angelegt werden: ' + error.message);
@@ -1249,6 +1262,7 @@ async function codeBeitreten(){
     renderCodeEingabe();
     return;
   }
+  await ladeAufgabeFuerSitzung(eingabe);
   sitzungscode = eingabe;
   history.replaceState(null, '', '?geraet=kind&code='+sitzungscode);
   state.sessionActive = true;
@@ -1865,12 +1879,14 @@ reinitialisiereKinderZustand(true); // Anfangszustand: Demo-Kinderliste mit ein 
 if(istKindGeraet && sitzungscode){
   // Kindgerät, das über den QR-Code/Link beigetreten ist:
   // kein Demo-Menü sichtbar, direkt in die Symbolauswahl der echten Sitzung.
-  // Auch hier muss erst die echte Klassenliste geladen werden (s. codeBeitreten()) --
-  // sonst fehlt kindId und die Antwort landet ohne kind_id in der Datenbank.
+  // Auch hier müssen erst die echte Klassenliste UND die von der Lehrkraft hochgeladene
+  // Aufgabe geladen werden -- sonst fehlt kindId, und Aufgabentext/Kategorien wären die
+  // eingebaute Standardaufgabe statt der tatsächlich laufenden.
   document.querySelector('.topbar').style.display = 'none';
   state.sessionActive = true;
-  ladeKinderlisteFuerSitzung(sitzungscode).then(geladen => {
-    if(!geladen) alert('Die Kinderliste konnte nicht geladen werden -- bitte über den QR-Code/Link neu starten oder die Lehrkraft informieren.');
+  ladeKinderlisteFuerSitzung(sitzungscode).then(async geladen => {
+    if(!geladen){ alert('Die Kinderliste konnte nicht geladen werden -- bitte über den QR-Code/Link neu starten oder die Lehrkraft informieren.'); return; }
+    await ladeAufgabeFuerSitzung(sitzungscode);
     show('symbolauswahl');
   });
 } else {

@@ -1159,14 +1159,6 @@ function openDetail(name){
 function closeDetail(){
   document.getElementById('detail-modal').classList.remove('visible');
 }
-// Erzeugt einen zeitlich begrenzten Link, um das Original-Audio anzuhören -- nur
-// zur Prüfung der Transkriptionsqualität in den Forschungsdaten, nicht Teil des
-// normalen Unterrichtsflusses. Setzt die Storage-Policy aus der SQL-Migration voraus.
-async function spieleAudioAb(pfad){
-  const { data, error } = await sb.storage.from('audio-antworten').createSignedUrl(pfad, 3600);
-  if(error || !data){ alert('Audio konnte nicht geladen werden: ' + (error?.message || '')); return; }
-  window.open(data.signedUrl, '_blank');
-}
 function renderDetail(){
   const child = state.pool.find(p=>p.name===detailChild);
   if(!child) return;
@@ -1178,7 +1170,6 @@ function renderDetail(){
       <span class="tag ${cat.color}">${cat.typ==='Fehlvorstellung'?'⚠ ':''}${cat.label}</span>
     </div>
     <div class="quote-box">"${child.quote}"</div>
-    ${child.audioPfad ? `<button class="navbtn" style="margin-top:6px;" onclick="spieleAudioAb('${child.audioPfad}')"><i class="ti ti-volume"></i> Original-Audio anhören (Qualitätsprüfung)</button>` : ''}
     <div class="ts" style="font-size:11px; margin-top:8px;"><i class="ti ti-bulb"></i> ${cat.nachfrage}</div>
     <div style="margin-top:12px;">
       <label class="ts" style="font-size:11px;">Kategorie ändern:</label>

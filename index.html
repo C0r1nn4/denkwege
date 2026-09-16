@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
 <style>
   :root {
     /* Organic-Design-System: warme Creme-/Terrakotta-/Olivton-Palette statt Blau/Grau.
@@ -160,7 +161,7 @@
     <h2 class="scr-title">Aufgabe wählen — Klasse 3b</h2>
     <div class="card row" onclick="show('aufgabe')" style="cursor:pointer;">
       <div class="icon-circle c-amber"><i class="ti ti-calculator"></i></div>
-      <div><div class="t" style="font-size:14px;">6 T 2 H 42 Z 5 E</div><div class="ts" style="font-size:11px;">Zahlen bündeln und entbündeln</div></div>
+      <div><div class="t" id="pool-aufgabe-format" style="font-size:14px;">Zahlen bündeln und entbündeln</div><div class="ts" id="pool-aufgabe-text" style="font-size:11px;">Wie würdest du die Zahl 6 T 2 H 42 Z 5 E in die Stellenwerttafel und als Zahl schreiben? Erkläre.</div></div>
     </div>
     <div class="card row" style="opacity:0.5;">
       <div class="icon-circle c-gray"><i class="ti ti-stack-2"></i></div>
@@ -176,7 +177,8 @@
       <div class="row" style="justify-content:space-between; margin-bottom:8px;">
         <div>
           <div class="ts" style="font-size:11px;">Verstehenskern</div>
-          <div class="t" style="font-size:15px; font-weight:500;">Bündeln und Entbündeln von Zahlen (6 T 2 H 42 Z 5 E)</div>
+          <div class="t" id="aufgabe-verstehenskern" style="font-size:15px; font-weight:500;">Bündeln und Entbündeln von Zahlen</div>
+          <div class="ts" id="aufgabe-text-anzeige" style="font-size:12px; margin-top:4px;">Wie würdest du die Zahl 6 T 2 H 42 Z 5 E in die Stellenwerttafel und als Zahl schreiben? Erkläre.</div>
         </div>
         <i class="ti ti-info-circle" style="font-size:18px; color:var(--text-accent);" onclick="showInfo('Hintergrundmaterial', 'Kurzer Hinweis zu Grundvorstellungen additiver Zerlegung + Link zu Video (Demo).')"></i>
       </div>
@@ -217,13 +219,22 @@
   <!-- KIND: AUFNAHME -->
   <div id="scr-aufnahme" class="screen" style="text-align:center;">
     <div class="card c-blue">
-      <div class="t" style="font-size:36px; font-weight:600; margin-bottom:10px;">6 T 2 H 42 Z 5 E</div>
-      <div id="aufnahme-anweisung" class="ts" style="font-size:18px; margin-bottom:10px;">Wie würdest du das in die Stellenwerttafel und als Zahl schreiben? Erkläre.</div>
+      <div id="aufnahme-anweisung" class="t" style="font-size:24px; font-weight:600; line-height:1.35; margin-bottom:10px;">Wie würdest du die Zahl 6 T 2 H 42 Z 5 E in die Stellenwerttafel und als Zahl schreiben? Erkläre.</div>
       <div style="width:100%; height:80px; background:var(--surface-2); border-radius:16px; display:flex; align-items:center; justify-content:center; color:var(--text-muted);"><i class="ti ti-photo" style="font-size:30px;"></i></div>
       <div class="row" style="justify-content:center; gap:10px; margin-top:10px;">
         <div id="sprachauswahl" class="row" style="justify-content:center; gap:10px; flex-wrap:wrap;"></div>
       </div>
     </div>
+    <!-- Nur bei Aufgaben mit vorgeschobener Ja/Nein-Frage sichtbar (HAT_WAHL) -- das
+         Kind muss erst wählen, bevor es begründen/aufnehmen kann. -->
+    <div id="wahl-bereich" style="display:none; margin: 22px 0;">
+      <div class="ts" style="font-size:16px; margin-bottom:12px;">Was denkst du?</div>
+      <div class="row" style="justify-content:center; gap:20px;">
+        <button id="wahl-ja" class="btn" style="width:130px; padding:20px; font-size:22px; font-weight:600;" onclick="waehleJaNein('ja')">Ja</button>
+        <button id="wahl-nein" class="btn" style="width:130px; padding:20px; font-size:22px; font-weight:600;" onclick="waehleJaNein('nein')">Nein</button>
+      </div>
+    </div>
+    <div id="begruendung-bereich">
     <div class="row" style="justify-content:center; gap:32px; margin: 22px 0;">
       <div style="text-align:center;">
         <button id="mode-speak" class="kid-mode-btn" style="background:var(--fill-accent);color:var(--on-accent);border:none;" onclick="setMode('speak')"><i class="ti ti-microphone" style="font-size:32px;"></i></button>
@@ -252,6 +263,7 @@
         </div>
       </div>
     </div>
+    </div>
     <div id="done-area" style="display:none; border-top:2px dashed var(--border); padding-top:18px; margin-top:20px;">
       <div class="card c-teal" style="text-align:center;"><i class="ti ti-check" style="font-size:40px;"></i><div style="font-size:19px; margin-top:8px;">Aufgenommen — <span id="done-name"></span> ist fertig.</div></div>
       <button class="btn btn-primary" style="margin-top:14px; padding:18px;" onclick="show('symbolauswahl')">Nächstes Kind</button>
@@ -263,8 +275,8 @@
     <div class="row" style="justify-content:space-between; align-items:flex-start; margin-bottom:12px; padding-bottom:10px; border-bottom:0.5px solid var(--border);">
       <div>
         <div class="ts" style="font-size:11px;">Aufgabe</div>
-        <div class="t" style="font-size:14px; font-weight:500;">6 T 2 H 42 Z 5 E</div>
-        <div class="ts" style="font-size:11px; margin-top:2px;">Verstehenskern: Bündeln und Entbündeln von Zahlen</div>
+        <div class="t" id="dashboard-aufgabe-text" style="font-size:14px; font-weight:500;">6 T 2 H 42 Z 5 E</div>
+        <div class="ts" id="dashboard-verstehenskern" style="font-size:11px; margin-top:2px;">Verstehenskern: Bündeln und Entbündeln von Zahlen</div>
       </div>
       <i class="ti ti-info-circle" style="font-size:18px; color:var(--text-accent);"></i>
     </div>
@@ -358,6 +370,12 @@
     <div class="row" style="gap:8px; margin-bottom:16px;">
       <button class="btn" onclick="show('sitzplan')"><i class="ti ti-armchair"></i> Sitzplan</button>
       <button class="btn" onclick="show('lernverlauf')"><i class="ti ti-chart-bar"></i> Verlauf</button>
+    </div>
+    <div style="padding:10px; background:var(--surface-2); border-radius:var(--radius); margin-bottom:16px; border:0.5px solid var(--border);">
+      <div style="font-size:13px; font-weight:500; margin-bottom:2px;">Aufgabe laden</div>
+      <div class="ts" style="font-size:11px; margin-bottom:8px;">.yaml/.yml oder .json-Datei einer Aufgabenkonfiguration. Ersetzt die aktuell aktive Aufgabe für dieses Gerät.</div>
+      <input type="file" accept=".yaml,.yml,.json" onchange="handleAufgabeUpload(event)" style="font-size:11px; width:100%;">
+      <div id="aufgabe-lade-status" class="ts" style="font-size:11px; margin-top:6px;">Aktuell aktiv: <span id="aufgabe-lade-aktuell">buendeln_6t2h42z5e</span></div>
     </div>
     <div class="row" style="justify-content:space-between; align-items:center; padding:10px; background:var(--surface-2); border-radius:var(--radius); margin-bottom:12px; border:0.5px solid var(--border);">
       <div>
@@ -499,7 +517,7 @@ function uebernehmeAntwort(row){
   const symbolEntry = SYMBOLS.find(s => s.kindId === row.kind_id);
   const name = symbolEntry ? symbolEntry.name : "Unbekannt";
   state.pool = state.pool.filter(p=>p.name!==name);
-  state.pool.push({name, cat: row.kategorie, quote: row.transkript, audioPfad: row.audio_pfad || null});
+  state.pool.push({name, cat: row.kategorie, quote: row.transkript, audioPfad: row.audio_pfad || null, wahl: row.antwort_wahl || null});
   if(row.symbol_id) state.heatmapStatus[row.symbol_id] = row.kategorie;
 }
 function aktualisierenAnsicht(){
@@ -508,15 +526,19 @@ function aktualisierenAnsicht(){
   if(document.getElementById('scr-heatmap').classList.contains('visible')) renderHeatmap();
 }
 
-const CATS = {
-  korrekt_begruendet: {label:"richtig, begründet", color:"c-teal", typ:"tragfähige Strategie", def:"Zahl 6625 korrekt UND eine Stellenwert- oder Bündelungsregel wird erkennbar als Begründung genannt.", nachfrage:"Warum musstest du die 42 Zehner überhaupt umwandeln?"},
-  korrekt_unbegruendet: {label:"richtig, unbegründet", color:"c-mint", typ:"tragfähige Strategie", def:"Zahl 6625 korrekt, aber keine erkennbare inhaltliche Begründung.", nachfrage:"Wie bist du auf die 6625 gekommen? Was ist mit den 42 Zehnern passiert?"},
-  fehler_unbundled: {label:"Fehler: nicht entbündelt (62425)", color:"c-coral", typ:"Fehlvorstellung", def:"42 Zehner werden unverändert/roh in die Zehnerspalte übernommen, keine Regruppierung stattgefunden.", nachfrage:"Darf in einem Kästchen der Stellenwerttafel mehr als eine Ziffer stehen?"},
-  fehler_stellenwert_ignoriert: {label:"Fehler: Stellenwert ignoriert (6247)", color:"c-purple", typ:"Fehlvorstellung", def:"Die '2' von 42 wird fälschlich als Einer-Ziffer gedeutet und zu den 5 Einern addiert.", nachfrage:"Was bedeutet die '2' in '42 Zehner' — ist das eine Einer-Ziffer?"},
-  fehler_mit_buendelungsversuch: {label:"Fehler, mit Bündelungsansatz", color:"c-amber", typ:"Fehlvorstellung", def:"Andere falsche Endzahl, aber im Text wird erkennbar eine Bündelungs- oder Stellenwertregel artikuliert.", nachfrage:"Deine Erklärung zur Umwandlung klingt richtig — wo genau ist beim Rechnen etwas schiefgelaufen?"},
-  fehler_ohne_erklaerung: {label:"Fehler ohne Begründung", color:"c-rose", typ:"Fehlvorstellung", def:"Andere falsche Endzahl, ohne dass eine inhaltliche Begründung erkennbar ist.", nachfrage:"Wie bist du vorgegangen? Erzähl mal Schritt für Schritt."},
-  keine_bearbeitung: {label:"keine Bearbeitung", color:"c-gray", typ:null, def:"Kein Eintrag / keine Antwort vorhanden.", nachfrage:""},
-  unklar: {label:"unklar", color:"c-blue", typ:null, def:"Keiner Kategorie sicher zuordenbar", nachfrage:""}
+// Ab hier 'let' statt 'const' -- aktiviereAufgabe() (weiter unten) ersetzt diese
+// Werte komplett, wenn eine neue Aufgaben-Datei geladen wird. Die Werte hier sind
+// der Anfangszustand ("Zahlen bündeln und entbündeln"), bis eine andere Aufgabe
+// geladen wird.
+let CATS = {
+  korrekt_begruendet: {label:"richtig, begründet", color:"c-teal", typ:"tragfähige Strategie", gueltig_fuer:null, def:"Zahl 6625 korrekt UND eine Stellenwert- oder Bündelungsregel wird erkennbar als Begründung genannt.", nachfrage:"Warum musstest du die 42 Zehner überhaupt umwandeln?"},
+  korrekt_unbegruendet: {label:"richtig, unbegründet", color:"c-mint", typ:"tragfähige Strategie", gueltig_fuer:null, def:"Zahl 6625 korrekt, aber keine erkennbare inhaltliche Begründung.", nachfrage:"Wie bist du auf die 6625 gekommen? Was ist mit den 42 Zehnern passiert?"},
+  fehler_unbundled: {label:"Fehler: nicht entbündelt (62425)", color:"c-coral", typ:"Fehlvorstellung", gueltig_fuer:null, def:"42 Zehner werden unverändert/roh in die Zehnerspalte übernommen, keine Regruppierung stattgefunden.", nachfrage:"Darf in einem Kästchen der Stellenwerttafel mehr als eine Ziffer stehen?"},
+  fehler_stellenwert_ignoriert: {label:"Fehler: Stellenwert ignoriert (6247)", color:"c-purple", typ:"Fehlvorstellung", gueltig_fuer:null, def:"Die '2' von 42 wird fälschlich als Einer-Ziffer gedeutet und zu den 5 Einern addiert.", nachfrage:"Was bedeutet die '2' in '42 Zehner' — ist das eine Einer-Ziffer?"},
+  fehler_mit_buendelungsversuch: {label:"Fehler, mit Bündelungsansatz", color:"c-amber", typ:"Fehlvorstellung", gueltig_fuer:null, def:"Andere falsche Endzahl, aber im Text wird erkennbar eine Bündelungs- oder Stellenwertregel artikuliert.", nachfrage:"Deine Erklärung zur Umwandlung klingt richtig — wo genau ist beim Rechnen etwas schiefgelaufen?"},
+  fehler_ohne_erklaerung: {label:"Fehler ohne Begründung", color:"c-rose", typ:"Fehlvorstellung", gueltig_fuer:null, def:"Andere falsche Endzahl, ohne dass eine inhaltliche Begründung erkennbar ist.", nachfrage:"Wie bist du vorgegangen? Erzähl mal Schritt für Schritt."},
+  keine_bearbeitung: {label:"keine Bearbeitung", color:"c-gray", typ:null, gueltig_fuer:null, def:"Kein Eintrag / keine Antwort vorhanden.", nachfrage:""},
+  unklar: {label:"unklar", color:"c-gray", typ:null, gueltig_fuer:null, def:"Keiner Kategorie sicher zuordenbar", nachfrage:""}
 };
 const SYMBOLS_POOL = ["🐻","🦊","🐸","🐢","🐝","🐬","🐙","🐧","🦁","🐰","🐼","🐨","🦄","🐮","🐷","🐵","🦉","🦋","🐌","🐳","🦈","🐊","🦒","🦓","🐘","🦔","🦇","🐿️","🦥","🦦","🐺","🐴","🐐","🐑","🐹"];
 const MAX_KINDER = 35; // Obergrenze pro Klassenraum
@@ -529,9 +551,201 @@ let SYMBOLS = ["Mika","Lian","Ben","Nora","Tom","Ida","Ada","Neu"].map((name,i) 
 // -- Pseudonymisierung: jedes Kind bekommt bei syncKinderMitSupabase() eine feste,
 // über alle Sitzungen hinweg stabile Supabase-ID (SYMBOLS[i].kindId). Nur diese ID,
 // nicht der Name, landet in der antworten-Tabelle -- siehe finishAnswer().
-const AUFGABE_ID = "buendeln_6t2h42z5e";
+let AUFGABE_ID = "buendeln_6t2h42z5e";
+let HAT_WAHL = false;              // NEU -- true bei Aufgaben mit vorgeschobener Ja/Nein-Frage
+let RICHTIGE_ANTWORT = null;       // NEU -- "ja"/"nein"/null, nur relevant wenn HAT_WAHL
+let KLASSIFIKATIONS_PROMPT = "Ordne die folgende Kindererklärung genau einer der unten stehenden Kategorien zu (anhand von Bezeichnung + Kurzdefinition + Referenzbeispielen). Antworte ausschließlich mit der kategorie_id.";
+let KLASSIFIKATIONS_PROMPT_JA = null;
+let KLASSIFIKATIONS_PROMPT_NEIN = null;
+let AUFGABE_TEXT = "Wie würdest du die Zahl 6 T 2 H 42 Z 5 E in die Stellenwerttafel und als Zahl schreiben? Erkläre.";
+let AUFGABE_VERSTEHENSKERN = "Bündeln und Entbündeln von Zahlen";
+let AUFGABE_FORMAT = "Zahlen bündeln und entbündeln";
 let aktiveKlassenraum = "3b";    // Fallback fürs Demo-Sprungmenü ohne echten Login; wird nach lkAnmelden() überschrieben
 let aktiverAnzeigename = null;
+
+// ============================================================
+// AUFGABEN-LADE-SYSTEM (aus dem anderen Chat übernommen, unverändert in der Logik)
+// Transformiert eine geparste Aufgaben-Konfiguration (YAML oder JSON) in die von
+// dieser Datei erwarteten globalen Konstanten. Siehe handleAufgabeUpload() weiter
+// unten für den tatsächlichen Datei-Upload, der ladeAufgabe()/aktiviereAufgabe() aufruft.
+// ============================================================
+const KATEGORIE_FARBEN = ['c-teal', 'c-mint', 'c-coral', 'c-purple', 'c-amber', 'c-rose', 'c-blue'];
+const FARBE_HOUSEKEEPING = 'c-gray';
+const MODUS_NORMALISIERUNG = { konfrontieren: 'gegenueberstellen' };
+const ERLAUBTE_MODI = ['anknuepfen', 'gegenueberstellen', 'sequenzieren', 'frei'];
+
+function ladeAufgabe(config) {
+  const fehler = [];
+  const a = config && config.aufgabe;
+  if (!a) {
+    fehler.push('Kein "aufgabe"-Objekt in der Konfiguration gefunden.');
+    return { fehler };
+  }
+
+  const AUFGABE_ID = a.id;
+  if (!AUFGABE_ID) fehler.push('aufgabe.id fehlt.');
+
+  const HAT_WAHL = !!a.hat_wahl;
+  const RICHTIGE_ANTWORT = a.richtige_antwort ?? null;
+
+  if (RICHTIGE_ANTWORT !== null && !HAT_WAHL) {
+    fehler.push('aufgabe.richtige_antwort ist gesetzt, aber aufgabe.hat_wahl ist nicht true.');
+  }
+  if (RICHTIGE_ANTWORT !== null && !['ja', 'nein'].includes(RICHTIGE_ANTWORT)) {
+    fehler.push(`aufgabe.richtige_antwort muss "ja", "nein" oder null sein, nicht "${RICHTIGE_ANTWORT}".`);
+  }
+
+  const kategorienListe = (a.taxonomie && a.taxonomie.kategorien) || [];
+  const CATS = {};
+  let farbIndex = 0;
+
+  kategorienListe.forEach(k => {
+    if (!k.kategorie_id) { fehler.push('Eine Kategorie ohne kategorie_id gefunden.'); return; }
+    if (CATS[k.kategorie_id]) { fehler.push(`kategorie_id "${k.kategorie_id}" ist doppelt vergeben.`); return; }
+
+    const istHousekeeping = k.kategorietyp === null || k.kategorietyp === undefined;
+
+    if (HAT_WAHL && !istHousekeeping && !k.gueltig_fuer) {
+      fehler.push(`Kategorie "${k.kategorie_id}": aufgabe.hat_wahl ist true, aber gueltig_fuer fehlt.`);
+    }
+    if (!HAT_WAHL && k.gueltig_fuer) {
+      fehler.push(`Kategorie "${k.kategorie_id}": gueltig_fuer gesetzt, aber aufgabe.hat_wahl ist nicht true.`);
+    }
+    if (k.gueltig_fuer && !['ja', 'nein'].includes(k.gueltig_fuer)) {
+      fehler.push(`Kategorie "${k.kategorie_id}": gueltig_fuer muss "ja" oder "nein" sein, nicht "${k.gueltig_fuer}".`);
+    }
+
+    let color;
+    if (istHousekeeping) {
+      color = FARBE_HOUSEKEEPING;
+    } else if (farbIndex >= KATEGORIE_FARBEN.length) {
+      fehler.push(`Mehr als ${KATEGORIE_FARBEN.length} inhaltliche Kategorien in dieser Aufgabe -- die Farbpalette in der CSS muss zuerst erweitert werden.`);
+      color = FARBE_HOUSEKEEPING;
+    } else {
+      color = KATEGORIE_FARBEN[farbIndex++];
+    }
+
+    CATS[k.kategorie_id] = {
+      label: k.bezeichnung, color, typ: k.kategorietyp ?? null,
+      gueltig_fuer: k.gueltig_fuer ?? null, def: k.kurzdefinition, nachfrage: k.nachfrage_impuls ?? null
+    };
+  });
+
+  const bekannteIds = new Set(Object.keys(CATS));
+  function pruefeKombination(kombination, ort) {
+    (kombination || []).forEach(id => { if (!bekannteIds.has(id)) fehler.push(`${ort}: unbekannte kategorie_id "${id}".`); });
+  }
+
+  const MOST_MARKIERUNGEN = (a.most_markierungen || []).map(m => {
+    pruefeKombination(m.kombination, 'most_markierungen');
+    return { kombination: m.kombination, gespraechswuerdig: !!m.gespraechswuerdig };
+  });
+
+  const TEXTBAUSTEINE = (a.textbausteine || []).map(t => {
+    const modus = MODUS_NORMALISIERUNG[t.modus] || t.modus;
+    if (!ERLAUBTE_MODI.includes(modus)) fehler.push(`textbausteine: unbekannter modus "${t.modus}".`);
+    pruefeKombination(t.kombination, `textbausteine (modus "${t.modus}")`);
+    return { modus, kombination: t.kombination, einstiegssatz: (t.einstiegssatz || '').trim(), verbindungsfrage: t.verbindungsfrage ? t.verbindungsfrage.trim() : null };
+  });
+
+  const AUFGABE_UEBERSETZUNGEN = (a.uebersetzungen || []).map(u => ({ sprache: u.sprache, text: u.text }));
+  AUFGABE_UEBERSETZUNGEN.forEach(u => {
+    if (typeof SPRACH_META !== 'undefined' && !SPRACH_META[u.sprache]) {
+      fehler.push(`Hinweis: Sprachcode "${u.sprache}" fehlt in SPRACH_META -- Übersetzung bekommt Fallback 🌐 statt Flagge/Sprachname.`);
+    }
+  });
+
+  if (fehler.length) return { fehler };
+
+  return {
+    fehler: [], AUFGABE_ID, HAT_WAHL, RICHTIGE_ANTWORT, CATS, TEXTBAUSTEINE, MOST_MARKIERUNGEN, AUFGABE_UEBERSETZUNGEN,
+    aufgabentext: a.aufgabentext, verstehenskern: a.verstehenskern, hintergrundmaterial: a.hintergrundmaterial || null,
+    aufgabenformat: a.aufgabenformat || null, druckbare_version: !!a.druckbare_version,
+    klassifikations_prompt: (a.taxonomie && a.taxonomie.klassifikations_prompt) || null,
+    klassifikations_prompt_ja: (a.taxonomie && a.taxonomie.klassifikations_prompt_ja) || null,
+    klassifikations_prompt_nein: (a.taxonomie && a.taxonomie.klassifikations_prompt_nein) || null
+  };
+}
+
+function aktiviereAufgabe(config) {
+  const ergebnis = ladeAufgabe(config);
+  if (ergebnis.fehler.length) { zeigeLadeFehler(ergebnis.fehler); return false; }
+
+  AUFGABE_ID = ergebnis.AUFGABE_ID;
+  HAT_WAHL = ergebnis.HAT_WAHL;
+  RICHTIGE_ANTWORT = ergebnis.RICHTIGE_ANTWORT;
+  CATS = ergebnis.CATS;
+  TEXTBAUSTEINE = ergebnis.TEXTBAUSTEINE;
+  MOST_MARKIERUNGEN = ergebnis.MOST_MARKIERUNGEN;
+  AUFGABE_UEBERSETZUNGEN = ergebnis.AUFGABE_UEBERSETZUNGEN;
+  AUFGABE_TEXT = ergebnis.aufgabentext || "";
+  AUFGABE_VERSTEHENSKERN = ergebnis.verstehenskern || "";
+  AUFGABE_FORMAT = ergebnis.aufgabenformat || "";
+  KLASSIFIKATIONS_PROMPT = ergebnis.klassifikations_prompt || KLASSIFIKATIONS_PROMPT;
+  KLASSIFIKATIONS_PROMPT_JA = ergebnis.klassifikations_prompt_ja;
+  KLASSIFIKATIONS_PROMPT_NEIN = ergebnis.klassifikations_prompt_nein;
+
+  // Neue Sitzung/Demo-Zustand für die neue Aufgabe -- alte Demo-Antworten/Slots aus der
+  // vorigen Aufgabe passen nicht mehr zu den neuen Kategorien.
+  state.pool = [];
+  state.slots = { anknuepfen: [], gegenueberstellen: [], sequenzieren: [], frei: [] };
+  state.visibleCount.sequenzieren = 0;
+  state.automatischBefuellt = true;
+
+  wendeAufgabeAufUIAn();
+  return true;
+}
+
+// Aktualisiert alle Stellen in der Oberfläche, die den Aufgabentext/Verstehenskern
+// statisch anzeigen -- wird nach jedem aktiviereAufgabe() aufgerufen.
+function wendeAufgabeAufUIAn(){
+  const formatText = AUFGABE_FORMAT || AUFGABE_ID;
+  const kurzId = document.getElementById('pool-aufgabe-format'); if(kurzId) kurzId.textContent = formatText;
+  const kurzText = document.getElementById('pool-aufgabe-text'); if(kurzText) kurzText.textContent = AUFGABE_TEXT;
+  const aVerstehenskern = document.getElementById('aufgabe-verstehenskern'); if(aVerstehenskern) aVerstehenskern.textContent = AUFGABE_VERSTEHENSKERN;
+  const aText = document.getElementById('aufgabe-text-anzeige'); if(aText) aText.textContent = AUFGABE_TEXT;
+  const aufnahme = document.getElementById('aufnahme-anweisung'); if(aufnahme) aufnahme.textContent = AUFGABE_TEXT;
+  const dashText = document.getElementById('dashboard-aufgabe-text'); if(dashText) dashText.textContent = AUFGABE_TEXT;
+  const dashVerst = document.getElementById('dashboard-verstehenskern'); if(dashVerst) dashVerst.textContent = 'Verstehenskern: ' + AUFGABE_VERSTEHENSKERN;
+  const tafel = document.getElementById('tafel-aufgabe'); if(tafel) tafel.textContent = AUFGABE_TEXT;
+  const ladeAktuell = document.getElementById('aufgabe-lade-aktuell'); if(ladeAktuell) ladeAktuell.textContent = AUFGABE_ID;
+  if(typeof renderDashboard === 'function' && document.getElementById('scr-dashboard').classList.contains('visible')) renderDashboard();
+}
+
+/**
+ * Zeigt Ladefehler in einem Modal (nutzt die vorhandene Info-Modal-Infrastruktur).
+ */
+function zeigeLadeFehler(fehlerListe){
+  const liste = fehlerListe.map(f => `<li style="margin-bottom:4px;">${f}</li>`).join('');
+  showInfo('Aufgabe konnte nicht geladen werden', `<ul style="padding-left:18px; margin:0;">${liste}</ul>`);
+}
+
+// Liest eine hochgeladene .yaml/.yml/.json-Datei, parst sie passend zur Endung und
+// aktiviert sie. js-yaml wird nur für YAML-Dateien gebraucht (siehe <script>-Einbindung
+// im <head>). Bei Erfolg kurze Bestätigung, bei Fehler übernimmt zeigeLadeFehler().
+function handleAufgabeUpload(event){
+  const datei = event.target.files[0];
+  if(!datei) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    let config;
+    try {
+      if(datei.name.endsWith('.json')) config = JSON.parse(reader.result);
+      else config = jsyaml.load(reader.result);
+    } catch(e){
+      zeigeLadeFehler(['Datei konnte nicht gelesen werden (kein gültiges YAML/JSON): ' + e.message]);
+      event.target.value = '';
+      return;
+    }
+    const erfolg = aktiviereAufgabe(config);
+    if(erfolg){
+      alert('Aufgabe geladen: ' + AUFGABE_ID + (HAT_WAHL ? ' (mit Ja/Nein-Frage)' : ''));
+    }
+    event.target.value = ''; // gleiche Datei danach erneut auswählbar machen
+  };
+  reader.readAsText(datei, 'utf-8');
+}
+
 
 async function lkAnmelden(){
   const email = document.getElementById('lk-email').value.trim();
@@ -614,7 +828,8 @@ let state = {
   heatmapStatus: {}, // wird von reinitialisiereKinderZustand() befüllt, sobald SYMBOLS feststeht
   selectedSymbol: null,
   mode: "speak",
-  isRecording: false
+  isRecording: false,
+  aktuelleWahl: null // "ja"/"nein"/null -- nur relevant bei HAT_WAHL, pro Kind neu gesetzt in confirmSymbol()
 };
 
 // Aus den textbausteine-Einträgen der Aufgaben-YAML übernommen (ein Eintrag pro
@@ -631,7 +846,7 @@ let state = {
 // Mehrere Einträge pro Modus sind jetzt möglich: waehleTextbaustein() sucht anhand der
 // Kategorien, die gerade in den Slots liegen, den passendsten Eintrag statt eines
 // einzigen festen Textes pro Tab.
-const TEXTBAUSTEINE = [
+let TEXTBAUSTEINE = [
   { modus: "gegenueberstellen", kombination: ["korrekt_begruendet","fehler_mit_buendelungsversuch"],
     einstiegssatz: "Zwei Kinder haben unterschiedliche Ergebnisse — schauen wir uns an, wie sie zur Umwandlung der 42 Zehner gekommen sind.",
     verbindungsfrage: "Was ist an beiden Erklärungen zur Bündelung gleich, was ist unterschiedlich — und wo trennen sich die Wege?" },
@@ -647,7 +862,7 @@ const TEXTBAUSTEINE = [
     einstiegssatz: "Wir hören uns nacheinander vier verschiedene Wege an, mit den 42 Zehnern umzugehen.",
     verbindungsfrage: "Welcher Weg überzeugt euch am meisten — und warum?" }
 ];
-const MOST_MARKIERUNGEN = [
+let MOST_MARKIERUNGEN = [
   { kombination: ["korrekt_begruendet","fehler_mit_buendelungsversuch"], gespraechswuerdig: true },
   { kombination: ["korrekt_unbegruendet","korrekt_begruendet"], gespraechswuerdig: true },
   { kombination: ["fehler_unbundled","fehler_stellenwert_ignoriert"], gespraechswuerdig: true }
@@ -806,9 +1021,25 @@ function confirmSymbol(){
   document.getElementById('record-icon').className='ti ti-microphone';
   document.getElementById('record-label').textContent='Aufnehmen';
   state.isRecording=false;
+  state.aktuelleWahl = null;
+  document.getElementById('wahl-ja').classList.remove('btn-primary');
+  document.getElementById('wahl-nein').classList.remove('btn-primary');
+  if(HAT_WAHL){
+    document.getElementById('wahl-bereich').style.display = 'block';
+    document.getElementById('begruendung-bereich').style.display = 'none'; // erst nach Ja/Nein-Wahl sichtbar
+  } else {
+    document.getElementById('wahl-bereich').style.display = 'none';
+    document.getElementById('begruendung-bereich').style.display = 'block';
+  }
   renderSprachauswahl();
   setSprache('de');
   if(state.selectedSymbol) state.heatmapStatus[state.selectedSymbol.id] = 'laeuft';
+}
+function waehleJaNein(wahl){
+  state.aktuelleWahl = wahl;
+  document.getElementById('wahl-ja').classList.toggle('btn-primary', wahl==='ja');
+  document.getElementById('wahl-nein').classList.toggle('btn-primary', wahl==='nein');
+  document.getElementById('begruendung-bereich').style.display = 'block';
 }
 function setMode(m){
   state.mode=m;
@@ -910,26 +1141,32 @@ function rerecord(){
 async function finishAnswer(){
   const text = document.getElementById('transcript-edit').value || "(keine Antwort)";
   const name = state.selectedSymbol ? state.selectedSymbol.name : "Neu";
+  const wahl = HAT_WAHL ? state.aktuelleWahl : null;
 
-  // Ausfallsicherung (Kap. 10 Projektentwurf), an die aktuelle Aufgabe angepasst:
-  // grobe Heuristik anhand der erwarteten Zahl (6625) bzw. der beiden bekannten
-  // Fehler-Endergebnisse (62425/6247), plus einfache Bündelsprache-Erkennung.
-  // Ersetzt keine echte Kategorisierung, verhindert nur eine falsch zugeordnete
-  // Kategorie-ID, falls die KI mal ausfällt.
+  // Ausfallsicherung (Kap. 10 Projektentwurf): generische Heuristik, die für jede
+  // Aufgabe funktioniert (im Gegensatz zu einer aufgabenspezifischen Zahlen-Heuristik,
+  // die bei jedem Aufgabenwechsel falsch läge). Ersetzt keine echte Kategorisierung,
+  // verhindert nur eine sinnlose Kategorie-ID, falls die KI mal ausfällt.
   function heuristischeKategorie(t){
-    const hatBuendelsprache = /bündel|tausch|zehner.*hundert|10 zehner|zehn zehner/i.test(t);
-    if(/6625/.test(t)) return hatBuendelsprache ? "korrekt_begruendet" : "korrekt_unbegruendet";
-    if(/62425/.test(t)) return "fehler_unbundled";
-    if(/6247/.test(t)) return "fehler_stellenwert_ignoriert";
-    if(hatBuendelsprache) return "fehler_mit_buendelungsversuch";
-    if(t && t.trim().length > 0 && !/^\(/.test(t)) return "fehler_ohne_erklaerung";
+    if(!t || !t.trim() || /^\(/.test(t)) return "keine_bearbeitung";
     return "unklar";
   }
 
+  // Nur die für den aktuellen Ja/Nein-Zweig gültigen Kategorien an die Kategorisierung
+  // schicken (gueltig_fuer null = zweigunabhängig, z.B. keine_bearbeitung/unklar).
+  const kategorienFuerPrompt = Object.entries(CATS)
+    .filter(([id, k]) => !wahl || !k.gueltig_fuer || k.gueltig_fuer === wahl)
+    .map(([id, k]) => ({ kategorie_id: id, bezeichnung: k.label, kurzdefinition: k.def }));
+  const promptFuerAnfrage = HAT_WAHL
+    ? (wahl === 'ja' ? KLASSIFIKATIONS_PROMPT_JA : KLASSIFIKATIONS_PROMPT_NEIN)
+    : KLASSIFIKATIONS_PROMPT;
+
   let cat = "unklar";
   try {
-    const { data, error } = await sb.functions.invoke('kategorisieren', { body: { transkript: text } });
-    if(!error && data && data.kategorie) cat = data.kategorie;
+    const { data, error } = await sb.functions.invoke('kategorisieren', {
+      body: { transkript: text, aufgabe_id: AUFGABE_ID, wahl, prompt: promptFuerAnfrage, kategorien: kategorienFuerPrompt }
+    });
+    if(!error && data && data.kategorie && CATS[data.kategorie]) cat = data.kategorie;
     else cat = heuristischeKategorie(text);
   } catch(e) {
     cat = heuristischeKategorie(text);
@@ -944,13 +1181,14 @@ async function finishAnswer(){
       symbol_id: state.selectedSymbol ? state.selectedSymbol.id : null,
       transkript: text,
       kategorie: cat,
+      antwort_wahl: wahl,
       audio_pfad: letzterAudioPfad
     });
     if(error) alert('Antwort konnte nicht gespeichert werden: ' + error.message + '\n(Sitzungscode: ' + sitzungscode + ')');
   } else {
     // Kein Sitzungscode vorhanden (Demo-Vorführung ohne echte Sitzung): nur lokal
     state.pool = state.pool.filter(p=>p.name!==name);
-    state.pool.push({name, cat, quote:text, audioPfad: null});
+    state.pool.push({name, cat, quote:text, audioPfad: null, wahl});
     if(state.selectedSymbol) state.heatmapStatus[state.selectedSymbol.id] = cat;
   }
   letzterAudioPfad = null;
@@ -1268,7 +1506,10 @@ function renderDetail(){
   document.getElementById('detail-body').innerHTML = `
     <div class="row" style="justify-content:space-between; margin-bottom:8px;">
       <b style="font-size:14px;">${child.name}</b>
-      <span class="tag ${cat.color}">${cat.typ==='Fehlvorstellung'?'⚠ ':''}${cat.label}</span>
+      <span class="row" style="gap:4px;">
+        ${child.wahl ? `<span class="tag" style="background:var(--surface-1); color:var(--text-secondary);">${child.wahl==='ja'?'Ja':'Nein'}</span>` : ''}
+        <span class="tag ${cat.color}">${cat.typ==='Fehlvorstellung'?'⚠ ':''}${cat.label}</span>
+      </span>
     </div>
     <div class="quote-box">"${child.quote}"</div>
     <div class="ts" style="font-size:11px; margin-top:8px;"><i class="ti ti-bulb"></i> ${cat.nachfrage}</div>
@@ -1276,7 +1517,7 @@ function renderDetail(){
       <label class="ts" style="font-size:11px;">Kategorie ändern:</label>
       <select style="width:100%; font-size:12px; margin-top:4px;" onchange="recode('${child.name}', this.value)">
         <option value="">(unverändert lassen)</option>
-        ${Object.keys(CATS).map(k=>`<option value="${k}">${CATS[k].label}</option>`).join('')}
+        ${Object.keys(CATS).filter(k=>!child.wahl || !CATS[k].gueltig_fuer || CATS[k].gueltig_fuer===child.wahl).map(k=>`<option value="${k}">${CATS[k].label}</option>`).join('')}
       </select>
     </div>
     <button class="btn ${inSlot?'':'btn-primary'}" style="margin-top:14px;" onclick="toggleSlotFromDetail()">
@@ -1451,7 +1692,7 @@ const SPRACH_META = {
 // (steht auch so in der YAML): die Stellenwert-Kürzel (T/H/Z/E in der jeweiligen Sprache)
 // sind noch nicht mit den tatsächlichen Spaltenbeschriftungen einer Stellenwerttafel in der
 // App abgeglichen -- vor Einsatz prüfen/korrigieren.
-const AUFGABE_UEBERSETZUNGEN = [
+let AUFGABE_UEBERSETZUNGEN = [
   { sprache: "tr", text: "6 T, 2 H, 42 Z, 5 E sayısını basamak değerleri tablosuna nasıl yazarsın ve sayı olarak nasıl gösterirsin? Açıkla." },
   { sprache: "en", text: "How would you write the number 6 Th 2 H 42 T 5 O in the place value table and as a number? Explain." },
   { sprache: "ru", text: "Как бы ты записал число 6 Т 2 С 42 Д 5 Е в таблицу разрядов и в виде числа? Объясни." },

@@ -554,7 +554,7 @@ async function lkAbmelden(){
 }
 
 async function syncKinderMitSupabase(){
-  const rows = SYMBOLS.map(s => ({ klassenraum: aktiveKlassenraum, symbol_id: s.id, name: s.name }));
+  const rows = SYMBOLS.map(s => ({ klassenraum: aktiveKlassenraum, symbol_id: s.id, name: s.name, icon: s.icon }));
   const { data, error } = await sb.from('kinder')
     .upsert(rows, { onConflict: 'klassenraum,symbol_id' })
     .select('id, symbol_id, einwilligung');
@@ -569,6 +569,18 @@ async function syncKinderMitSupabase(){
     }
   });
   if(document.getElementById('kinderliste')) renderKinderliste();
+}
+
+// Für Kind-Geräte (kein Login): lädt die echte Klassenliste über die Security-Definer-
+// Funktion, die nur mit einem gültigen, laufenden Sitzungscode etwas zurückgibt.
+// Ersetzt die lokale Demo-SYMBOLS-Liste durch die echten Kinder inkl. ihrer Pseudonym-ID
+// (kindId) -- ohne das würde finishAnswer() später kind_id=null speichern.
+async function ladeKinderlisteFuerSitzung(code){
+  const { data, error } = await sb.rpc('hole_kinderliste_fuer_code', { p_code: code });
+  if(error || !data || data.length === 0) return false;
+  SYMBOLS = data.map(row => ({ id: row.symbol_id, icon: row.icon, name: row.name, kindId: row.id }));
+  reinitialisiereKinderZustand(false);
+  return true;
 }
 
 let state = {
@@ -896,6 +908,14 @@ async function codeBeitreten(){
 
   const { data, error } = await sb.from('sitzungen').select('code').eq('code', eingabe).is('beendet_am', null).maybeSingle();
   if(error || !data){
+    fehler.style.display = 'block';
+    codeEingabe = [];
+    renderCodeEingabe();
+    return;
+  }
+  const geladen = await ladeKinderlisteFuerSitzung(eingabe);
+  if(!geladen){
+    fehler.textContent = 'Die Kinderliste konnte nicht geladen werden -- bitte die Lehrkraft informieren.';
     fehler.style.display = 'block';
     codeEingabe = [];
     renderCodeEingabe();
@@ -1489,10 +1509,15 @@ function canvasClick(e){
 reinitialisiereKinderZustand(true); // Anfangszustand: Demo-Kinderliste mit ein paar Beispielwerten
 if(istKindGeraet && sitzungscode){
   // Kindgerät, das über den QR-Code/Link beigetreten ist:
-  // kein Demo-Menü sichtbar, direkt in die Symbolauswahl der echten Sitzung
+  // kein Demo-Menü sichtbar, direkt in die Symbolauswahl der echten Sitzung.
+  // Auch hier muss erst die echte Klassenliste geladen werden (s. codeBeitreten()) --
+  // sonst fehlt kindId und die Antwort landet ohne kind_id in der Datenbank.
   document.querySelector('.topbar').style.display = 'none';
   state.sessionActive = true;
-  show('symbolauswahl');
+  ladeKinderlisteFuerSitzung(sitzungscode).then(geladen => {
+    if(!geladen) alert('Die Kinderliste konnte nicht geladen werden -- bitte über den QR-Code/Link neu starten oder die Lehrkraft informieren.');
+    show('symbolauswahl');
+  });
 } else {
   // LK-Gerät: falls noch eine gültige Anmeldung besteht (z.B. nach Reload), direkt
   // zur Klassenraum-Ansicht statt erneut nach Zugangsname/Passwort zu fragen.

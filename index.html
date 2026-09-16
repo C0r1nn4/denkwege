@@ -498,7 +498,7 @@ function uebernehmeAntwort(row){
   const symbolEntry = SYMBOLS.find(s => s.kindId === row.kind_id);
   const name = symbolEntry ? symbolEntry.name : "Unbekannt";
   state.pool = state.pool.filter(p=>p.name!==name);
-  state.pool.push({name, cat: row.kategorie, quote: row.transkript});
+  state.pool.push({name, cat: row.kategorie, quote: row.transkript, audioPfad: row.audio_pfad || null});
   if(row.symbol_id) state.heatmapStatus[row.symbol_id] = row.kategorie;
 }
 function aktualisierenAnsicht(){
@@ -734,6 +734,7 @@ function setMode(m){
 let mediaRecorder = null;
 let audioChunks = [];
 let aufnahmeMimeType = 'audio/webm';
+let letzterAudioPfad = null; // wird nach der Transkription gesetzt, s. finishAnswer()
 
 async function toggleRecord(){
   const btn = document.getElementById('record-btn');
@@ -772,8 +773,14 @@ async function toggleRecord(){
     mediaRecorder.onstop = async () => {
       const audioBlob = new Blob(audioChunks, { type: aufnahmeMimeType });
       let text = "";
+      letzterAudioPfad = null;
       try {
-        const antwort = await fetch(SUPABASE_URL + '/functions/v1/transkribieren', {
+        // sitzungscode mitschicken, damit die Edge Function das Audio serverseitig
+        // (kein zusätzlicher Datenverkehr im Schulnetz) fürs spätere Prüfen der
+        // Transkriptionsqualität in Storage ablegen kann -- nur bei echter Sitzung.
+        const url = SUPABASE_URL + '/functions/v1/transkribieren'
+          + (sitzungscode ? '?sitzungscode=' + encodeURIComponent(sitzungscode) : '');
+        const antwort = await fetch(url, {
           method: 'POST',
           headers: {
             'apikey': SUPABASE_ANON_KEY,
@@ -785,6 +792,7 @@ async function toggleRecord(){
         if(daten.transkript) text = daten.transkript;
         else if(daten.error) text = "(Fehler von der Spracherkennung: " + daten.error + ")";
         else text = "(Spracherkennung hat nichts erkannt -- bitte nochmal versuchen oder tippen)";
+        letzterAudioPfad = daten.audio_pfad || null;
       } catch(e){
         text = "(Spracherkennung fehlgeschlagen -- bitte nochmal versuchen oder tippen)";
       }
@@ -801,6 +809,7 @@ function rerecord(){
   document.getElementById('record-icon').className='ti ti-microphone';
   document.getElementById('record-label').textContent='Aufnehmen';
   state.isRecording=false;
+  letzterAudioPfad = null; // neue Aufnahme -- alter Pfad gehört nicht mehr zur finalen Antwort
   if(state.mode==='type'){ document.getElementById('review-area').style.display='block'; document.getElementById('transcript-edit').value=''; }
 }
 async function finishAnswer(){
@@ -832,15 +841,17 @@ async function finishAnswer(){
       kind_id: state.selectedSymbol ? state.selectedSymbol.kindId : null,
       symbol_id: state.selectedSymbol ? state.selectedSymbol.id : null,
       transkript: text,
-      kategorie: cat
+      kategorie: cat,
+      audio_pfad: letzterAudioPfad
     });
     if(error) alert('Antwort konnte nicht gespeichert werden: ' + error.message + '\n(Sitzungscode: ' + sitzungscode + ')');
   } else {
     // Kein Sitzungscode vorhanden (Demo-Vorführung ohne echte Sitzung): nur lokal
     state.pool = state.pool.filter(p=>p.name!==name);
-    state.pool.push({name, cat, quote:text});
+    state.pool.push({name, cat, quote:text, audioPfad: null});
     if(state.selectedSymbol) state.heatmapStatus[state.selectedSymbol.id] = cat;
   }
+  letzterAudioPfad = null;
   document.getElementById('review-area').style.display='none';
   document.getElementById('done-area').style.display='block';
   document.getElementById('done-name').textContent = name;
@@ -1128,6 +1139,14 @@ function openDetail(name){
 function closeDetail(){
   document.getElementById('detail-modal').classList.remove('visible');
 }
+// Erzeugt einen zeitlich begrenzten Link, um das Original-Audio anzuhören -- nur
+// zur Prüfung der Transkriptionsqualität in den Forschungsdaten, nicht Teil des
+// normalen Unterrichtsflusses. Setzt die Storage-Policy aus der SQL-Migration voraus.
+async function spieleAudioAb(pfad){
+  const { data, error } = await sb.storage.from('audio-antworten').createSignedUrl(pfad, 3600);
+  if(error || !data){ alert('Audio konnte nicht geladen werden: ' + (error?.message || '')); return; }
+  window.open(data.signedUrl, '_blank');
+}
 function renderDetail(){
   const child = state.pool.find(p=>p.name===detailChild);
   if(!child) return;
@@ -1139,6 +1158,7 @@ function renderDetail(){
       <span class="tag ${cat.color}">${cat.typ==='Fehlvorstellung'?'⚠ ':''}${cat.label}</span>
     </div>
     <div class="quote-box">"${child.quote}"</div>
+    ${child.audioPfad ? `<button class="navbtn" style="margin-top:6px;" onclick="spieleAudioAb('${child.audioPfad}')"><i class="ti ti-volume"></i> Original-Audio anhören (Qualitätsprüfung)</button>` : ''}
     <div class="ts" style="font-size:11px; margin-top:8px;"><i class="ti ti-bulb"></i> ${cat.nachfrage}</div>
     <div style="margin-top:12px;">
       <label class="ts" style="font-size:11px;">Kategorie ändern:</label>

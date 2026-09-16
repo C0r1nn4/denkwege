@@ -44,6 +44,7 @@
   .t { color: var(--text-primary); } .ts { color: var(--text-secondary); }
   .c-teal { background: #9FE1CB; } .c-coral { background: #F0997B; } .c-purple { background: #AFA9EC; }
   .c-gray { background: #D3D1C7; } .c-blue { background: #B5D4F4; } .c-amber { background: #FAC775; }
+  .c-mint { background: #C9EAA8; } .c-rose { background: #F2AEBE; }
   .tag { font-size: 10px; padding: 3px 9px; border-radius: 10px; display:inline-block; }
   .icon-circle { width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:15px; }
   h2.scr-title { font-family: var(--font-heading); font-weight: 400; font-size: 19px; margin: 0 0 14px; color: var(--text-secondary); letter-spacing: 0.01em; }
@@ -159,7 +160,7 @@
     <h2 class="scr-title">Aufgabe wählen — Klasse 3b</h2>
     <div class="card row" onclick="show('aufgabe')" style="cursor:pointer;">
       <div class="icon-circle c-amber"><i class="ti ti-calculator"></i></div>
-      <div><div class="t" style="font-size:14px;">47 + 38</div><div class="ts" style="font-size:11px;">Kopfrechenstrategien</div></div>
+      <div><div class="t" style="font-size:14px;">6 T 2 H 42 Z 5 E</div><div class="ts" style="font-size:11px;">Zahlen bündeln und entbündeln</div></div>
     </div>
     <div class="card row" style="opacity:0.5;">
       <div class="icon-circle c-gray"><i class="ti ti-stack-2"></i></div>
@@ -175,7 +176,7 @@
       <div class="row" style="justify-content:space-between; margin-bottom:8px;">
         <div>
           <div class="ts" style="font-size:11px;">Verstehenskern</div>
-          <div class="t" style="font-size:15px; font-weight:500;">Additive Zerlegung beim Kopfrechnen (47 + 38)</div>
+          <div class="t" style="font-size:15px; font-weight:500;">Bündeln und Entbündeln von Zahlen (6 T 2 H 42 Z 5 E)</div>
         </div>
         <i class="ti ti-info-circle" style="font-size:18px; color:var(--text-accent);" onclick="showInfo('Hintergrundmaterial', 'Kurzer Hinweis zu Grundvorstellungen additiver Zerlegung + Link zu Video (Demo).')"></i>
       </div>
@@ -216,8 +217,8 @@
   <!-- KIND: AUFNAHME -->
   <div id="scr-aufnahme" class="screen" style="text-align:center;">
     <div class="card c-blue">
-      <div class="t" style="font-size:44px; font-weight:600; margin-bottom:10px;">47 + 38</div>
-      <div id="aufnahme-anweisung" class="ts" style="font-size:18px; margin-bottom:10px;">Löse und erkläre deinen Rechenweg</div>
+      <div class="t" style="font-size:36px; font-weight:600; margin-bottom:10px;">6 T 2 H 42 Z 5 E</div>
+      <div id="aufnahme-anweisung" class="ts" style="font-size:18px; margin-bottom:10px;">Wie würdest du das in die Stellenwerttafel und als Zahl schreiben? Erkläre.</div>
       <div style="width:100%; height:80px; background:var(--surface-2); border-radius:16px; display:flex; align-items:center; justify-content:center; color:var(--text-muted);"><i class="ti ti-photo" style="font-size:30px;"></i></div>
       <div class="row" style="justify-content:center; gap:10px; margin-top:10px;">
         <div id="sprachauswahl" class="row" style="justify-content:center; gap:10px; flex-wrap:wrap;"></div>
@@ -262,8 +263,8 @@
     <div class="row" style="justify-content:space-between; align-items:flex-start; margin-bottom:12px; padding-bottom:10px; border-bottom:0.5px solid var(--border);">
       <div>
         <div class="ts" style="font-size:11px;">Aufgabe</div>
-        <div class="t" style="font-size:14px; font-weight:500;">Kopfrechnen: 47 + 38</div>
-        <div class="ts" style="font-size:11px; margin-top:2px;">Verstehenskern: Additive Zerlegung beim Kopfrechnen</div>
+        <div class="t" style="font-size:14px; font-weight:500;">6 T 2 H 42 Z 5 E</div>
+        <div class="ts" style="font-size:11px; margin-top:2px;">Verstehenskern: Bündeln und Entbündeln von Zahlen</div>
       </div>
       <i class="ti ti-info-circle" style="font-size:18px; color:var(--text-accent);"></i>
     </div>
@@ -275,7 +276,7 @@
       <span class="ts" style="font-size:10px; text-decoration:underline; cursor:pointer;" onclick="toggleErklaerung()">Warum diese Empfehlung?</span>
     </div>
     <div id="empfehlung-erklaerung" class="ts" style="display:none; font-size:11px; background:var(--bg-accent); color:var(--text-accent); padding:8px; border-radius:var(--radius); margin-bottom:8px;">
-      Der empfohlene Modus + die vorbelegten Antworten ergeben sich aus zwei Schritten: (1) <b>MOST-Filterung</b> — welche Kategorie-Kombination laut Aufgabenanlage als besonders gesprächswürdig markiert ist (hier: schrittweise vs. stellenweise), (2) pro Kategorie wird die Antwort mit der <b>höchsten Klassifikations-Konfidenz</b> vorbelegt. Die Lehrkraft kann das jederzeit überschreiben.
+      Der empfohlene Modus + die vorbelegten Antworten ergeben sich aus zwei Schritten: (1) <b>MOST-Filterung</b> — welche Kategorie-Kombination laut Aufgabenanlage als besonders gesprächswürdig markiert ist (hier: richtig begründet vs. Fehler mit Bündelungsansatz), (2) pro Kategorie wird die Antwort mit der <b>höchsten Klassifikations-Konfidenz</b> vorbelegt. Die Lehrkraft kann das jederzeit überschreiben.
     </div>
     <div class="row" style="gap:6px; margin-bottom:14px; overflow-x:auto;">
       <button class="tabbtn navbtn" data-tab="anknuepfen" onclick="switchTab('anknuepfen')">Anknüpfen</button>
@@ -293,7 +294,7 @@
     </div>
     <div class="card c-purple">
       <div class="ts" style="font-size:11px;"><i class="ti ti-arrows-join-2"></i> Mögliche Anschlussfrage</div>
-      <div class="t" style="font-size:13px;">Bei beiden kommt 85 raus — was passiert bei beiden mit Zehnern und Einern?</div>
+      <div class="t" style="font-size:13px;">Was ist an beiden Erklärungen zur Bündelung gleich, was ist unterschiedlich — und wo trennen sich die Wege?</div>
     </div>
     <details style="margin-bottom:12px;">
       <summary style="font-size:13px; font-weight:500; cursor:pointer; color:var(--text-secondary);">Alle Kategorien anzeigen/anpassen ▾</summary>
@@ -321,7 +322,7 @@
       <div id="tafel-qr-box" style="display:flex; justify-content:center; margin-bottom:10px;"></div>
       <div id="tafel-code-anzeige" style="font-size:52px; font-weight:600; letter-spacing:10px; color:var(--text-accent);">⭐⭐⭐</div>
     </div>
-    <div id="tafel-aufgabe" class="t" style="text-align:center; font-size:20px; font-weight:600; margin-bottom:12px; padding:10px; background:var(--surface-2); border-radius:12px; display:none;">47 + 38</div>
+    <div id="tafel-aufgabe" class="t" style="text-align:center; font-size:20px; font-weight:600; margin-bottom:12px; padding:10px; background:var(--surface-2); border-radius:12px; display:none;">6 T 2 H 42 Z 5 E</div>
     <div id="tafel-slots"></div>
     <div class="row" style="justify-content:center; gap:8px; margin-top:14px;">
       <button class="navbtn" onclick="toggleTafelAufgabe()">Aufgabe ein/aus</button>
@@ -409,9 +410,9 @@ Neu</textarea>
     <div class="row" style="margin-bottom:14px;">
       <div class="icon-circle c-teal">🐻</div><span style="font-size:15px; font-weight:500;">Mika</span>
     </div>
-    <div class="ts" style="font-size:12px; margin-bottom:6px;">Kopfrechenstrategien</div>
-    <div class="pool-item"><span class="ts" style="font-size:11px; width:56px;">12.09.</span><span style="font-size:12px; flex:1;">47+38</span><span class="tag c-teal">schrittweise</span></div>
-    <div class="pool-item"><span class="ts" style="font-size:11px; width:56px;">05.09.</span><span style="font-size:12px; flex:1;">63+29</span><span class="tag c-teal">schrittweise</span></div>
+    <div class="ts" style="font-size:12px; margin-bottom:6px;">Zahlen bündeln und entbündeln</div>
+    <div class="pool-item"><span class="ts" style="font-size:11px; width:56px;">12.09.</span><span style="font-size:12px; flex:1;">6 T 2 H 42 Z 5 E</span><span class="tag c-teal">richtig, begründet</span></div>
+    <div class="pool-item"><span class="ts" style="font-size:11px; width:56px;">05.09.</span><span style="font-size:12px; flex:1;">3 T 15 H 2 Z 8 E</span><span class="tag c-teal">richtig, begründet</span></div>
     <button class="btn" style="margin-top:8px;" onclick="show('verwaltung')">zurück</button>
   </div>
 
@@ -507,10 +508,14 @@ function aktualisierenAnsicht(){
 }
 
 const CATS = {
-  schrittweise: {label:"schrittweise", color:"c-teal", typ:"tragfähig", def:"Zerlegt in Schritte, addiert nacheinander", nachfrage:"Warum erst 30 dazu, nicht gleich 38?"},
-  stellenweise: {label:"stellenweise", color:"c-coral", typ:"tragfähig", def:"Zehner und Einer getrennt addiert", nachfrage:"Was tust du bei Einern über 10?"},
-  uebertrag: {label:"Übertrag vergessen", color:"c-purple", typ:"Fehlvorstellung", def:"Einer-Summe über 10 nicht übertragen", nachfrage:"Was passiert mit der 1, die übrig bleibt?"},
-  unklar: {label:"unklar", color:"c-gray", typ:null, def:"Keiner Kategorie sicher zuordenbar", nachfrage:""}
+  korrekt_begruendet: {label:"richtig, begründet", color:"c-teal", typ:"tragfähige Strategie", def:"Zahl 6625 korrekt UND eine Stellenwert- oder Bündelungsregel wird erkennbar als Begründung genannt.", nachfrage:"Warum musstest du die 42 Zehner überhaupt umwandeln?"},
+  korrekt_unbegruendet: {label:"richtig, unbegründet", color:"c-mint", typ:"tragfähige Strategie", def:"Zahl 6625 korrekt, aber keine erkennbare inhaltliche Begründung.", nachfrage:"Wie bist du auf die 6625 gekommen? Was ist mit den 42 Zehnern passiert?"},
+  fehler_unbundled: {label:"Fehler: nicht entbündelt (62425)", color:"c-coral", typ:"Fehlvorstellung", def:"42 Zehner werden unverändert/roh in die Zehnerspalte übernommen, keine Regruppierung stattgefunden.", nachfrage:"Darf in einem Kästchen der Stellenwerttafel mehr als eine Ziffer stehen?"},
+  fehler_stellenwert_ignoriert: {label:"Fehler: Stellenwert ignoriert (6247)", color:"c-purple", typ:"Fehlvorstellung", def:"Die '2' von 42 wird fälschlich als Einer-Ziffer gedeutet und zu den 5 Einern addiert.", nachfrage:"Was bedeutet die '2' in '42 Zehner' — ist das eine Einer-Ziffer?"},
+  fehler_mit_buendelungsversuch: {label:"Fehler, mit Bündelungsansatz", color:"c-amber", typ:"Fehlvorstellung", def:"Andere falsche Endzahl, aber im Text wird erkennbar eine Bündelungs- oder Stellenwertregel artikuliert.", nachfrage:"Deine Erklärung zur Umwandlung klingt richtig — wo genau ist beim Rechnen etwas schiefgelaufen?"},
+  fehler_ohne_erklaerung: {label:"Fehler ohne Begründung", color:"c-rose", typ:"Fehlvorstellung", def:"Andere falsche Endzahl, ohne dass eine inhaltliche Begründung erkennbar ist.", nachfrage:"Wie bist du vorgegangen? Erzähl mal Schritt für Schritt."},
+  keine_bearbeitung: {label:"keine Bearbeitung", color:"c-gray", typ:null, def:"Kein Eintrag / keine Antwort vorhanden.", nachfrage:""},
+  unklar: {label:"unklar", color:"c-blue", typ:null, def:"Keiner Kategorie sicher zuordenbar", nachfrage:""}
 };
 const SYMBOLS_POOL = ["🐻","🦊","🐸","🐢","🐝","🐬","🐙","🐧","🦁","🐰","🐼","🐨","🦄","🐮","🐷","🐵","🦉","🦋","🐌","🐳","🦈","🐊","🦒","🦓","🐘","🦔","🦇","🐿️","🦥","🦦","🐺","🐴","🐐","🐑","🐹"];
 const MAX_KINDER = 35; // Obergrenze pro Klassenraum
@@ -523,7 +528,7 @@ let SYMBOLS = ["Mika","Lian","Ben","Nora","Tom","Ida","Ada","Neu"].map((name,i) 
 // -- Pseudonymisierung: jedes Kind bekommt bei syncKinderMitSupabase() eine feste,
 // über alle Sitzungen hinweg stabile Supabase-ID (SYMBOLS[i].kindId). Nur diese ID,
 // nicht der Name, landet in der antworten-Tabelle -- siehe finishAnswer().
-const AUFGABE_ID = "kopfrechnen_47_38";
+const AUFGABE_ID = "buendeln_6t2h42z5e";
 let aktiveKlassenraum = "3b";    // Fallback fürs Demo-Sprungmenü ohne echten Login; wird nach lkAnmelden() überschrieben
 let aktiverAnzeigename = null;
 
@@ -585,18 +590,18 @@ async function ladeKinderlisteFuerSitzung(code){
 
 let state = {
   pool: [
-    {name:"Mika", cat:"schrittweise", quote:"Ich hab erst 47 und 30 gerechnet, das ist 77, und dann noch die 8 dazu, 85."},
-    {name:"Tom", cat:"schrittweise", quote:"Erst 47+30=77, dann 77+8=85."},
-    {name:"Ida", cat:"schrittweise", quote:"Ich hab in Zehnerschritten gerechnet."},
-    {name:"Lian", cat:"stellenweise", quote:"Zehner mit Zehner, 40 und 30 ist 70. Einer mit Einer, 7 und 8 ist 15. Macht 85."},
-    {name:"Ada", cat:"stellenweise", quote:"Zehner zusammen, Einer zusammen, dann addiert."},
-    {name:"Ben", cat:"uebertrag", quote:"7 und 8 ist 15, ich schreib die 5 und vergess die 1."},
-    {name:"Nora", cat:"unklar", quote:"Ich weiß nicht genau, ich hab's einfach gerechnet."}
+    {name:"Mika", cat:"korrekt_begruendet", quote:"10 Zehner sind ein Hunderter, also sind 42 Zehner 4 Hunderter und 2 Zehner übrig. Mit den 6 Tausendern, 2 Hundertern und 5 Einern macht das 6625."},
+    {name:"Tom", cat:"korrekt_begruendet", quote:"Ich hab 42 mal 10 gerechnet, das sind 420. Plus 6000, 200 und 5 macht 6625."},
+    {name:"Ida", cat:"korrekt_unbegruendet", quote:"6625, weil ich das so eingetragen habe."},
+    {name:"Lian", cat:"fehler_mit_buendelungsversuch", quote:"6000+200+40+7=6247, weil die Zehner zu Hundertern werden."},
+    {name:"Ada", cat:"fehler_unbundled", quote:"6 Tausender, 2 Hunderter, 42 Zehner, 5 Einer -- also 62425."},
+    {name:"Ben", cat:"fehler_stellenwert_ignoriert", quote:"Ich hab die 2 von der 42 zur 5 von den Einern gerechnet."},
+    {name:"Nora", cat:"fehler_ohne_erklaerung", quote:"42 + 5 = 47."}
   ],
   slots: {
     anknuepfen: ["Mika"],
     gegenueberstellen: ["Mika","Lian"],
-    sequenzieren: ["Ben","Mika","Lian"],
+    sequenzieren: ["Ada","Ben","Lian","Mika"],
     frei: []
   },
   activeTab: "gegenueberstellen",
@@ -610,10 +615,19 @@ let state = {
   isRecording: false
 };
 
+// Aus den textbausteine-Einträgen der Aufgaben-YAML übernommen (ein Eintrag pro
+// existierendem Tab). WICHTIG: "gegenueberstellen" hat in der YAML zwei mögliche
+// Kombinationen (korrekt_begruendet+fehler_mit_buendelungsversuch UND
+// fehler_unbundled+fehler_stellenwert_ignoriert) -- die App kann aktuell nur EINEN
+// festen Impuls pro Tab zeigen, nicht abhängig davon, welche Antworten gerade im
+// Slot liegen. Hier ist die erste Kombination hinterlegt; die zweite geht sonst
+// verloren. Der Modus "konfrontieren" aus der YAML existiert als Tab in der App
+// noch gar nicht -- sein Textbaustein ("Beide kommen auf 6625 -- aber nur eine
+// Erklärung sagt uns, warum das stimmt.") ist dadurch aktuell nirgends nutzbar.
 const IMPULS = {
-  anknuepfen: "Wer kann uns erklären, wie er/sie das gerechnet hat?",
-  gegenueberstellen: "Wir schauen uns zwei Wege an, 47+38 zu rechnen — was ist hier unterschiedlich gemacht worden?",
-  sequenzieren: "Wir hören uns drei Wege nacheinander an — vom Ausgangspunkt bis zur vollständigen Lösung.",
+  anknuepfen: "Wer kann uns erklären, was mit den 42 Zehnern passiert ist?",
+  gegenueberstellen: "Zwei Kinder haben unterschiedliche Ergebnisse — schauen wir uns an, wie sie zur Umwandlung der 42 Zehner gekommen sind.",
+  sequenzieren: "Wir hören uns nacheinander vier verschiedene Wege an, mit den 42 Zehnern umzugehen.",
   frei: "(kein automatischer Impuls im Frei-Modus)"
 };
 
@@ -828,21 +842,28 @@ async function finishAnswer(){
   const text = document.getElementById('transcript-edit').value || "(keine Antwort)";
   const name = state.selectedSymbol ? state.selectedSymbol.name : "Neu";
 
+  // Ausfallsicherung (Kap. 10 Projektentwurf), an die aktuelle Aufgabe angepasst:
+  // grobe Heuristik anhand der erwarteten Zahl (6625) bzw. der beiden bekannten
+  // Fehler-Endergebnisse (62425/6247), plus einfache Bündelsprache-Erkennung.
+  // Ersetzt keine echte Kategorisierung, verhindert nur eine falsch zugeordnete
+  // Kategorie-ID, falls die KI mal ausfällt.
+  function heuristischeKategorie(t){
+    const hatBuendelsprache = /bündel|tausch|zehner.*hundert|10 zehner|zehn zehner/i.test(t);
+    if(/6625/.test(t)) return hatBuendelsprache ? "korrekt_begruendet" : "korrekt_unbegruendet";
+    if(/62425/.test(t)) return "fehler_unbundled";
+    if(/6247/.test(t)) return "fehler_stellenwert_ignoriert";
+    if(hatBuendelsprache) return "fehler_mit_buendelungsversuch";
+    if(t && t.trim().length > 0 && !/^\(/.test(t)) return "fehler_ohne_erklaerung";
+    return "unklar";
+  }
+
   let cat = "unklar";
   try {
     const { data, error } = await sb.functions.invoke('kategorisieren', { body: { transkript: text } });
     if(!error && data && data.kategorie) cat = data.kategorie;
-    else {
-      // Ausfallsicherung (Kap. 10 Projektentwurf): keine Fehlermeldung fürs Kind,
-      // stattdessen einfache lokale Rückfall-Heuristik
-      if(/zehner|stellen/i.test(text)) cat = "stellenweise";
-      else if(/vergess|1 dazu|übertrag/i.test(text)) cat = "uebertrag";
-      else if(/erst|dann|30|dazu/i.test(text)) cat = "schrittweise";
-    }
+    else cat = heuristischeKategorie(text);
   } catch(e) {
-    if(/zehner|stellen/i.test(text)) cat = "stellenweise";
-    else if(/vergess|1 dazu|übertrag/i.test(text)) cat = "uebertrag";
-    else if(/erst|dann|30|dazu/i.test(text)) cat = "schrittweise";
+    cat = heuristischeKategorie(text);
   }
 
   if(sitzungscode){
@@ -1014,7 +1035,7 @@ function renderSprachauswahl(){
   });
 }
 function setSprache(lang){
-  document.getElementById('aufnahme-anweisung').textContent = SPRACHEN[lang].text || "Löse und erkläre deinen Rechenweg";
+  document.getElementById('aufnahme-anweisung').textContent = SPRACHEN[lang].text || "Wie würdest du das in die Stellenwerttafel und als Zahl schreiben? Erkläre.";
   ['de', lang].forEach(k=>{
     const btn = document.getElementById('sprache-'+k);
     if(btn) btn.classList.toggle('active', k===lang);
@@ -1337,8 +1358,11 @@ function reinitialisiereKinderZustand(zeigeDemoBeispiele){
 }
 const SPRACHEN = {
   de: { flag: '🇩🇪', label: 'Deutsch', text: null },
-  tr: { flag: '🇹🇷', label: 'Türkisch', text: "Çöz ve nasıl hesapladığını açıkla" },
-  uk: { flag: '🇺🇦', label: 'Ukrainisch', text: "Розв'яжи і поясни свій спосіб обчислення" }
+  // Übersetzungen aus der Aufgaben-YAML übernommen. ACHTUNG (steht auch so in der YAML):
+  // die Stellenwert-Kürzel (T/H/Z/E in der jeweiligen Sprache) sind noch nicht mit den
+  // tatsächlichen Spaltenbeschriftungen einer Stellenwerttafel abgeglichen -- vor Einsatz prüfen.
+  tr: { flag: '🇹🇷', label: 'Türkisch', text: "6 T, 2 H, 42 Z, 5 E sayısını basamak değerleri tablosuna nasıl yazarsın ve sayı olarak nasıl gösterirsin? Açıkla." },
+  uk: { flag: '🇺🇦', label: 'Ukrainisch', text: "Як би ти записав число 6 Т 2 С 42 Д 5 О у таблицю розрядів і у вигляді числа? Поясни." }
 };
 function toggleAnonym(){
   anonymMode = !anonymMode;

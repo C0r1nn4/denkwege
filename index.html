@@ -942,10 +942,10 @@ async function lkAnmelden(){
     fehler.style.display = 'block';
     return;
   }
-  uebernehmeLogin(data.user);
+  await uebernehmeLogin(data.user);
   show('login');
 }
-function uebernehmeLogin(user){
+async function uebernehmeLogin(user){
   aktiveKlassenraum = user.user_metadata?.klassenraum || "3b";
   aktiverAnzeigename = user.user_metadata?.anzeige_name || user.email;
   document.getElementById('klassenraum-name-anzeige').textContent = "Klasse " + aktiveKlassenraum;
@@ -954,6 +954,9 @@ function uebernehmeLogin(user){
   // Reine UI-Bequemlichkeit: der eigentliche Schutz läuft über die RLS-Policies auf "aufgaben".
   istAdmin = new URLSearchParams(window.location.search).has('admin') && user.app_metadata?.rolle === 'admin';
   document.getElementById('aufgaben-admin-btn').style.display = istAdmin ? '' : 'none';
+  // Echten Kinderliste-Stand aus Supabase holen, statt bei den lokalen Demo-/Alt-Namen zu
+  // bleiben (s. ladeKinderlisteAusSupabase()) -- wichtig VOR jeder Bearbeitung/Sync.
+  await ladeKinderlisteAusSupabase();
 }
 async function lkAbmelden(){
   await sb.auth.signOut();
@@ -978,6 +981,29 @@ async function syncKinderMitSupabase(){
     }
   });
   if(document.getElementById('kinderliste')) renderKinderliste();
+}
+
+// Holt den TATSÄCHLICHEN Stand der Kinderliste dieses Klassenraums aus Supabase und ersetzt
+// SYMBOLS komplett damit (reines SELECT, kein Upsert). Vorher gab es dafür keine Stelle:
+// syncKinderMitSupabase() schreibt nur, liest den Server-Stand aber nie zurück -- SYMBOLS blieb
+// nach einem Reload/Neu-Login bei den lokalen Demo-Namen bzw. dem letzten Browser-Stand. Beim
+// nächsten Speichern konnte das ein längst gelöschtes Kind per Upsert wieder anlegen. Wird beim
+// Login (uebernehmeLogin) und bei jedem Öffnen der Verwaltung aufgerufen.
+async function ladeKinderlisteAusSupabase(){
+  const { data, error } = await sb.from('kinder')
+    .select('id, symbol_id, name, icon, einwilligung')
+    .eq('klassenraum', aktiveKlassenraum)
+    .order('symbol_id');
+  if(error){
+    console.error('Kinderliste konnte nicht aus Supabase geladen werden:', error.message);
+    return false;
+  }
+  SYMBOLS = data.map(row => ({ id: row.symbol_id, icon: row.icon, name: row.name, kindId: row.id }));
+  data.forEach(row => { consentState[row.symbol_id] = row.einwilligung; });
+  if(document.getElementById('kinderliste')) renderKinderliste();
+  const anzahlAnzeige = document.getElementById('klassenraum-anzahl-anzeige');
+  if(anzahlAnzeige) anzahlAnzeige.textContent = SYMBOLS.length + " Kinder";
+  return true;
 }
 
 // Für Kind-Geräte (kein Login): lädt die echte Klassenliste über die Security-Definer-
@@ -1165,7 +1191,7 @@ function show(id){
   if(id==='dashboard'){ aktualisiereEmpfehlung(); renderDashboard(); }
   if(id==='tafel') renderTafel();
   if(id==='heatmap') renderHeatmap();
-  if(id==='verwaltung') renderKinderliste();
+  if(id==='verwaltung') ladeKinderlisteAusSupabase();
   if(id==='sitzplan') renderSitzplan();
   if(id==='pool') ladeAufgabenPool();
   if(id==='aufgaben-admin') ladeAufgabenAdminListe();
@@ -2344,9 +2370,9 @@ if(istKindGeraet && sitzungscode){
 } else {
   // LK-Gerät: falls noch eine gültige Anmeldung besteht (z.B. nach Reload), direkt
   // zur Klassenraum-Ansicht statt erneut nach Zugangsname/Passwort zu fragen.
-  sb.auth.getSession().then(({ data }) => {
+  sb.auth.getSession().then(async ({ data }) => {
     if(data.session && data.session.user){
-      uebernehmeLogin(data.session.user);
+      await uebernehmeLogin(data.session.user);
       show('login');
     } else {
       show('start');

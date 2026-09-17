@@ -164,6 +164,7 @@
       <span id="klasse-3b-sitzplan-badge" class="tag" style="background:var(--bg-warning); color:var(--text-warning); display:none;"><i class="ti ti-alert-triangle" style="font-size:10px;"></i> Sitzplan fehlt</span>
     </div>
     <button class="btn" onclick="show('verwaltung')"><i class="ti ti-settings"></i> Klassenraum verwalten</button>
+    <button class="btn" id="aufgaben-admin-btn" style="display:none; margin-top:8px;" onclick="show('aufgaben-admin')"><i class="ti ti-database"></i> Aufgaben-Verwaltung</button>
   </div>
 
 
@@ -171,14 +172,20 @@
   <div id="scr-pool" class="screen">
     <button class="navbtn" style="margin-bottom:10px;" onclick="show('login')"><i class="ti ti-arrow-left"></i> Klassenraum-Übersicht</button>
     <h2 class="scr-title">Aufgabe wählen — Klasse 3b</h2>
-    <div class="card row" onclick="show('aufgabe')" style="cursor:pointer;">
-      <div class="icon-circle c-amber"><i class="ti ti-calculator"></i></div>
-      <div><div class="t" id="pool-aufgabe-format" style="font-size:14px;">Zahlen bündeln und entbündeln</div><div class="ts" id="pool-aufgabe-text" style="font-size:11px;">Wie würdest du die Zahl 6 T 2 H 42 Z 5 E in die Stellenwerttafel und als Zahl schreiben? Erkläre.</div></div>
+    <div id="pool-liste"></div>
+  </div>
+
+  <!-- AUFGABEN-VERWALTUNG (versteckt -- nur mit ?admin in der URL + Admin-Rolle sichtbar) -->
+  <div id="scr-aufgaben-admin" class="screen">
+    <button class="navbtn" style="margin-bottom:10px;" onclick="show('login')"><i class="ti ti-arrow-left"></i> Klassenraum-Übersicht</button>
+    <h2 class="scr-title">Aufgaben-Verwaltung</h2>
+    <div style="padding:10px; background:var(--surface-2); border-radius:var(--radius); margin-bottom:16px; border:0.5px solid var(--border);">
+      <div style="font-size:13px; font-weight:500; margin-bottom:2px;">Neue Aufgabe hochladen</div>
+      <div class="ts" style="font-size:11px; margin-bottom:8px;">.yaml/.yml oder .json-Datei einer Aufgabenkonfiguration. Landet zunächst als Entwurf (inaktiv) in der Bibliothek -- Lehrkräfte sehen sie erst nach Freigabe unten.</div>
+      <input type="file" accept=".yaml,.yml,.json" onchange="handleAufgabeUploadInDB(event)" style="font-size:11px; width:100%;">
     </div>
-    <div class="card row" style="opacity:0.5;">
-      <div class="icon-circle c-gray"><i class="ti ti-stack-2"></i></div>
-      <div><div class="t" style="font-size:14px;">Zahlenmauer A</div><div class="ts" style="font-size:11px;">(Demo: nicht aktiv)</div></div>
-    </div>
+    <div class="ts" style="font-size:12px; margin-bottom:4px;">Aufgabenbibliothek</div>
+    <div id="aufgaben-admin-liste"></div>
   </div>
 
   <!-- AUFGABE DETAIL -->
@@ -402,12 +409,6 @@
       <button class="btn" onclick="show('sitzplan')"><i class="ti ti-armchair"></i> Sitzplan</button>
       <button class="btn" onclick="show('lernverlauf')"><i class="ti ti-chart-bar"></i> Verlauf</button>
     </div>
-    <div style="padding:10px; background:var(--surface-2); border-radius:var(--radius); margin-bottom:16px; border:0.5px solid var(--border);">
-      <div style="font-size:13px; font-weight:500; margin-bottom:2px;">Aufgabe laden</div>
-      <div class="ts" style="font-size:11px; margin-bottom:8px;">.yaml/.yml oder .json-Datei einer Aufgabenkonfiguration. Ersetzt die aktuell aktive Aufgabe für dieses Gerät.</div>
-      <input type="file" accept=".yaml,.yml,.json" onchange="handleAufgabeUpload(event)" style="font-size:11px; width:100%;">
-      <div id="aufgabe-lade-status" class="ts" style="font-size:11px; margin-top:6px;">Aktuell aktiv: <span id="aufgabe-lade-aktuell">buendeln_6t2h42z5e</span></div>
-    </div>
     <div class="row" style="justify-content:space-between; align-items:center; padding:10px; background:var(--surface-2); border-radius:var(--radius); margin-bottom:12px; border:0.5px solid var(--border);">
       <div>
         <div style="font-size:13px; font-weight:500;">Anonym arbeiten</div>
@@ -618,12 +619,13 @@ let AUFGABE_VERSTEHENSKERN = "Bündeln und Entbündeln von Zahlen";
 let AUFGABE_FORMAT = "Zahlen bündeln und entbündeln";
 let aktiveKlassenraum = "3b";    // Fallback fürs Demo-Sprungmenü ohne echten Login; wird nach lkAnmelden() überschrieben
 let aktiverAnzeigename = null;
+let istAdmin = false;            // s. uebernehmeLogin() -- steuert nur die Sichtbarkeit des Admin-Buttons
 
 // ============================================================
 // AUFGABEN-LADE-SYSTEM (aus dem anderen Chat übernommen, unverändert in der Logik)
 // Transformiert eine geparste Aufgaben-Konfiguration (YAML oder JSON) in die von
-// dieser Datei erwarteten globalen Konstanten. Siehe handleAufgabeUpload() weiter
-// unten für den tatsächlichen Datei-Upload, der ladeAufgabe()/aktiviereAufgabe() aufruft.
+// dieser Datei erwarteten globalen Konstanten. Siehe handleAufgabeUploadInDB() und
+// waehleAufgabeAusPool() weiter unten, die ladeAufgabe()/aktiviereAufgabe() aufrufen.
 // ============================================================
 const KATEGORIE_FARBEN = ['c-teal', 'c-mint', 'c-coral', 'c-purple', 'c-amber', 'c-rose', 'c-blue'];
 const FARBE_HOUSEKEEPING = 'c-gray';
@@ -829,14 +831,16 @@ function zeigeLadeFehler(fehlerListe){
   showInfo('Aufgabe konnte nicht geladen werden', `<ul style="padding-left:18px; margin:0;">${liste}</ul>`);
 }
 
-// Liest eine hochgeladene .yaml/.yml/.json-Datei, parst sie passend zur Endung und
-// aktiviert sie. js-yaml wird nur für YAML-Dateien gebraucht (siehe <script>-Einbindung
-// im <head>). Bei Erfolg kurze Bestätigung, bei Fehler übernimmt zeigeLadeFehler().
-function handleAufgabeUpload(event){
+// Liest eine hochgeladene .yaml/.yml/.json-Datei, parst sie passend zur Endung und legt
+// sie als Entwurf (aktiv:false) in der Aufgabenbibliothek (Supabase) ab -- statt sie wie
+// zuvor nur lokal auf diesem Gerät zu aktivieren. Nur über die versteckte Admin-Ansicht
+// erreichbar (?admin + app_metadata.rolle==='admin', durchgesetzt per RLS). Die Validierung
+// via ladeAufgabe() ist unverändert dieselbe wie beim früheren direkten Aktivieren.
+function handleAufgabeUploadInDB(event){
   const datei = event.target.files[0];
   if(!datei) return;
   const reader = new FileReader();
-  reader.onload = () => {
+  reader.onload = async () => {
     let config;
     try {
       if(datei.name.endsWith('.json')) config = JSON.parse(reader.result);
@@ -846,13 +850,84 @@ function handleAufgabeUpload(event){
       event.target.value = '';
       return;
     }
-    const erfolg = aktiviereAufgabe(config);
-    if(erfolg){
-      alert('Aufgabe geladen: ' + AUFGABE_ID + (HAT_WAHL ? ' (mit Ja/Nein-Frage)' : ''));
+    const ergebnis = ladeAufgabe(config);
+    if(ergebnis.fehler.length){
+      zeigeLadeFehler(ergebnis.fehler);
+      event.target.value = '';
+      return;
     }
-    event.target.value = ''; // gleiche Datei danach erneut auswählbar machen
+    const { error } = await sb.from('aufgaben').insert({
+      aufgabe_id: ergebnis.AUFGABE_ID,
+      aufgabenformat: ergebnis.aufgabenformat,
+      aufgabentext: ergebnis.aufgabentext,
+      verstehenskern: ergebnis.verstehenskern,
+      konfiguration: config,
+      aktiv: false
+    });
+    if(error){
+      zeigeLadeFehler(['Konnte nicht in der Aufgabenbibliothek gespeichert werden: ' + error.message]);
+      event.target.value = '';
+      return;
+    }
+    alert('Als Entwurf gespeichert: ' + ergebnis.AUFGABE_ID + '. Zur Freigabe unten in der Liste auf "Entwurf" tippen.');
+    event.target.value = '';
+    ladeAufgabenAdminListe();
   };
   reader.readAsText(datei, 'utf-8');
+}
+
+// Lädt/rendert die komplette Aufgabenbibliothek (inkl. Entwürfe) -- nur für Admin sichtbar
+// dank RLS-Policy "admin_liest_alle_aufgaben"; eine normale LK bekäme hier nur die aktiven.
+async function ladeAufgabenAdminListe(){
+  const el = document.getElementById('aufgaben-admin-liste');
+  if(!el) return;
+  el.innerHTML = 'Lädt…';
+  const { data, error } = await sb.from('aufgaben').select('*').order('erstellt_am', { ascending: false });
+  if(error){ el.innerHTML = '<div class="ts" style="font-size:12px;">Fehler beim Laden: ' + error.message + '</div>'; return; }
+  if(!data.length){ el.innerHTML = '<div class="ts" style="font-size:12px;">Noch keine Aufgaben in der Bibliothek.</div>'; return; }
+  el.innerHTML = data.map(a => `
+    <div class="card row" style="justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <div>
+        <div class="t" style="font-size:13px;">${a.aufgabenformat || a.aufgabe_id}</div>
+        <div class="ts" style="font-size:11px;">${a.aufgabe_id}</div>
+      </div>
+      <button class="navbtn" onclick="toggleAufgabeAktiv('${a.id}', ${!a.aktiv})">${a.aktiv ? 'Aktiv' : 'Entwurf'}</button>
+    </div>`).join('');
+}
+
+async function toggleAufgabeAktiv(id, neuerStatus){
+  const { error } = await sb.from('aufgaben').update({ aktiv: neuerStatus }).eq('id', id);
+  if(error){ alert('Status konnte nicht geändert werden: ' + error.message); return; }
+  ladeAufgabenAdminListe();
+}
+
+// Lädt/rendert den Aufgabenpool für die LK -- nur aktive (freigegebene) Aufgaben, dank
+// RLS-Policy "lk_liest_aktive_aufgaben" auch ohne Admin-Rolle lesbar. Gruppiert nach
+// aufgabenformat, damit dasselbe Feld später auch den Lernverlauf gruppieren kann (2.9).
+async function ladeAufgabenPool(){
+  const el = document.getElementById('pool-liste');
+  if(!el) return;
+  el.innerHTML = 'Lädt…';
+  const { data, error } = await sb.from('aufgaben').select('*').eq('aktiv', true).order('aufgabenformat');
+  if(error){ el.innerHTML = '<div class="ts" style="font-size:12px;">Aufgaben konnten nicht geladen werden: ' + error.message + '</div>'; return; }
+  if(!data.length){ el.innerHTML = '<div class="ts" style="font-size:12px;">Noch keine freigegebene Aufgabe verfügbar.</div>'; return; }
+  const gruppen = {};
+  data.forEach(a => { const g = a.aufgabenformat || 'Ohne Gruppe'; (gruppen[g] = gruppen[g] || []).push(a); });
+  el.innerHTML = Object.entries(gruppen).map(([gruppe, liste]) => `
+    <div class="ts" style="font-size:11px; text-transform:uppercase; margin:10px 0 4px;">${gruppe}</div>
+    ${liste.map(a => `
+      <div class="card row" onclick="waehleAufgabeAusPool('${a.id}')" style="cursor:pointer;">
+        <div class="icon-circle c-amber"><i class="ti ti-calculator"></i></div>
+        <div><div class="t" style="font-size:14px;">${a.aufgabenformat || a.aufgabe_id}</div><div class="ts" style="font-size:11px;">${a.aufgabentext || ''}</div></div>
+      </div>`).join('')}`).join('');
+}
+
+// LK tippt eine Karte im Pool an: Konfiguration nachladen und wie zuvor aktivieren.
+async function waehleAufgabeAusPool(id){
+  const { data, error } = await sb.from('aufgaben').select('konfiguration').eq('id', id).single();
+  if(error || !data){ zeigeLadeFehler(['Aufgabe konnte nicht geladen werden.']); return; }
+  const erfolg = aktiviereAufgabe(data.konfiguration);
+  if(erfolg) show('aufgabe');
 }
 
 
@@ -874,6 +949,11 @@ function uebernehmeLogin(user){
   aktiveKlassenraum = user.user_metadata?.klassenraum || "3b";
   aktiverAnzeigename = user.user_metadata?.anzeige_name || user.email;
   document.getElementById('klassenraum-name-anzeige').textContent = "Klasse " + aktiveKlassenraum;
+  // Admin-Button nur sichtbar mit ?admin in der URL UND echter Admin-Rolle im Account
+  // (app_metadata -- kann nur über das Supabase-Dashboard gesetzt werden, nicht vom Client).
+  // Reine UI-Bequemlichkeit: der eigentliche Schutz läuft über die RLS-Policies auf "aufgaben".
+  istAdmin = new URLSearchParams(window.location.search).has('admin') && user.app_metadata?.rolle === 'admin';
+  document.getElementById('aufgaben-admin-btn').style.display = istAdmin ? '' : 'none';
 }
 async function lkAbmelden(){
   await sb.auth.signOut();
@@ -1073,7 +1153,8 @@ function show(id){
   document.getElementById('topbar-label').textContent = {
     start:"Start", "lk-login":"Anmelden", login:"Login", pool:"Aufgabenpool", aufgabe:"Aufgabe", symbolauswahl:"Kind: wer bist du?",
     aufnahme:"Kind: Aufnahme", dashboard:"LK-Dashboard", tafel:"Tafelansicht", heatmap:"Sitzplan mit Antwortübersicht",
-    verwaltung:"Verwaltung", schnellanlage:"Kinder anlegen", sitzplan:"Sitzplan", lernverlauf:"Lernverlauf"
+    verwaltung:"Verwaltung", schnellanlage:"Kinder anlegen", sitzplan:"Sitzplan", lernverlauf:"Lernverlauf",
+    "aufgaben-admin":"Aufgaben-Verwaltung"
   }[id] || "Demo";
   const role = (id==='symbolauswahl'||id==='aufnahme') ? 'kind' : 'lk';
   roleLastScreen[role] = id;
@@ -1086,6 +1167,8 @@ function show(id){
   if(id==='heatmap') renderHeatmap();
   if(id==='verwaltung') renderKinderliste();
   if(id==='sitzplan') renderSitzplan();
+  if(id==='pool') ladeAufgabenPool();
+  if(id==='aufgaben-admin') ladeAufgabenAdminListe();
   if(id==='aufgabe'){
     document.getElementById('aufgabe-sitzplan-warning').style.display = Object.keys(sitzplanState.placed).length>0 ? 'none' : 'block';
     const ohneEinwilligung = SYMBOLS.filter(s=>!consentState[s.id]).length;

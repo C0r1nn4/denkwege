@@ -75,6 +75,18 @@
   .kid-mode-btn { width: 92px; height: 92px; border-radius: 50%; }
   .sticky-header { position: sticky; top: 0; z-index: 10; }
   .dev-banner { background: var(--fill-warning); color: #201e1d; font-size: 12px; line-height: 1.5; padding: 9px 14px; text-align: center; font-weight: 600; }
+
+  /* [NEU] Verbindungsfrage mit mehreren Richtungen: Chip-Auswahl statt Fixtext. */
+  .vbf-chip { font-size: 11px; padding: 5px 10px; border-radius: 999px; border: 0.5px solid var(--border-strong); background: var(--surface-2); color: var(--text-secondary); }
+  .vbf-chip.active { background: var(--fill-accent); border-color: var(--fill-accent); color: var(--on-accent); font-weight: 600; }
+  /* [NEU] Live-Frage: hervorgehobener, direkt vorlesbarer Impuls statt kleiner grauer Zeile;
+     die frühere Notiz bleibt zusätzlich als untergeordneter Hintergrund-Hinweis erhalten. */
+  .live-frage-box { background: var(--bg-warning); border-radius: var(--radius); padding: 8px 10px; margin-top: 6px; }
+  .live-frage-label { font-size: 10px; color: var(--text-warning); margin-bottom: 2px; display: flex; align-items: center; gap: 4px; }
+  .live-frage-text { font-size: 13px; color: var(--text-primary); }
+  /* [NEU] Sichtbar gemachte Begründung der Sequenzierungs-Reihenfolge, analog zur
+     "Warum diese Empfehlung?"-Erklärung beim Modus-Tab. */
+  .reihenfolge-badge { display:flex; align-items:center; gap:6px; background: var(--bg-accent); color: var(--text-accent); border-radius: var(--radius); padding: 7px 10px; font-size: 12px; font-weight: 600; margin-bottom: 10px; }
 </style>
 </head>
 <body>
@@ -300,15 +312,13 @@
       <div id="vergleichs-art-label" class="ts" style="display:none; font-size:11px; font-weight:600; color:var(--text-accent); margin-bottom:6px;"></div>
       <div class="ts" style="font-size:11px;">Impuls-Idee</div>
       <div class="ts" id="impuls-text" style="font-size:13px; margin-bottom:10px;"></div>
+      <div id="reihenfolge-begruendung" style="display:none;"></div>
       <div class="ts" style="font-size:11px; margin-bottom:6px;">Für die Tafel ausgewählt:</div>
       <div class="grid2" id="slots-area" style="margin-bottom:8px;"></div>
       <div id="seq-controls" style="display:none; margin-bottom:8px;"></div>
       <button class="btn" onclick="addSlot()"><i class="ti ti-plus"></i> Weiteres Feld für die Tafel hinzufügen</button>
     </div>
-    <div class="card c-purple" id="anschlussfrage-card" style="display:none;">
-      <div class="ts" style="font-size:11px;"><i class="ti ti-arrows-join-2"></i> Mögliche Anschlussfrage</div>
-      <div class="t" id="anschlussfrage-text" style="font-size:13px;"></div>
-    </div>
+    <div class="card c-purple" id="anschlussfrage-card" style="display:none;"></div>
     <details style="margin-bottom:12px;">
       <summary style="font-size:13px; font-weight:500; cursor:pointer; color:var(--text-secondary);">Alle Kategorien anzeigen/anpassen ▾</summary>
       <div id="kategorie-legende" style="display:flex; flex-wrap:wrap; gap:8px; margin:10px 0;"></div>
@@ -694,6 +704,21 @@ function ladeAufgabe(config) {
   function pruefeKombination(kombination, ort) {
     (kombination || []).forEach(id => { if (!bekannteIds.has(id)) fehler.push(`${ort}: unbekannte kategorie_id "${id}".`); });
   }
+  // [NEU] Verbindungsfrage: entweder weiterhin ein einzelner String ("verbindungsfrage"),
+  // oder -- für Fälle mit mehr als einer sinnvollen Anschlussrichtung -- eine Liste
+  // benannter Varianten ("verbindungsfragen": [{label, frage}, ...]). Intern immer als
+  // Array normalisiert, damit renderDashboard() nicht zwei Formen unterscheiden muss.
+  // Beide Felder gleichzeitig gesetzt: die Liste hat Vorrang, der Einzelstring wird ignoriert.
+  function parseVerbindungsfragen(t, ort) {
+    if (Array.isArray(t.verbindungsfragen) && t.verbindungsfragen.length) {
+      return t.verbindungsfragen.map((v, i) => {
+        if (!v || !v.frage) fehler.push(`${ort}: verbindungsfragen[${i}] braucht ein Feld "frage".`);
+        return { label: (v && v.label ? v.label.trim() : '') || `Variante ${i + 1}`, frage: v && v.frage ? v.frage.trim() : '' };
+      });
+    }
+    if (t.verbindungsfrage) return [{ label: null, frage: t.verbindungsfrage.trim() }];
+    return [];
+  }
 
   const MOST_MARKIERUNGEN = (a.most_markierungen || []).map(m => {
     pruefeKombination(m.kombination, 'most_markierungen');
@@ -718,7 +743,16 @@ function ladeAufgabe(config) {
     const modus = MODUS_NORMALISIERUNG[t.modus] || t.modus;
     if (!ERLAUBTE_MODI.includes(modus)) fehler.push(`textbausteine: unbekannter modus "${t.modus}".`);
     pruefeKombination(t.kombination, `textbausteine (modus "${t.modus}")`);
-    TEXTBAUSTEINE.push({ modus, kombination: t.kombination, einstiegssatz: (t.einstiegssatz || '').trim(), verbindungsfrage: t.verbindungsfrage ? t.verbindungsfrage.trim() : null });
+    // [NEU] reihenfolge_begruendung: kurzes, optionales Label, das die Logik der
+    // vorgeschlagenen Reihenfolge sichtbar macht (z.B. "unvollständig → vollständig").
+    // Nur bei modus "reihenfolge" sinnvoll, wird sonst ignoriert statt einen Fehler zu werfen.
+    const reihenfolgeBegruendung = (modus === 'reihenfolge' && t.reihenfolge_begruendung)
+      ? t.reihenfolge_begruendung.trim() : null;
+    TEXTBAUSTEINE.push({
+      modus, kombination: t.kombination, einstiegssatz: (t.einstiegssatz || '').trim(),
+      verbindungsfragen: parseVerbindungsfragen(t, `textbausteine (modus "${t.modus}")`),
+      reihenfolgeBegruendung
+    });
   });
 
   const AUFGABE_UEBERSETZUNGEN = (a.uebersetzungen || []).map(u => ({ sprache: u.sprache, text: u.text }));
@@ -926,13 +960,22 @@ let state = {
 let TEXTBAUSTEINE = [
   { modus: "vergleichen", kombination: ["korrekt_begruendet","fehler_mit_buendelungsversuch"],
     einstiegssatz: "Zwei Kinder haben unterschiedliche Ergebnisse — schauen wir uns an, wie sie zur Umwandlung der 42 Zehner gekommen sind.",
-    verbindungsfrage: "Was ist an beiden Erklärungen zur Bündelung gleich, was ist unterschiedlich — und wo trennen sich die Wege?" },
+    // [NEU] Zwei Richtungen statt einer Fixfrage -- die Lehrkraft wählt spontan im Gespräch.
+    verbindungsfragen: [
+      { label: "Gemeinsamkeit", frage: "Was ist an beiden Erklärungen zur Bündelung eigentlich gleich, obwohl der Weg unterschiedlich aussieht?" },
+      { label: "Unterschied", frage: "Wo genau trennen sich die beiden Wege — an welcher Stelle passiert bei dem einen etwas anderes als beim anderen?" }
+    ] },
   { modus: "vergleichen", kombination: ["fehler_unbundled","fehler_stellenwert_ignoriert"],
     einstiegssatz: "Wir schauen uns zwei falsche Lösungswege an — was ist hier mit den 42 Zehnern jeweils passiert?",
-    verbindungsfrage: "Bei wem wurde die 42 gar nicht verändert, und bei wem wurde sie falsch aufgeteilt?" },
+    verbindungsfragen: [
+      { label: "Gemeinsamkeit", frage: "Was haben beide falschen Wege gemeinsam — woran hakt es bei beiden?" },
+      { label: "Unterschied", frage: "Bei wem wurde die 42 gar nicht verändert, und bei wem wurde sie falsch aufgeteilt?" }
+    ] },
   { modus: "reihenfolge", kombination: ["fehler_unbundled","fehler_stellenwert_ignoriert","fehler_mit_buendelungsversuch","korrekt_begruendet"],
     einstiegssatz: "Wir hören uns nacheinander vier verschiedene Wege an, mit den 42 Zehnern umzugehen.",
-    verbindungsfrage: "Welcher Weg überzeugt euch am meisten — und warum?" }
+    verbindungsfragen: [{ label: null, frage: "Welcher Weg überzeugt euch am meisten — und warum?" }],
+    // [NEU] macht sichtbar, nach welcher Logik diese Reihenfolge vorgeschlagen wird.
+    reihenfolgeBegruendung: "nicht tragfähig → tragfähig, aber unbegründet" }
 ];
 // [NEU] Anknüpfen-Impuls pro (unpräziser, tragfähiger) Kategorie -- keine Slots, kein
 // Tab, wird direkt in der Übersicht bei den betreffenden Kindern angezeigt.
@@ -1371,6 +1414,17 @@ function switchTab(tab){
   state.activeTab = tab;
   renderDashboard();
 }
+// [NEU] Welche Verbindungsfrage-Variante gerade aktiv ist (bei mehreren Richtungen, s.
+// renderAnschlussfrage()). An das konkrete Textbaustein-Objekt gebunden, nicht nur an den
+// Tab: wechselt die Lehrkraft die Slot-Kombination (und damit den Textbaustein), springt die
+// Auswahl automatisch auf die erste Variante zurück; bleibt derselbe Textbaustein aktiv (z.B.
+// nach einem Rerender ohne Slot-Änderung), bleibt auch die gewählte Variante erhalten.
+let verbindungsfrageIndex = 0;
+let _letzterTextbausteinFuerVbf = null;
+function waehleVerbindungsfrage(i){
+  verbindungsfrageIndex = i;
+  renderDashboard();
+}
 // [NEU] Auswahlleiste im "vergleichen"-Tab, wenn mehrere Vergleichs-Kombinationen
 // gleichzeitig verfügbar sind (z.B. ein Fehlvorstellungs-Kontrast UND ein Vergleich
 // zweier unterschiedlicher tragfähiger Wege). Bei nur einer verfügbaren Kombination
@@ -1395,6 +1449,24 @@ function waehleVergleichsKombination(kombination){
   state.automatischBefuellt = false;
   renderDashboard();
 }
+// [NEU] Verbindungsfrage-Karte: bei genau einer hinterlegten Variante wie bisher ein
+// einzelner Satz, bei mehreren zusätzlich eine Chip-Leiste zum spontanen Umschalten. Die
+// Auswahl setzt sich zurück auf die erste Variante, sobald ein ANDERER Textbaustein aktiv
+// wird (z.B. weil die Lehrkraft die Slot-Kombination geändert hat) -- nicht bei jedem Rerender.
+function renderAnschlussfrage(textbaustein){
+  const card = document.getElementById('anschlussfrage-card');
+  const varianten = (textbaustein && textbaustein.verbindungsfragen) || [];
+  if(!varianten.length){ card.style.display = 'none'; card.innerHTML = ''; return; }
+  if(textbaustein !== _letzterTextbausteinFuerVbf){ verbindungsfrageIndex = 0; _letzterTextbausteinFuerVbf = textbaustein; }
+  const idx = Math.min(verbindungsfrageIndex, varianten.length - 1);
+  card.style.display = 'block';
+  card.innerHTML = `
+    <div class="ts" style="font-size:11px;"><i class="ti ti-arrows-join-2"></i> Mögliche Anschlussfrage</div>
+    ${varianten.length > 1 ? `<div class="row" style="gap:6px; flex-wrap:wrap; margin:6px 0 8px;">
+      ${varianten.map((v,i)=>`<button class="vbf-chip ${i===idx?'active':''}" onclick="waehleVerbindungsfrage(${i})">${v.label}</button>`).join('')}
+    </div>` : ''}
+    <div class="t" style="font-size:13px;">${varianten[idx].frage}</div>`;
+}
 function renderDashboard(){
   document.querySelectorAll('.tabbtn').forEach(b=>{
     b.classList.toggle('active', b.dataset.tab===state.activeTab);
@@ -1410,12 +1482,16 @@ function renderDashboard(){
   }
   const textbaustein = waehleTextbaustein(state.activeTab);
   document.getElementById('impuls-text').textContent = textbaustein ? textbaustein.einstiegssatz : "(kein automatischer Impuls im Frei-Modus)";
-  const anschlussCard = document.getElementById('anschlussfrage-card');
-  if(textbaustein && textbaustein.verbindungsfrage){
-    anschlussCard.style.display = 'block';
-    document.getElementById('anschlussfrage-text').textContent = textbaustein.verbindungsfrage;
+  renderAnschlussfrage(textbaustein);
+  // [NEU] Begründung der Sequenzierungs-Reihenfolge, nur im "reihenfolge"-Tab und nur wenn
+  // die Aufgabe eine hinterlegt hat -- macht die Logik der Reihenfolge nachvollziehbar,
+  // statt dass sie unbegründet dasteht.
+  const begrEl = document.getElementById('reihenfolge-begruendung');
+  if(state.activeTab === 'reihenfolge' && textbaustein && textbaustein.reihenfolgeBegruendung){
+    begrEl.style.display = 'block';
+    begrEl.innerHTML = `<div class="reihenfolge-badge"><i class="ti ti-arrows-sort"></i> Reihenfolge: ${textbaustein.reihenfolgeBegruendung}</div>`;
   } else {
-    anschlussCard.style.display = 'none';
+    begrEl.style.display = 'none'; begrEl.innerHTML = '';
   }
   const slotIds = state.slots[state.activeTab];
   const area = document.getElementById('slots-area');
@@ -1437,7 +1513,10 @@ function renderDashboard(){
           ${i<slotIds.length-1 ? `<button class="navbtn" style="padding:4px 6px;" onclick="event.stopPropagation(); moveSlot(${i},1)"><i class="ti ti-arrow-down" style="font-size:12px;"></i></button>` : ''}
         </span></div></div>
         <div class="quote-box" style="border-top:none; border-radius:0 0 var(--radius) var(--radius); margin-top:0;">"${child.quote}"</div>
-        <div class="ts" style="font-size:10px; margin-top:4px;"><i class="ti ti-message-circle"></i> ${cat.nachfrage}</div>`;
+        ${cat.nachfrage ? `<div class="live-frage-box">
+          <div class="live-frage-label"><i class="ti ti-message-circle"></i> direkt stellbar</div>
+          <div class="live-frage-text">${cat.nachfrage}</div>
+        </div>` : ''}`;
     } else {
       div.className='slot-empty'; div.textContent = 'leere Tafelanzeige — Antwort aus dem Pool antippen';
       div.onclick = null; div.style.cursor='default';
@@ -1658,7 +1737,10 @@ function renderDetail(){
       </span>
     </div>
     <div class="quote-box">"${child.quote}"</div>
-    <div class="ts" style="font-size:11px; margin-top:8px;"><i class="ti ti-bulb"></i> ${cat.nachfrage}</div>
+    ${cat.nachfrage ? `<div class="live-frage-box" style="margin-top:8px;">
+      <div class="live-frage-label"><i class="ti ti-message-circle"></i> direkt stellbar</div>
+      <div class="live-frage-text">${cat.nachfrage}</div>
+    </div>` : ''}
     <div style="margin-top:12px;">
       <label class="ts" style="font-size:11px;">Kategorie ändern:</label>
       <select style="width:100%; font-size:12px; margin-top:4px;" onchange="recode('${child.name}', this.value)">

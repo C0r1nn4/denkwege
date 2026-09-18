@@ -87,6 +87,14 @@
   /* [NEU] Sichtbar gemachte Begründung der Sequenzierungs-Reihenfolge, analog zur
      "Warum diese Empfehlung?"-Erklärung beim Modus-Tab. */
   .reihenfolge-badge { display:flex; align-items:center; gap:6px; background: var(--bg-accent); color: var(--text-accent); border-radius: var(--radius); padding: 7px 10px; font-size: 12px; font-weight: 600; margin-bottom: 10px; }
+  /* [NEU] Echter Toggle-Switch statt An/Aus-Button -- die Stellung der Wippe zeigt den
+     Zustand selbst, unabhängig von Text (kein "zeigt es das AN, oder schalte ich es AN?"). */
+  .switch { position: relative; display: inline-flex; width: 40px; height: 23px; flex-shrink: 0; cursor: pointer; }
+  .switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+  .switch .slider { position: absolute; inset: 0; background: var(--surface-1); border: 0.5px solid var(--border-strong); border-radius: 999px; transition: background-color .15s, border-color .15s; }
+  .switch .slider::before { content: ""; position: absolute; top: 2px; left: 2px; width: 17px; height: 17px; border-radius: 50%; background: var(--surface-2); box-shadow: 0 1px 2px rgba(0,0,0,0.25); transition: transform .15s; }
+  .switch input:checked + .slider { background: var(--fill-success); border-color: var(--fill-success); }
+  .switch input:checked + .slider::before { transform: translateX(17px); }
 </style>
 </head>
 <body>
@@ -164,7 +172,6 @@
       <span id="klasse-3b-sitzplan-badge" class="tag" style="background:var(--bg-warning); color:var(--text-warning); display:none;"><i class="ti ti-alert-triangle" style="font-size:10px;"></i> Sitzplan fehlt</span>
     </div>
     <button class="btn" onclick="show('verwaltung')"><i class="ti ti-settings"></i> Klassenraum verwalten</button>
-    <button class="btn" id="aufgaben-admin-btn" style="display:none; margin-top:8px;" onclick="show('aufgaben-admin')"><i class="ti ti-database"></i> Aufgaben-Verwaltung</button>
   </div>
 
 
@@ -172,20 +179,14 @@
   <div id="scr-pool" class="screen">
     <button class="navbtn" style="margin-bottom:10px;" onclick="show('login')"><i class="ti ti-arrow-left"></i> Klassenraum-Übersicht</button>
     <h2 class="scr-title">Aufgabe wählen — Klasse 3b</h2>
-    <div id="pool-liste"></div>
-  </div>
-
-  <!-- AUFGABEN-VERWALTUNG (versteckt -- nur mit ?admin in der URL + Admin-Rolle sichtbar) -->
-  <div id="scr-aufgaben-admin" class="screen">
-    <button class="navbtn" style="margin-bottom:10px;" onclick="show('login')"><i class="ti ti-arrow-left"></i> Klassenraum-Übersicht</button>
-    <h2 class="scr-title">Aufgaben-Verwaltung</h2>
-    <div style="padding:10px; background:var(--surface-2); border-radius:var(--radius); margin-bottom:16px; border:0.5px solid var(--border);">
-      <div style="font-size:13px; font-weight:500; margin-bottom:2px;">Neue Aufgabe hochladen</div>
-      <div class="ts" style="font-size:11px; margin-bottom:8px;">.yaml/.yml oder .json-Datei einer Aufgabenkonfiguration. Landet zunächst als Entwurf (inaktiv) in der Bibliothek -- Lehrkräfte sehen sie erst nach Freigabe unten.</div>
-      <input type="file" accept=".yaml,.yml,.json" onchange="handleAufgabeUploadInDB(event)" style="font-size:11px; width:100%;">
+    <div class="card row" onclick="show('aufgabe')" style="cursor:pointer;">
+      <div class="icon-circle c-amber"><i class="ti ti-calculator"></i></div>
+      <div><div class="t" id="pool-aufgabe-format" style="font-size:14px;">Zahlen bündeln und entbündeln</div><div class="ts" id="pool-aufgabe-text" style="font-size:11px;">Wie würdest du die Zahl 6 T 2 H 42 Z 5 E in die Stellenwerttafel und als Zahl schreiben? Erkläre.</div></div>
     </div>
-    <div class="ts" style="font-size:12px; margin-bottom:4px;">Aufgabenbibliothek</div>
-    <div id="aufgaben-admin-liste"></div>
+    <div class="card row" style="opacity:0.5;">
+      <div class="icon-circle c-gray"><i class="ti ti-stack-2"></i></div>
+      <div><div class="t" style="font-size:14px;">Zahlenmauer A</div><div class="ts" style="font-size:11px;">(Demo: nicht aktiv)</div></div>
+    </div>
   </div>
 
   <!-- AUFGABE DETAIL -->
@@ -300,40 +301,50 @@
       <i class="ti ti-info-circle" style="font-size:18px; color:var(--text-accent);"></i>
     </div>
     <div class="banner" style="background:var(--bg-success); color:var(--text-success); margin-bottom:10px;">
-      Hier bereiten Sie das Plenumsgespräch vor: zwei Antworten vergleichen, mehrere der Reihe nach besprechen, oder die Tafel frei gestalten. Anknüpfen an eine einzelne tragfähige, aber noch unpräzise Antwort ist kein eigener Tab mehr — dafür markiert die Übersicht (Sitzplan) die passenden Kandidaten direkt.
+      Hier bereiten Sie das Plenumsgespräch vor: die empfohlene Abfolge übernehmen (und bei Bedarf Schritte tauschen/überspringen), oder die Tafel komplett frei gestalten.
     </div>
     <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:4px;">
       <div class="ts" style="font-size:11px;">Wie ins Gespräch einsteigen?</div>
-      <span class="ts" style="font-size:10px; text-decoration:underline; cursor:pointer;" onclick="toggleErklaerung()">Warum diese Empfehlung?</span>
+      <span class="ts" style="font-size:10px; text-decoration:underline; cursor:pointer;" onclick="toggleErklaerung()">Warum diese Reihenfolge?</span>
     </div>
     <div id="empfehlung-erklaerung" class="ts" style="display:none; font-size:11px; background:var(--bg-accent); color:var(--text-accent); padding:8px; border-radius:var(--radius); margin-bottom:8px;">
-      Der empfohlene Tab + die vorbelegten Antworten ergeben sich aus zwei Schritten: (1) <b>MOST-Filterung</b> — welche Kategorie-Kombinationen laut Aufgabenanlage als besonders gesprächswürdig markiert sind und gerade unter den eingegangenen Antworten vorkommen (es können mehrere gleichzeitig sein — dann erscheint oben eine Auswahlleiste), (2) pro Kategorie wird die zuerst eingegangene passende Antwort vorbelegt (eine Konfidenz-basierte Auswahl liefert die Kategorisierung aktuell nicht). Die Lehrkraft kann das jederzeit überschreiben.
+      Jeder Schritt ist einem "Baustein" der Aufgabenanlage zugeordnet (einzeln oder Vergleich). Welche Kategorie einen Baustein konkret füllt, ergibt sich aus der jeweiligen Prioritätsliste (Fehler bzw. tragfähige Antworten) UND daraus, was in dieser Klasse tatsächlich vorgekommen ist — pro Kategorie wird die zuerst eingegangene passende Antwort vorbelegt. Kommt eine vorgesehene Kategorie gar nicht vor, entfällt ihr Schritt automatisch. Die Lehrkraft kann jeden Schritt überspringen oder die Antwort/Kategorie darin manuell tauschen.
     </div>
     <div class="row" style="gap:6px; margin-bottom:14px; overflow-x:auto;">
-      <button class="tabbtn navbtn" data-tab="vergleichen" onclick="switchTab('vergleichen')" style="position:relative;">Vergleichen<span class="empf-badge" data-tab-badge="vergleichen" style="display:none; position:absolute;top:-8px;right:-6px;background:var(--bg-accent);color:var(--text-accent);font-size:8px;padding:1px 4px;border-radius:8px;">empf.</span></button>
-      <button class="tabbtn navbtn" data-tab="reihenfolge" onclick="switchTab('reihenfolge')" style="position:relative;">Der Reihe nach<span class="empf-badge" data-tab-badge="reihenfolge" style="display:none; position:absolute;top:-8px;right:-6px;background:var(--bg-accent);color:var(--text-accent);font-size:8px;padding:1px 4px;border-radius:8px;">empf.</span></button>
+      <button class="tabbtn navbtn" data-tab="empfohlen" onclick="switchTab('empfohlen')" style="position:relative;">Empfohlene Reihenfolge<span class="empf-badge" style="display:none; position:absolute;top:-8px;right:-6px;background:var(--bg-accent);color:var(--text-accent);font-size:8px;padding:1px 4px;border-radius:8px;">empf.</span></button>
       <button class="tabbtn navbtn" data-tab="frei" onclick="switchTab('frei')">Frei</button>
     </div>
-    <div id="vergleichs-auswahl" style="display:none; margin-bottom:8px;"></div>
-    <div class="card">
-      <div id="vergleichs-art-label" class="ts" style="display:none; font-size:11px; font-weight:600; color:var(--text-accent); margin-bottom:6px;"></div>
-      <div class="ts" style="font-size:11px;">Impuls-Idee</div>
-      <div class="ts" id="impuls-text" style="font-size:13px; margin-bottom:10px;"></div>
-      <div id="reihenfolge-begruendung" style="display:none;"></div>
-      <div class="ts" style="font-size:11px; margin-bottom:6px;">Für die Tafel ausgewählt:</div>
-      <div class="grid2" id="slots-area" style="margin-bottom:8px;"></div>
-      <div id="seq-controls" style="display:none; margin-bottom:8px;"></div>
-      <button class="btn" onclick="addSlot()"><i class="ti ti-plus"></i> Weiteres Feld für die Tafel hinzufügen</button>
+
+    <!-- EMPFOHLENE REIHENFOLGE -->
+    <div id="empfohlen-area"></div>
+
+    <!-- FREI -->
+    <div id="frei-area" style="display:none;">
+      <div class="card">
+        <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <div class="ts" style="font-size:11px;">Layout auf der Tafel</div>
+          <div class="row" style="gap:4px;">
+            <button class="navbtn" id="layout-nebeneinander" onclick="setFreiLayout('nebeneinander')">Nebeneinander</button>
+            <button class="navbtn" id="layout-untereinander" onclick="setFreiLayout('untereinander')">Untereinander</button>
+          </div>
+        </div>
+        <div class="ts" style="font-size:11px; margin-bottom:6px;">Für die Tafel ausgewählt:</div>
+        <div class="grid2" id="slots-area" style="margin-bottom:8px;"></div>
+        <div id="seq-controls" style="display:none; margin-bottom:8px;"></div>
+        <button class="btn" onclick="addSlot()"><i class="ti ti-plus"></i> Weiteres Feld für die Tafel hinzufügen</button>
+      </div>
     </div>
-    <div class="card c-purple" id="anschlussfrage-card" style="display:none;"></div>
+
+
     <details style="margin-bottom:12px;">
+
       <summary style="font-size:13px; font-weight:500; cursor:pointer; color:var(--text-secondary);">Alle Kategorien anzeigen/anpassen ▾</summary>
       <div id="kategorie-legende" style="display:flex; flex-wrap:wrap; gap:8px; margin:10px 0;"></div>
       <div class="grid2" id="pool-area"></div>
     </details>
     <div class="row" style="justify-content:space-between; align-items:center; padding:8px 10px; background:var(--surface-2); border-radius:var(--radius); border:0.5px solid var(--border); margin-top:8px;">
       <span style="font-size:12px;">Antworten auf der Tafel zeigen</span>
-      <button class="navbtn" id="antworten-toggle" onclick="toggleAntwortenSichtbar()">Aus</button>
+      <label class="switch"><input type="checkbox" id="antworten-toggle" onchange="toggleAntwortenSichtbar(this.checked)"><span class="slider"></span></label>
     </div>
     <button class="btn btn-primary" style="margin-top:8px;" onclick="show('tafel')"><i class="ti ti-presentation"></i> Tafelansicht anzeigen (Erweitern-Modus)</button>
     <button class="btn" style="margin-top:8px;" onclick="show('heatmap')"><i class="ti ti-map-2"></i> Zurück zum Sitzplan mit Antwortübersicht</button>
@@ -345,7 +356,11 @@
     <div class="banner"><i class="ti ti-projector"></i> Demo: Dies ist die Projektions-Ansicht — im echten Betrieb liefe sie parallel (eigenes Fenster) neben dem LK-Dashboard, kein Hin-und-Zurück-Navigieren nötig.</div>
     <div class="row" style="justify-content:space-between; align-items:center; padding:8px 10px; background:var(--surface-2); border-radius:var(--radius); border:0.5px solid var(--border); margin-bottom:12px;">
       <span style="font-size:12px;">Antworten auf der Tafel zeigen</span>
-      <button class="navbtn" id="antworten-toggle-tafel" onclick="toggleAntwortenSichtbar()">Aus</button>
+      <label class="switch"><input type="checkbox" id="antworten-toggle-tafel" onchange="toggleAntwortenSichtbar(this.checked)"><span class="slider"></span></label>
+    </div>
+    <div class="row" style="justify-content:space-between; align-items:center; padding:8px 10px; background:var(--surface-2); border-radius:var(--radius); border:0.5px solid var(--border); margin-bottom:12px;">
+      <span style="font-size:12px;">Aufgabentext auf der Tafel zeigen</span>
+      <label class="switch"><input type="checkbox" id="aufgabe-toggle" onchange="toggleTafelAufgabe(this.checked)"><span class="slider"></span></label>
     </div>
     <div id="tafel-qr-section" style="display:none; text-align:center; background:var(--surface-2); border-radius:12px; padding:16px; margin-bottom:12px;">
       <div class="ts" style="font-size:12px; margin-bottom:10px;">Scanne den Code, oder gib ihn auf deinem Gerät ein:</div>
@@ -354,8 +369,8 @@
     </div>
     <div id="tafel-aufgabe" class="t" style="text-align:center; font-size:20px; font-weight:600; margin-bottom:12px; padding:10px; background:var(--surface-2); border-radius:12px; display:none;">6 T 2 H 42 Z 5 E</div>
     <div id="tafel-slots"></div>
+    <div id="tafel-schritt-steuerung" class="row" style="justify-content:center; align-items:center; gap:10px; margin-top:14px; padding:10px; background:var(--surface-2); border-radius:var(--radius); border:0.5px solid var(--border);"></div>
     <div class="row" style="justify-content:center; gap:8px; margin-top:14px;">
-      <button class="navbtn" onclick="toggleTafelAufgabe()">Aufgabe ein/aus</button>
       <button class="navbtn" onclick="show('heatmap')"><i class="ti ti-map-2"></i> zum Sitzplan mit Antwortübersicht</button>
     </div>
   </div>
@@ -409,12 +424,18 @@
       <button class="btn" onclick="show('sitzplan')"><i class="ti ti-armchair"></i> Sitzplan</button>
       <button class="btn" onclick="show('lernverlauf')"><i class="ti ti-chart-bar"></i> Verlauf</button>
     </div>
+    <div style="padding:10px; background:var(--surface-2); border-radius:var(--radius); margin-bottom:16px; border:0.5px solid var(--border);">
+      <div style="font-size:13px; font-weight:500; margin-bottom:2px;">Aufgabe laden</div>
+      <div class="ts" style="font-size:11px; margin-bottom:8px;">.yaml/.yml oder .json-Datei einer Aufgabenkonfiguration. Ersetzt die aktuell aktive Aufgabe für dieses Gerät.</div>
+      <input type="file" accept=".yaml,.yml,.json" onchange="handleAufgabeUpload(event)" style="font-size:11px; width:100%;">
+      <div id="aufgabe-lade-status" class="ts" style="font-size:11px; margin-top:6px;">Aktuell aktiv: <span id="aufgabe-lade-aktuell">buendeln_6t2h42z5e</span></div>
+    </div>
     <div class="row" style="justify-content:space-between; align-items:center; padding:10px; background:var(--surface-2); border-radius:var(--radius); margin-bottom:12px; border:0.5px solid var(--border);">
       <div>
         <div style="font-size:13px; font-weight:500;">Anonym arbeiten</div>
         <div class="ts" style="font-size:11px;">Nur Symbole digital — Namen kennt nur die Lehrkraft, auf Papier</div>
       </div>
-      <button class="navbtn" id="anonym-toggle" onclick="toggleAnonym()">Aus</button>
+      <label class="switch"><input type="checkbox" id="anonym-toggle" onchange="toggleAnonym(this.checked)"><span class="slider"></span></label>
     </div>
     <div class="ts" style="font-size:12px; margin-bottom:4px;" id="kinder-count">Kinder</div>
     <div class="banner" id="kein-zugang-hinweis" style="display:none;">
@@ -570,16 +591,16 @@ function aktualisierenAnsicht(){
 let CATS = {
   korrekt_begruendet: {label:"richtig, begründet", color:"c-teal", typ:"tragfähige Strategie", praezision:"praezise", gueltig_fuer:null, def:"Zahl 6625 korrekt UND eine Stellenwert- oder Bündelungsregel wird erkennbar als Begründung genannt.", nachfrage:"Warum musstest du die 42 Zehner überhaupt umwandeln?"},
   korrekt_unbegruendet: {label:"richtig, unbegründet", color:"c-mint", typ:"tragfähige Strategie", praezision:"unpraezise", gueltig_fuer:null, def:"Zahl 6625 korrekt, aber keine erkennbare inhaltliche Begründung -- das Verständnis ist noch nicht ausdifferenziert genug, um es zu artikulieren.", nachfrage:"Wie bist du auf die 6625 gekommen? Was ist mit den 42 Zehnern passiert?"},
-  fehler_unbundled: {label:"Fehler: nicht entbündelt (62425)", color:"c-coral", typ:"Fehlvorstellung", gueltig_fuer:null, def:"42 Zehner werden unverändert/roh in die Zehnerspalte übernommen, keine Regruppierung stattgefunden.", nachfrage:"Darf in einem Kästchen der Stellenwerttafel mehr als eine Ziffer stehen?"},
-  fehler_stellenwert_ignoriert: {label:"Fehler: Stellenwert ignoriert (6247)", color:"c-purple", typ:"Fehlvorstellung", gueltig_fuer:null, def:"Die '2' von 42 wird fälschlich als Einer-Ziffer gedeutet und zu den 5 Einern addiert.", nachfrage:"Was bedeutet die '2' in '42 Zehner' — ist das eine Einer-Ziffer?"},
-  fehler_mit_buendelungsversuch: {label:"Fehler, mit Bündelungsansatz", color:"c-amber", typ:"Fehlvorstellung", gueltig_fuer:null, def:"Andere falsche Endzahl, aber im Text wird erkennbar eine Bündelungs- oder Stellenwertregel artikuliert.", nachfrage:"Deine Erklärung zur Umwandlung klingt richtig — wo genau ist beim Rechnen etwas schiefgelaufen?"},
-  fehler_ohne_erklaerung: {label:"Fehler ohne Begründung", color:"c-rose", typ:"Fehlvorstellung", gueltig_fuer:null, def:"Andere falsche Endzahl, ohne dass eine inhaltliche Begründung erkennbar ist.", nachfrage:"Wie bist du vorgegangen? Erzähl mal Schritt für Schritt."},
+  fehler_unbundled: {label:"Fehler: nicht entbündelt (62425)", color:"c-coral", typ:"Fehler", gueltig_fuer:null, def:"42 Zehner werden unverändert/roh in die Zehnerspalte übernommen, keine Regruppierung stattgefunden.", nachfrage:"Darf in einem Kästchen der Stellenwerttafel mehr als eine Ziffer stehen?"},
+  fehler_stellenwert_ignoriert: {label:"Fehler: Stellenwert ignoriert (6247)", color:"c-purple", typ:"Fehler", gueltig_fuer:null, def:"Die '2' von 42 wird fälschlich als Einer-Ziffer gedeutet und zu den 5 Einern addiert.", nachfrage:"Was bedeutet die '2' in '42 Zehner' — ist das eine Einer-Ziffer?"},
+  fehler_mit_buendelungsversuch: {label:"Fehler, mit Bündelungsansatz", color:"c-amber", typ:"Fehler", gueltig_fuer:null, def:"Andere falsche Endzahl, aber im Text wird erkennbar eine Bündelungs- oder Stellenwertregel artikuliert.", nachfrage:"Deine Erklärung zur Umwandlung klingt richtig — wo genau ist beim Rechnen etwas schiefgelaufen?"},
+  fehler_ohne_erklaerung: {label:"Fehler ohne Begründung", color:"c-rose", typ:"Fehler", gueltig_fuer:null, def:"Andere falsche Endzahl, ohne dass eine inhaltliche Begründung erkennbar ist.", nachfrage:"Wie bist du vorgegangen? Erzähl mal Schritt für Schritt."},
   keine_bearbeitung: {label:"keine Bearbeitung", color:"c-gray", typ:null, gueltig_fuer:null, def:"Kein Eintrag / keine Antwort vorhanden.", nachfrage:""},
   unklar: {label:"unklar", color:"c-gray", typ:null, gueltig_fuer:null, def:"Keiner Kategorie sicher zuordenbar", nachfrage:""}
 };
 
 // [NEU] Didaktische Funktion einer Kategorie -- Konsequenz aus der Taxonomie, keine eigene
-// Pflege nötig: typ:"Fehlvorstellung" -> konfrontieren; typ:"tragfähige Strategie" +
+// Pflege nötig: typ:"Fehler" -> konfrontieren; typ:"tragfähige Strategie" +
 // praezision:"unpraezise" -> anknuepfen; typ:"tragfähige Strategie" + praezision:"praezise"
 // -> vergleichen (aber nur ein KANDIDAT -- ob es wirklich etwas zu vergleichen gibt, hängt
 // davon ab, ob eine zweite, andersartige praezise Kategorie ebenfalls vorkommt, s.
@@ -587,7 +608,7 @@ let CATS = {
 function didaktischeFunktion(katId){
   const cat = CATS[katId];
   if(!cat || !cat.typ) return null;
-  if(cat.typ === 'Fehlvorstellung') return 'konfrontieren';
+  if(cat.typ === 'Fehler') return 'konfrontieren';
   if(cat.typ === 'tragfähige Strategie') return cat.praezision === 'unpraezise' ? 'anknuepfen' : 'vergleichen';
   return null;
 }
@@ -619,27 +640,15 @@ let AUFGABE_VERSTEHENSKERN = "Bündeln und Entbündeln von Zahlen";
 let AUFGABE_FORMAT = "Zahlen bündeln und entbündeln";
 let aktiveKlassenraum = "3b";    // Fallback fürs Demo-Sprungmenü ohne echten Login; wird nach lkAnmelden() überschrieben
 let aktiverAnzeigename = null;
-let istAdmin = false;            // s. uebernehmeLogin() -- steuert nur die Sichtbarkeit des Admin-Buttons
 
 // ============================================================
 // AUFGABEN-LADE-SYSTEM (aus dem anderen Chat übernommen, unverändert in der Logik)
 // Transformiert eine geparste Aufgaben-Konfiguration (YAML oder JSON) in die von
-// dieser Datei erwarteten globalen Konstanten. Siehe handleAufgabeUploadInDB() und
-// waehleAufgabeAusPool() weiter unten, die ladeAufgabe()/aktiviereAufgabe() aufrufen.
+// dieser Datei erwarteten globalen Konstanten. Siehe handleAufgabeUpload() weiter
+// unten für den tatsächlichen Datei-Upload, der ladeAufgabe()/aktiviereAufgabe() aufruft.
 // ============================================================
 const KATEGORIE_FARBEN = ['c-teal', 'c-mint', 'c-coral', 'c-purple', 'c-amber', 'c-rose', 'c-blue'];
 const FARBE_HOUSEKEEPING = 'c-gray';
-// [NEU/überarbeitet] Nur noch drei Board-Modi. "Anknüpfen" ist kein Board-Modus mehr --
-// es betrifft immer nur eine einzelne Antwort (kein Vergleich/keine Reihenfolge nötig)
-// und wird stattdessen in der Übersicht (Sitzplan/Heatmap) direkt an der jeweiligen
-// Antwort gezeigt, s. ANKNUEPFEN_IMPULSE unten. "konfrontieren" und "gegenueberstellen"
-// sind für die Lehrkraft kaum unterscheidbare Fachbegriffe und laufen daher als EIN Tab
-// ("vergleichen"); welche Art von Vergleich gerade vorliegt (Fehlvorstellung vs.
-// tragfähig, oder zwei unterschiedliche tragfähige Wege) wird live aus den Kategorien in
-// den Slots abgelesen, s. vergleichsArt(). "sequenzieren" heißt für die Lehrkraft
-// "reihenfolge".
-const MODUS_NORMALISIERUNG = { konfrontieren: 'vergleichen', gegenueberstellen: 'vergleichen', sequenzieren: 'reihenfolge' };
-const ERLAUBTE_MODI = ['vergleichen', 'reihenfolge', 'frei'];
 
 function ladeAufgabe(config) {
   const fehler = [];
@@ -695,6 +704,13 @@ function ladeAufgabe(config) {
     if (k.kategorietyp === 'tragfähige Strategie' && k.praezision && !['praezise','unpraezise'].includes(k.praezision)) {
       fehler.push(`Kategorie "${k.kategorie_id}": praezision muss "praezise" oder "unpraezise" sein, nicht "${k.praezision}".`);
     }
+    // [NEU] kategorietyp ist kein Freitext -- der Code vergleicht an mehreren Stellen
+    // wörtlich auf genau diese zwei Werte (didaktischeFunktion(), Fehler-Prioritätslisten,
+    // ⚠-Symbol). Jede andere Schreibweise würde bisher STILL ignoriert statt einen Fehler
+    // zu werfen -- das hier verhindert genau das.
+    if (!istHousekeeping && !['tragfähige Strategie', 'Fehler'].includes(k.kategorietyp)) {
+      fehler.push(`Kategorie "${k.kategorie_id}": kategorietyp muss "tragfähige Strategie" oder "Fehler" sein (oder für Housekeeping weggelassen), nicht "${k.kategorietyp}".`);
+    }
 
     CATS[k.kategorie_id] = {
       label: k.bezeichnung, color, typ: k.kategorietyp ?? null, praezision: k.praezision ?? null,
@@ -702,59 +718,60 @@ function ladeAufgabe(config) {
     };
   });
 
+  // [NEU] Diese zwei IDs sind im Code fest verdrahtet als Rückfall, wenn ein Transkript
+  // leer ist oder die KI-Kategorisierung fehlschlägt (s. heuristischeKategorie()). Fehlen
+  // sie, zeigt das Dashboard im Fehlerfall eine nicht existierende Kategorie -- bisher
+  // unvalidiert.
+  ['keine_bearbeitung', 'unklar'].forEach(id => {
+    if (!CATS[id]) fehler.push(`Pflicht-Kategorie "${id}" fehlt -- wird von der KI-Ausfallsicherung als Rückfall-ID vorausgesetzt.`);
+  });
+
   const bekannteIds = new Set(Object.keys(CATS));
   function pruefeKombination(kombination, ort) {
     (kombination || []).forEach(id => { if (!bekannteIds.has(id)) fehler.push(`${ort}: unbekannte kategorie_id "${id}".`); });
   }
-  // [NEU] Verbindungsfrage: entweder weiterhin ein einzelner String ("verbindungsfrage"),
-  // oder -- für Fälle mit mehr als einer sinnvollen Anschlussrichtung -- eine Liste
-  // benannter Varianten ("verbindungsfragen": [{label, frage}, ...]). Intern immer als
-  // Array normalisiert, damit renderDashboard() nicht zwei Formen unterscheiden muss.
-  // Beide Felder gleichzeitig gesetzt: die Liste hat Vorrang, der Einzelstring wird ignoriert.
-  function parseVerbindungsfragen(t, ort) {
-    if (Array.isArray(t.verbindungsfragen) && t.verbindungsfragen.length) {
-      return t.verbindungsfragen.map((v, i) => {
-        if (!v || !v.frage) fehler.push(`${ort}: verbindungsfragen[${i}] braucht ein Feld "frage".`);
-        return { label: (v && v.label ? v.label.trim() : '') || `Variante ${i + 1}`, frage: v && v.frage ? v.frage.trim() : '' };
-      });
-    }
-    if (t.verbindungsfrage) return [{ label: null, frage: t.verbindungsfrage.trim() }];
-    return [];
-  }
-
-  const MOST_MARKIERUNGEN = (a.most_markierungen || []).map(m => {
-    pruefeKombination(m.kombination, 'most_markierungen');
-    return { kombination: m.kombination, gespraechswuerdig: !!m.gespraechswuerdig };
+  // [NEU] Statt fester Tabs beschreibt "bausteine" die vorgesehene ABFOLGE für die
+  // "Empfohlene Reihenfolge". Jeder Eintrag ist typ:"isoliert" (eine Antwort einzeln, Feld
+  // "pool": "fehler"|"tragfaehig", Default "fehler") oder typ:"vergleich" (zwei Antworten,
+  // Feld "pools": [Pool der ersten Seite, Pool der zweiten Seite] -- z.B. ["fehler",
+  // "tragfaehig"] für Fehler-gegen-tragfähig, aber genauso ["fehler","fehler"] für zwei
+  // unterschiedliche Fehler gegeneinander, oder ["tragfaehig","tragfaehig"] für zwei
+  // unterschiedliche tragfähige Wege -- entspricht den drei Vergleichsarten, die früher
+  // vergleichsArt() aus einer MOST-Kombination ablas). WELCHE Kategorie einen Baustein
+  // konkret füllt, steht nicht im Baustein selbst, sondern ergibt sich zur Laufzeit aus
+  // fehler_prioritaet/tragfaehig_prioritaet: die höchstpriorisierten tatsächlich
+  // vorgekommenen Kategorien des jeweiligen Pools werden der Reihe nach verteilt, ohne
+  // eine Kategorie doppelt zu vergeben. Kommt eine Kategorie nicht vor (oder braucht ein
+  // gleicher-Pool-Vergleich zwei, aber nur eine ist da), entfällt der Baustein automatisch,
+  // s. berechneEmpfBloecke(). Eine "Anschlussfrage" gibt es bewusst nicht mehr als eigenes
+  // Feld -- Einstiegssatz (Impuls) und die Live-Frage je Kategorie decken das ab.
+  const ERLAUBTE_POOLS = ['fehler', 'tragfaehig'];
+  const FEHLER_PRIORITAET = a.fehler_prioritaet || [];
+  pruefeKombination(FEHLER_PRIORITAET, 'fehler_prioritaet');
+  FEHLER_PRIORITAET.forEach(id => {
+    if (CATS[id] && CATS[id].typ !== 'Fehler') fehler.push(`fehler_prioritaet: "${id}" ist keine Kategorie vom Typ "Fehler".`);
   });
-
-  // [NEU] "anknuepfen"-Textbausteine sind kein Board-Modus mehr -- sie brauchen genau
-  // eine kategorie_id (Anknüpfen betrifft immer nur eine einzelne Antwort) und landen in
-  // ANKNUEPFEN_IMPULSE statt in TEXTBAUSTEINE, für die Anzeige direkt in der Übersicht.
-  const TEXTBAUSTEINE = [];
-  const ANKNUEPFEN_IMPULSE = {};
-  (a.textbausteine || []).forEach(t => {
-    if (t.modus === 'anknuepfen') {
-      pruefeKombination(t.kombination, 'textbausteine (modus "anknuepfen")');
-      if (!t.kombination || t.kombination.length !== 1) {
-        fehler.push(`textbausteine (modus "anknuepfen"): braucht genau eine kategorie_id, nicht ${(t.kombination||[]).length}.`);
-        return;
-      }
-      ANKNUEPFEN_IMPULSE[t.kombination[0]] = { einstiegssatz: (t.einstiegssatz || '').trim(), verbindungsfrage: t.verbindungsfrage ? t.verbindungsfrage.trim() : null };
-      return;
+  const TRAGFAEHIG_PRIORITAET = a.tragfaehig_prioritaet || [];
+  pruefeKombination(TRAGFAEHIG_PRIORITAET, 'tragfaehig_prioritaet');
+  TRAGFAEHIG_PRIORITAET.forEach(id => {
+    if (CATS[id] && CATS[id].typ !== 'tragfähige Strategie') fehler.push(`tragfaehig_prioritaet: "${id}" ist keine Kategorie vom Typ "tragfähige Strategie".`);
+  });
+  const ERLAUBTE_BAUSTEIN_TYPEN = ['isoliert', 'vergleich'];
+  const BAUSTEINE = (a.bausteine || []).map((b, i) => {
+    if (!ERLAUBTE_BAUSTEIN_TYPEN.includes(b.typ)) fehler.push(`bausteine[${i}]: typ muss "isoliert" oder "vergleich" sein, nicht "${b.typ}".`);
+    if (b.typ === 'isoliert') {
+      const pool = b.pool || 'fehler';
+      if (!ERLAUBTE_POOLS.includes(pool)) fehler.push(`bausteine[${i}]: pool muss "fehler" oder "tragfaehig" sein, nicht "${b.pool}".`);
+      return { typ: b.typ, pools: [pool], einstiegssatz: (b.einstiegssatz || '').trim() };
     }
-    const modus = MODUS_NORMALISIERUNG[t.modus] || t.modus;
-    if (!ERLAUBTE_MODI.includes(modus)) fehler.push(`textbausteine: unbekannter modus "${t.modus}".`);
-    pruefeKombination(t.kombination, `textbausteine (modus "${t.modus}")`);
-    // [NEU] reihenfolge_begruendung: kurzes, optionales Label, das die Logik der
-    // vorgeschlagenen Reihenfolge sichtbar macht (z.B. "unvollständig → vollständig").
-    // Nur bei modus "reihenfolge" sinnvoll, wird sonst ignoriert statt einen Fehler zu werfen.
-    const reihenfolgeBegruendung = (modus === 'reihenfolge' && t.reihenfolge_begruendung)
-      ? t.reihenfolge_begruendung.trim() : null;
-    TEXTBAUSTEINE.push({
-      modus, kombination: t.kombination, einstiegssatz: (t.einstiegssatz || '').trim(),
-      verbindungsfragen: parseVerbindungsfragen(t, `textbausteine (modus "${t.modus}")`),
-      reihenfolgeBegruendung
-    });
+    if (b.typ === 'vergleich') {
+      const pools = b.pools || ['fehler', 'tragfaehig'];
+      if (!Array.isArray(pools) || pools.length !== 2 || pools.some(p => !ERLAUBTE_POOLS.includes(p))) {
+        fehler.push(`bausteine[${i}]: pools muss ein Array aus genau zwei Werten "fehler"/"tragfaehig" sein.`);
+      }
+      return { typ: b.typ, pools, einstiegssatz: (b.einstiegssatz || '').trim() };
+    }
+    return { typ: b.typ, pools: [], einstiegssatz: (b.einstiegssatz || '').trim() };
   });
 
   const AUFGABE_UEBERSETZUNGEN = (a.uebersetzungen || []).map(u => ({ sprache: u.sprache, text: u.text }));
@@ -767,7 +784,7 @@ function ladeAufgabe(config) {
   if (fehler.length) return { fehler };
 
   return {
-    fehler: [], AUFGABE_ID, HAT_WAHL, RICHTIGE_ANTWORT, CATS, TEXTBAUSTEINE, ANKNUEPFEN_IMPULSE, MOST_MARKIERUNGEN, AUFGABE_UEBERSETZUNGEN,
+    fehler: [], AUFGABE_ID, HAT_WAHL, RICHTIGE_ANTWORT, CATS, BAUSTEINE, FEHLER_PRIORITAET, TRAGFAEHIG_PRIORITAET, AUFGABE_UEBERSETZUNGEN,
     aufgabentext: a.aufgabentext, verstehenskern: a.verstehenskern, hintergrundmaterial: a.hintergrundmaterial || null,
     aufgabenformat: a.aufgabenformat || null, druckbare_version: !!a.druckbare_version,
     klassifikations_prompt: (a.taxonomie && a.taxonomie.klassifikations_prompt) || null,
@@ -784,9 +801,9 @@ function aktiviereAufgabe(config) {
   HAT_WAHL = ergebnis.HAT_WAHL;
   RICHTIGE_ANTWORT = ergebnis.RICHTIGE_ANTWORT;
   CATS = ergebnis.CATS;
-  TEXTBAUSTEINE = ergebnis.TEXTBAUSTEINE;
-  ANKNUEPFEN_IMPULSE = ergebnis.ANKNUEPFEN_IMPULSE;
-  MOST_MARKIERUNGEN = ergebnis.MOST_MARKIERUNGEN;
+  BAUSTEINE = ergebnis.BAUSTEINE;
+  FEHLER_PRIORITAET = ergebnis.FEHLER_PRIORITAET;
+  TRAGFAEHIG_PRIORITAET = ergebnis.TRAGFAEHIG_PRIORITAET;
   AUFGABE_UEBERSETZUNGEN = ergebnis.AUFGABE_UEBERSETZUNGEN;
   AUFGABE_TEXT = ergebnis.aufgabentext || "";
   AUFGABE_VERSTEHENSKERN = ergebnis.verstehenskern || "";
@@ -799,9 +816,11 @@ function aktiviereAufgabe(config) {
   // Neue Sitzung/Demo-Zustand für die neue Aufgabe -- alte Demo-Antworten/Slots aus der
   // vorigen Aufgabe passen nicht mehr zu den neuen Kategorien.
   state.pool = [];
-  state.slots = { vergleichen: [], reihenfolge: [], frei: [] };
-  state.visibleCount.reihenfolge = 0;
-  state.automatischBefuellt = true;
+  state.slots = { empfohlen: [], frei: [] };
+  state.visibleCount = { frei: 0 };
+  state.empfBloecke = [];
+  state.empfAktivBlock = -1;
+  state.empfAutomatisch = true;
 
   wendeAufgabeAufUIAn();
   return true;
@@ -831,16 +850,14 @@ function zeigeLadeFehler(fehlerListe){
   showInfo('Aufgabe konnte nicht geladen werden', `<ul style="padding-left:18px; margin:0;">${liste}</ul>`);
 }
 
-// Liest eine hochgeladene .yaml/.yml/.json-Datei, parst sie passend zur Endung und legt
-// sie als Entwurf (aktiv:false) in der Aufgabenbibliothek (Supabase) ab -- statt sie wie
-// zuvor nur lokal auf diesem Gerät zu aktivieren. Nur über die versteckte Admin-Ansicht
-// erreichbar (?admin + app_metadata.rolle==='admin', durchgesetzt per RLS). Die Validierung
-// via ladeAufgabe() ist unverändert dieselbe wie beim früheren direkten Aktivieren.
-function handleAufgabeUploadInDB(event){
+// Liest eine hochgeladene .yaml/.yml/.json-Datei, parst sie passend zur Endung und
+// aktiviert sie. js-yaml wird nur für YAML-Dateien gebraucht (siehe <script>-Einbindung
+// im <head>). Bei Erfolg kurze Bestätigung, bei Fehler übernimmt zeigeLadeFehler().
+function handleAufgabeUpload(event){
   const datei = event.target.files[0];
   if(!datei) return;
   const reader = new FileReader();
-  reader.onload = async () => {
+  reader.onload = () => {
     let config;
     try {
       if(datei.name.endsWith('.json')) config = JSON.parse(reader.result);
@@ -850,84 +867,13 @@ function handleAufgabeUploadInDB(event){
       event.target.value = '';
       return;
     }
-    const ergebnis = ladeAufgabe(config);
-    if(ergebnis.fehler.length){
-      zeigeLadeFehler(ergebnis.fehler);
-      event.target.value = '';
-      return;
+    const erfolg = aktiviereAufgabe(config);
+    if(erfolg){
+      alert('Aufgabe geladen: ' + AUFGABE_ID + (HAT_WAHL ? ' (mit Ja/Nein-Frage)' : ''));
     }
-    const { error } = await sb.from('aufgaben').insert({
-      aufgabe_id: ergebnis.AUFGABE_ID,
-      aufgabenformat: ergebnis.aufgabenformat,
-      aufgabentext: ergebnis.aufgabentext,
-      verstehenskern: ergebnis.verstehenskern,
-      konfiguration: config,
-      aktiv: false
-    });
-    if(error){
-      zeigeLadeFehler(['Konnte nicht in der Aufgabenbibliothek gespeichert werden: ' + error.message]);
-      event.target.value = '';
-      return;
-    }
-    alert('Als Entwurf gespeichert: ' + ergebnis.AUFGABE_ID + '. Zur Freigabe unten in der Liste auf "Entwurf" tippen.');
-    event.target.value = '';
-    ladeAufgabenAdminListe();
+    event.target.value = ''; // gleiche Datei danach erneut auswählbar machen
   };
   reader.readAsText(datei, 'utf-8');
-}
-
-// Lädt/rendert die komplette Aufgabenbibliothek (inkl. Entwürfe) -- nur für Admin sichtbar
-// dank RLS-Policy "admin_liest_alle_aufgaben"; eine normale LK bekäme hier nur die aktiven.
-async function ladeAufgabenAdminListe(){
-  const el = document.getElementById('aufgaben-admin-liste');
-  if(!el) return;
-  el.innerHTML = 'Lädt…';
-  const { data, error } = await sb.from('aufgaben').select('*').order('erstellt_am', { ascending: false });
-  if(error){ el.innerHTML = '<div class="ts" style="font-size:12px;">Fehler beim Laden: ' + error.message + '</div>'; return; }
-  if(!data.length){ el.innerHTML = '<div class="ts" style="font-size:12px;">Noch keine Aufgaben in der Bibliothek.</div>'; return; }
-  el.innerHTML = data.map(a => `
-    <div class="card row" style="justify-content:space-between; align-items:center; margin-bottom:8px;">
-      <div>
-        <div class="t" style="font-size:13px;">${a.aufgabenformat || a.aufgabe_id}</div>
-        <div class="ts" style="font-size:11px;">${a.aufgabe_id}</div>
-      </div>
-      <button class="navbtn" onclick="toggleAufgabeAktiv('${a.id}', ${!a.aktiv})">${a.aktiv ? 'Aktiv' : 'Entwurf'}</button>
-    </div>`).join('');
-}
-
-async function toggleAufgabeAktiv(id, neuerStatus){
-  const { error } = await sb.from('aufgaben').update({ aktiv: neuerStatus }).eq('id', id);
-  if(error){ alert('Status konnte nicht geändert werden: ' + error.message); return; }
-  ladeAufgabenAdminListe();
-}
-
-// Lädt/rendert den Aufgabenpool für die LK -- nur aktive (freigegebene) Aufgaben, dank
-// RLS-Policy "lk_liest_aktive_aufgaben" auch ohne Admin-Rolle lesbar. Gruppiert nach
-// aufgabenformat, damit dasselbe Feld später auch den Lernverlauf gruppieren kann (2.9).
-async function ladeAufgabenPool(){
-  const el = document.getElementById('pool-liste');
-  if(!el) return;
-  el.innerHTML = 'Lädt…';
-  const { data, error } = await sb.from('aufgaben').select('*').eq('aktiv', true).order('aufgabenformat');
-  if(error){ el.innerHTML = '<div class="ts" style="font-size:12px;">Aufgaben konnten nicht geladen werden: ' + error.message + '</div>'; return; }
-  if(!data.length){ el.innerHTML = '<div class="ts" style="font-size:12px;">Noch keine freigegebene Aufgabe verfügbar.</div>'; return; }
-  const gruppen = {};
-  data.forEach(a => { const g = a.aufgabenformat || 'Ohne Gruppe'; (gruppen[g] = gruppen[g] || []).push(a); });
-  el.innerHTML = Object.entries(gruppen).map(([gruppe, liste]) => `
-    <div class="ts" style="font-size:11px; text-transform:uppercase; margin:10px 0 4px;">${gruppe}</div>
-    ${liste.map(a => `
-      <div class="card row" onclick="waehleAufgabeAusPool('${a.id}')" style="cursor:pointer;">
-        <div class="icon-circle c-amber"><i class="ti ti-calculator"></i></div>
-        <div><div class="t" style="font-size:14px;">${a.aufgabenformat || a.aufgabe_id}</div><div class="ts" style="font-size:11px;">${a.aufgabentext || ''}</div></div>
-      </div>`).join('')}`).join('');
-}
-
-// LK tippt eine Karte im Pool an: Konfiguration nachladen und wie zuvor aktivieren.
-async function waehleAufgabeAusPool(id){
-  const { data, error } = await sb.from('aufgaben').select('konfiguration').eq('id', id).single();
-  if(error || !data){ zeigeLadeFehler(['Aufgabe konnte nicht geladen werden.']); return; }
-  const erfolg = aktiviereAufgabe(data.konfiguration);
-  if(erfolg) show('aufgabe');
 }
 
 
@@ -942,21 +888,13 @@ async function lkAnmelden(){
     fehler.style.display = 'block';
     return;
   }
-  await uebernehmeLogin(data.user);
+  uebernehmeLogin(data.user);
   show('login');
 }
-async function uebernehmeLogin(user){
+function uebernehmeLogin(user){
   aktiveKlassenraum = user.user_metadata?.klassenraum || "3b";
   aktiverAnzeigename = user.user_metadata?.anzeige_name || user.email;
   document.getElementById('klassenraum-name-anzeige').textContent = "Klasse " + aktiveKlassenraum;
-  // Admin-Button nur sichtbar mit ?admin in der URL UND echter Admin-Rolle im Account
-  // (app_metadata -- kann nur über das Supabase-Dashboard gesetzt werden, nicht vom Client).
-  // Reine UI-Bequemlichkeit: der eigentliche Schutz läuft über die RLS-Policies auf "aufgaben".
-  istAdmin = new URLSearchParams(window.location.search).has('admin') && user.app_metadata?.rolle === 'admin';
-  document.getElementById('aufgaben-admin-btn').style.display = istAdmin ? '' : 'none';
-  // Echten Kinderliste-Stand aus Supabase holen, statt bei den lokalen Demo-/Alt-Namen zu
-  // bleiben (s. ladeKinderlisteAusSupabase()) -- wichtig VOR jeder Bearbeitung/Sync.
-  await ladeKinderlisteAusSupabase();
 }
 async function lkAbmelden(){
   await sb.auth.signOut();
@@ -981,29 +919,6 @@ async function syncKinderMitSupabase(){
     }
   });
   if(document.getElementById('kinderliste')) renderKinderliste();
-}
-
-// Holt den TATSÄCHLICHEN Stand der Kinderliste dieses Klassenraums aus Supabase und ersetzt
-// SYMBOLS komplett damit (reines SELECT, kein Upsert). Vorher gab es dafür keine Stelle:
-// syncKinderMitSupabase() schreibt nur, liest den Server-Stand aber nie zurück -- SYMBOLS blieb
-// nach einem Reload/Neu-Login bei den lokalen Demo-Namen bzw. dem letzten Browser-Stand. Beim
-// nächsten Speichern konnte das ein längst gelöschtes Kind per Upsert wieder anlegen. Wird beim
-// Login (uebernehmeLogin) und bei jedem Öffnen der Verwaltung aufgerufen.
-async function ladeKinderlisteAusSupabase(){
-  const { data, error } = await sb.from('kinder')
-    .select('id, symbol_id, name, icon, einwilligung')
-    .eq('klassenraum', aktiveKlassenraum)
-    .order('symbol_id');
-  if(error){
-    console.error('Kinderliste konnte nicht aus Supabase geladen werden:', error.message);
-    return false;
-  }
-  SYMBOLS = data.map(row => ({ id: row.symbol_id, icon: row.icon, name: row.name, kindId: row.id }));
-  data.forEach(row => { consentState[row.symbol_id] = row.einwilligung; });
-  if(document.getElementById('kinderliste')) renderKinderliste();
-  const anzahlAnzeige = document.getElementById('klassenraum-anzahl-anzeige');
-  if(anzahlAnzeige) anzahlAnzeige.textContent = SYMBOLS.length + " Kinder";
-  return true;
 }
 
 // Für Kind-Geräte (kein Login): lädt die echte Klassenliste über die Security-Definer-
@@ -1040,13 +955,15 @@ let state = {
     {name:"Nora", cat:"fehler_ohne_erklaerung", quote:"42 + 5 = 47."}
   ],
   slots: {
-    vergleichen: ["Mika","Lian"],
-    reihenfolge: ["Ada","Ben","Lian","Mika"],
+    empfohlen: [],
     frei: []
   },
-  activeTab: "vergleichen",
-  automatischBefuellt: true, // solange true, überschreibt aktualisiereEmpfehlung() die Slots automatisch
-  visibleCount: { reihenfolge: 0 },
+  activeTab: "empfohlen",
+  empfAutomatisch: true, // solange true, überschreibt aktualisiereEmpfehlung() state.empfBloecke automatisch
+  empfBloecke: [],
+  empfAktivBlock: -1, // Index in den SICHTBAREN (nicht übersprungenen) Blöcken -- -1 = noch nichts auf der Tafel. Ein Vergleichs-Block zählt als EIN Schritt (beide Antworten gleichzeitig).
+  freiLayout: "nebeneinander", // "nebeneinander" | "untereinander" -- steuert Layout + ob schrittweise zugeschaltet wird
+  visibleCount: { frei: 0 },
   poolFilter: null,
   sessionActive: false,
   answersVisibleOnTafel: false,
@@ -1057,120 +974,113 @@ let state = {
   aktuelleWahl: null // "ja"/"nein"/null -- nur relevant bei HAT_WAHL, pro Kind neu gesetzt in confirmSymbol()
 };
 
-// [überarbeitet] Nur noch drei Board-Modi (vergleichen/reihenfolge/frei). "Anknüpfen"
-// ist kein Board-Modus mehr -- sein einziger Eintrag (Kombination aus genau einer
-// Kategorie) steht jetzt in ANKNUEPFEN_IMPULSE und wird direkt in der Übersicht neben
-// der betreffenden Antwort gezeigt, nicht mehr auf einem eigenen Tab. "Vergleichen"
-// kann jetzt MEHRERE gleichzeitig verfügbare Kombinationen haben (s. berechneVergleichsKombinationen());
-// waehleTextbaustein() sucht darin den zu den aktuellen Slot-Kategorien passenden Eintrag.
-let TEXTBAUSTEINE = [
-  { modus: "vergleichen", kombination: ["korrekt_begruendet","fehler_mit_buendelungsversuch"],
-    einstiegssatz: "Zwei Kinder haben unterschiedliche Ergebnisse — schauen wir uns an, wie sie zur Umwandlung der 42 Zehner gekommen sind.",
-    // [NEU] Zwei Richtungen statt einer Fixfrage -- die Lehrkraft wählt spontan im Gespräch.
-    verbindungsfragen: [
-      { label: "Gemeinsamkeit", frage: "Was ist an beiden Erklärungen zur Bündelung eigentlich gleich, obwohl der Weg unterschiedlich aussieht?" },
-      { label: "Unterschied", frage: "Wo genau trennen sich die beiden Wege — an welcher Stelle passiert bei dem einen etwas anderes als beim anderen?" }
-    ] },
-  { modus: "vergleichen", kombination: ["fehler_unbundled","fehler_stellenwert_ignoriert"],
-    einstiegssatz: "Wir schauen uns zwei falsche Lösungswege an — was ist hier mit den 42 Zehnern jeweils passiert?",
-    verbindungsfragen: [
-      { label: "Gemeinsamkeit", frage: "Was haben beide falschen Wege gemeinsam — woran hakt es bei beiden?" },
-      { label: "Unterschied", frage: "Bei wem wurde die 42 gar nicht verändert, und bei wem wurde sie falsch aufgeteilt?" }
-    ] },
-  { modus: "reihenfolge", kombination: ["fehler_unbundled","fehler_stellenwert_ignoriert","fehler_mit_buendelungsversuch","korrekt_begruendet"],
-    einstiegssatz: "Wir hören uns nacheinander vier verschiedene Wege an, mit den 42 Zehnern umzugehen.",
-    verbindungsfragen: [{ label: null, frage: "Welcher Weg überzeugt euch am meisten — und warum?" }],
-    // [NEU] macht sichtbar, nach welcher Logik diese Reihenfolge vorgeschlagen wird.
-    reihenfolgeBegruendung: "nicht tragfähig → tragfähig, aber unbegründet" }
+// [NEU] "Empfohlene Reihenfolge" statt fester Tabs: BAUSTEINE ist eine geordnete Liste von
+// Schritten (typ "isoliert" mit "pool", oder "vergleich" mit "pools": [Seite1, Seite2] --
+// je "fehler" oder "tragfaehig"), OHNE feste Kategorie-Zuordnung -- welche Kategorie welchen
+// Baustein füllt, entscheidet berechneEmpfBloecke() zur Laufzeit anhand der Prioritätslisten.
+// Hier: zwei Isoliert-Schritte aus dem Fehler-Pool, gefolgt von einem Vergleich Fehler↔tragfähig.
+// Ein Vergleich könnte stattdessen genauso pools:["fehler","fehler"] (zwei unterschiedliche
+// Fehler gegeneinander) oder ["tragfaehig","tragfaehig"] (zwei unterschiedliche tragfähige
+// Wege) sein -- s. buendeln_6t2h42z5e.yaml für ein Beispiel mit Fehler-gegen-Fehler.
+let BAUSTEINE = [
+  { typ: "isoliert", pools: ["fehler"], einstiegssatz: "Schauen wir uns erst an, wie ein Kind mit den 42 Zehnern umgegangen ist." },
+  { typ: "isoliert", pools: ["fehler"], einstiegssatz: "Hier ist noch ein anderer Weg mit den 42 Zehnern." },
+  { typ: "vergleich", pools: ["fehler", "tragfaehig"], einstiegssatz: "Jetzt vergleichen wir das mit einer Erklärung, die zur richtigen Zahl führt." }
 ];
-// [NEU] Anknüpfen-Impuls pro (unpräziser, tragfähiger) Kategorie -- keine Slots, kein
-// Tab, wird direkt in der Übersicht bei den betreffenden Kindern angezeigt.
-let ANKNUEPFEN_IMPULSE = {
-  korrekt_unbegruendet: { einstiegssatz: "6625 stimmt schon — kannst du erklären, was du mit den 42 Zehnern gemacht hast?", verbindungsfrage: null }
-};
-let MOST_MARKIERUNGEN = [
-  { kombination: ["korrekt_begruendet","fehler_mit_buendelungsversuch"], gespraechswuerdig: true },
-  { kombination: ["fehler_unbundled","fehler_stellenwert_ignoriert"], gespraechswuerdig: true }
-];
+// [NEU] Reihenfolge = Priorität. Die höchstpriorisierten tatsächlich vorgekommenen Fehler
+// füllen zuerst die Isoliert-Bausteine, der nächste verbleibende füllt den Vergleich.
+let FEHLER_PRIORITAET = ["fehler_stellenwert_ignoriert", "fehler_unbundled", "fehler_mit_buendelungsversuch", "fehler_ohne_erklaerung"];
+let TRAGFAEHIG_PRIORITAET = ["korrekt_begruendet", "korrekt_unbegruendet"];
 
-// Sucht unter den TEXTBAUSTEINE-Einträgen eines Modus denjenigen, dessen Kombination am
-// besten zu den Kategorien passt, die gerade in state.slots[modus] liegen: zuerst exakte
-// Mengengleichheit, sonst der erste Eintrag, dessen Kombination komplett enthalten ist,
-// sonst schlicht der erste Eintrag des Modus.
-function waehleTextbaustein(modus){
-  const kandidaten = TEXTBAUSTEINE.filter(tb => tb.modus === modus);
-  if(kandidaten.length === 0) return null;
-  const aktuelleKats = (state.slots[modus] || [])
-    .map(name => { const p = state.pool.find(x=>x.name===name); return p ? p.cat : null; })
-    .filter(Boolean);
-  const gleicheMenge = (a,b) => a.length===b.length && a.every(x=>b.includes(x));
-  let treffer = kandidaten.find(tb => gleicheMenge(tb.kombination, aktuelleKats));
-  if(!treffer) treffer = kandidaten.find(tb => tb.kombination.every(k => aktuelleKats.includes(k)));
-  if(!treffer) treffer = kandidaten[0];
-  return treffer;
-}
-
-// [NEU] Welche Art von Vergleich eine Kategorie-Kombination darstellt -- rein aus
-// kategorietyp/praezision der beteiligten Kategorien abgeleitet, keine eigene Pflege.
-// Bewusst in Alltagssprache formuliert (nicht "Konfrontieren"/"Gegenüberstellen"), s.
-// Diskussion zur Verständlichkeit für die Lehrkraft.
-function vergleichsArt(kombination){
-  const typen = kombination.map(k => CATS[k] && CATS[k].typ);
-  if(typen.every(t => t === 'Fehlvorstellung')){
-    return { art:'nicht_tragfaehig', label:'zwei unterschiedliche, aber beide nicht tragfähige Wege' };
+// [NEU] Löst BAUSTEINE gegen die tatsächlich eingegangenen Antworten auf: pro Baustein die
+// konkrete(n) Kategorie(n) + das (zuerst eingegangene) Kind dazu, oder uebersprungen:'auto',
+// wenn keine passende Kategorie vorkam. Generisch über beide Pools (fehler/tragfaehig) --
+// ein Vergleichs-Baustein kann je nach "pools" zwei Fehler, zwei tragfähige Wege, oder einen
+// von jedem gegenüberstellen; jeder Pool wird unabhängig fortlaufend "verbraucht", damit
+// derselbe Fall nicht doppelt auftaucht. Wird NUR aufgerufen, solange state.empfAutomatisch
+// true ist -- sobald die Lehrkraft manuell eingreift, bleibt state.empfBloecke unverändert.
+function berechneEmpfBloecke(){
+  const PRIOLISTE = { fehler: FEHLER_PRIORITAET, tragfaehig: TRAGFAEHIG_PRIORITAET };
+  const POOL_LABEL = { fehler: 'Fehler', tragfaehig: 'tragfähige Antwort' };
+  const vorhanden = {
+    fehler: FEHLER_PRIORITAET.filter(id => state.pool.some(p=>p.cat===id)),
+    tragfaehig: TRAGFAEHIG_PRIORITAET.filter(id => state.pool.some(p=>p.cat===id))
+  };
+  const naechsterIndex = { fehler: 0, tragfaehig: 0 };
+  function ziehen(pool){
+    const katId = vorhanden[pool][naechsterIndex[pool]];
+    if(katId) naechsterIndex[pool]++;
+    return katId || null;
   }
-  if(typen.some(t => t === 'Fehlvorstellung') && typen.some(t => t === 'tragfähige Strategie')){
-    return { art:'kontrast', label:'eine nicht tragfähige und eine tragfähige Antwort' };
-  }
-  return { art:'divergenz', label:'zwei tragfähige, aber unterschiedliche Wege' };
-}
-
-// [NEU] Alle aktuell verfügbaren Vergleichs-Kombinationen: gesprächswürdig laut
-// Aufgabenanlage UND tatsächlich unter den eingegangenen Antworten vollständig vorhanden.
-// Kann mehr als einen Treffer liefern (z.B. gleichzeitig ein Fehlvorstellungs-Kontrast UND
-// ein Vergleich zweier verschiedener tragfähiger Wege) -- die Lehrkraft wählt dann im
-// "vergleichen"-Tab zwischen den Kandidaten, s. renderVergleichsAuswahl().
-function berechneVergleichsKombinationen(){
-  return MOST_MARKIERUNGEN
-    .filter(m => m.gespraechswuerdig)
-    .filter(m => m.kombination.every(kat => state.pool.some(p=>p.cat===kat)))
-    .map(m => ({ kombination: m.kombination, ...vergleichsArt(m.kombination) }));
-}
-
-// MOST-Empfehlung: prüft, welche gesprächswürdigen Kombinationen unter den bisher
-// eingegangenen, kategorisierten Antworten VOLLSTÄNDIG vorhanden sind (mindestens eine
-// Antwort pro benötigter Kategorie), und befüllt -- solange die Lehrkraft noch nicht
-// manuell eingegriffen hat (state.automatischBefuellt) -- den passenden Tab automatisch.
-// Eine Konfidenz-basierte Auswahl gibt es nicht (die Kategorisierung liefert keinen
-// Konfidenzwert), daher wird je Kategorie schlicht die zuerst eingegangene Antwort genommen.
-let vergleichsKombinationen = [];
-function aktualisiereEmpfehlung(){
-  vergleichsKombinationen = berechneVergleichsKombinationen();
-  let empfohlenerModus = null;
-  if(vergleichsKombinationen.length > 0){
-    empfohlenerModus = 'vergleichen';
-    if(state.automatischBefuellt){
-      wendeVergleichsKombinationAn(vergleichsKombinationen[0]);
+  return BAUSTEINE.map((b, i) => {
+    if(b.typ === 'isoliert'){
+      const pool = b.pools[0];
+      const katId = ziehen(pool);
+      if(!katId){
+        return { typ:'isoliert', pools:b.pools, index:i, einstiegssatz:b.einstiegssatz, uebersprungen:'auto',
+          kategorieIds:[], namen:[], begruendung:`Kein weiterer, bisher nicht gezeigter Fall aus "${POOL_LABEL[pool]}" ist in dieser Klasse vorgekommen.` };
+      }
+      const kind = state.pool.find(p=>p.cat===katId);
+      return { typ:'isoliert', pools:b.pools, index:i, einstiegssatz:b.einstiegssatz, uebersprungen:false,
+        kategorieIds:[katId], namen:[kind.name],
+        begruendung:`Höchste Priorität (Rang ${PRIOLISTE[pool].indexOf(katId)+1} von ${PRIOLISTE[pool].length}) unter den bisher noch nicht gezeigten "${POOL_LABEL[pool]}"-Kategorien.` };
     }
-  } else {
-    // Kein Vergleichs-Kandidat vorhanden (z.B. noch keine gegensätzlichen Antworten
-    // eingegangen, oder die Aufgabe sieht für die vorliegende Kategorie-Kombination gar
-    // keinen Vergleich vor) -- Reihenfolge bleibt als Fallback verfügbar, wird aber nicht
-    // automatisch als "empfohlen" markiert, weil es dafür (anders als beim Vergleichen)
-    // keine MOST-Markierung gibt.
-  }
-  document.querySelectorAll('.empf-badge').forEach(b=>{
-    b.style.display = (empfohlenerModus && b.dataset.tabBadge===empfohlenerModus) ? 'inline-block' : 'none';
+    const [poolA, poolB] = b.pools;
+    const katA = ziehen(poolA);
+    const katB = ziehen(poolB);
+    if(!katA || !katB){
+      if(katA) naechsterIndex[poolA]--; // Ziehung rückgängig -- steht dem nächsten Baustein wieder zur Verfügung
+      if(katB) naechsterIndex[poolB]--;
+      return { typ:'vergleich', pools:b.pools, index:i, einstiegssatz:b.einstiegssatz, uebersprungen:'auto',
+        kategorieIds:[], namen:[],
+        begruendung: !katA ? `Kein weiterer Fall aus "${POOL_LABEL[poolA]}" für den Vergleich vorgekommen.` : `Kein weiterer Fall aus "${POOL_LABEL[poolB]}" für den Vergleich vorgekommen.` };
+    }
+    const kindA = state.pool.find(p=>p.cat===katA);
+    const kindB = state.pool.find(p=>p.cat===katB);
+    return { typ:'vergleich', pools:b.pools, index:i, einstiegssatz:b.einstiegssatz, uebersprungen:false,
+      kategorieIds:[katA, katB], namen:[kindA.name, kindB.name],
+      begruendung:`Höchste Priorität je Seite unter den noch nicht gezeigten Kategorien (${POOL_LABEL[poolA]} Rang ${PRIOLISTE[poolA].indexOf(katA)+1}; ${POOL_LABEL[poolB]} Rang ${PRIOLISTE[poolB].indexOf(katB)+1}).` };
   });
 }
-// Befüllt die Slots des "vergleichen"-Tabs mit den (zuerst eingegangenen) Antworten der
-// übergebenen Kombination. Wird sowohl von der Auto-Empfehlung als auch von der manuellen
-// Auswahlleiste (renderVergleichsAuswahl) aufgerufen.
-function wendeVergleichsKombinationAn(kombi){
-  state.slots.vergleichen = kombi.kombination.map(kat => {
-    const antwort = state.pool.find(p=>p.cat===kat);
-    return antwort ? antwort.name : null;
-  }).filter(Boolean);
+
+// Ersetzt die alte MOST-Empfehlung: löst die Bausteine auf (solange automatisch), und
+// schaltet die Empfehlungs-Bubble auf dem "Empfohlene Reihenfolge"-Tab sichtbar, sobald
+// mindestens ein Schritt tatsächlich etwas zu zeigen hat.
+function aktualisiereEmpfehlung(){
+  if(state.empfAutomatisch) state.empfBloecke = berechneEmpfBloecke();
+  const hatEtwas = state.empfBloecke.some(b => !b.uebersprungen);
+  document.querySelectorAll('.empf-badge').forEach(b=>{ b.style.display = hatEtwas ? 'inline-block' : 'none'; });
+}
+// Schritt manuell überspringen/wieder aufnehmen. Reaktivieren ist nur möglich, wenn der
+// Schritt manuell übersprungen wurde (uebersprungen==='manuell') -- ein automatisch
+// entfallener Schritt ('auto') hat keine Antwort, die man reaktivieren könnte.
+function empfSchrittUeberspringen(i){
+  state.empfBloecke[i].uebersprungen = 'manuell';
+  state.empfAutomatisch = false;
+  renderDashboard();
+}
+function empfSchrittReaktivieren(i){
+  if(state.empfBloecke[i].uebersprungen === 'manuell') state.empfBloecke[i].uebersprungen = false;
+  renderDashboard();
+}
+// Anderes Kind DERSELBEN Kategorie in einen Block-Slot setzen.
+function empfKindTauschen(i, slotIdx, neuerName){
+  if(!neuerName) return;
+  state.empfBloecke[i].namen[slotIdx] = neuerName;
+  state.empfAutomatisch = false;
+  renderDashboard();
+}
+// Kategorie eines Block-Slots wechseln -- weicht von der empfohlenen Abfolge ab, daher
+// eigenes Flag für den Hinweis in der Oberfläche.
+function empfKategorieWechseln(i, slotIdx, neueKategorieId){
+  if(!neueKategorieId) return;
+  const kind = state.pool.find(p=>p.cat===neueKategorieId);
+  if(!kind) return;
+  state.empfBloecke[i].kategorieIds[slotIdx] = neueKategorieId;
+  state.empfBloecke[i].namen[slotIdx] = kind.name;
+  state.empfBloecke[i].kategorieAbweichend = true;
+  state.empfAutomatisch = false;
+  renderDashboard();
 }
 
 function show(id){
@@ -1179,8 +1089,7 @@ function show(id){
   document.getElementById('topbar-label').textContent = {
     start:"Start", "lk-login":"Anmelden", login:"Login", pool:"Aufgabenpool", aufgabe:"Aufgabe", symbolauswahl:"Kind: wer bist du?",
     aufnahme:"Kind: Aufnahme", dashboard:"LK-Dashboard", tafel:"Tafelansicht", heatmap:"Sitzplan mit Antwortübersicht",
-    verwaltung:"Verwaltung", schnellanlage:"Kinder anlegen", sitzplan:"Sitzplan", lernverlauf:"Lernverlauf",
-    "aufgaben-admin":"Aufgaben-Verwaltung"
+    verwaltung:"Verwaltung", schnellanlage:"Kinder anlegen", sitzplan:"Sitzplan", lernverlauf:"Lernverlauf"
   }[id] || "Demo";
   const role = (id==='symbolauswahl'||id==='aufnahme') ? 'kind' : 'lk';
   roleLastScreen[role] = id;
@@ -1191,10 +1100,8 @@ function show(id){
   if(id==='dashboard'){ aktualisiereEmpfehlung(); renderDashboard(); }
   if(id==='tafel') renderTafel();
   if(id==='heatmap') renderHeatmap();
-  if(id==='verwaltung') ladeKinderlisteAusSupabase();
+  if(id==='verwaltung') renderKinderliste();
   if(id==='sitzplan') renderSitzplan();
-  if(id==='pool') ladeAufgabenPool();
-  if(id==='aufgaben-admin') ladeAufgabenAdminListe();
   if(id==='aufgabe'){
     document.getElementById('aufgabe-sitzplan-warning').style.display = Object.keys(sitzplanState.placed).length>0 ? 'none' : 'block';
     const ohneEinwilligung = SYMBOLS.filter(s=>!consentState[s.id]).length;
@@ -1242,7 +1149,10 @@ async function startSitzung(){
   );
   if(error) alert('Sitzung konnte nicht angelegt werden: ' + error.message);
   state.pool = []; // echte Sitzung startet mit leerem Pool statt Demo-Daten
-  state.automatischBefuellt = true; // frische Sitzung -- Empfehlung darf die Slots wieder automatisch befüllen
+  state.slots = { empfohlen: [], frei: [] };
+  state.empfBloecke = [];
+  state.empfAktivBlock = -1;
+  state.empfAutomatisch = true; // frische Sitzung -- Empfehlung darf sich wieder automatisch befüllen
   document.getElementById('sitzungscode-anzeige').textContent = codeAlsSymbole(sitzungscode);
   ladeUndAboniereAntworten();
   show('heatmap');
@@ -1523,101 +1433,144 @@ function switchTab(tab){
   state.activeTab = tab;
   renderDashboard();
 }
-// [NEU] Welche Verbindungsfrage-Variante gerade aktiv ist (bei mehreren Richtungen, s.
-// renderAnschlussfrage()). An das konkrete Textbaustein-Objekt gebunden, nicht nur an den
-// Tab: wechselt die Lehrkraft die Slot-Kombination (und damit den Textbaustein), springt die
-// Auswahl automatisch auf die erste Variante zurück; bleibt derselbe Textbaustein aktiv (z.B.
-// nach einem Rerender ohne Slot-Änderung), bleibt auch die gewählte Variante erhalten.
-let verbindungsfrageIndex = 0;
-let _letzterTextbausteinFuerVbf = null;
-function waehleVerbindungsfrage(i){
-  verbindungsfrageIndex = i;
-  renderDashboard();
-}
-// [NEU] Auswahlleiste im "vergleichen"-Tab, wenn mehrere Vergleichs-Kombinationen
-// gleichzeitig verfügbar sind (z.B. ein Fehlvorstellungs-Kontrast UND ein Vergleich
-// zweier unterschiedlicher tragfähiger Wege). Bei nur einer verfügbaren Kombination
-// bleibt die Leiste unsichtbar -- die eine Kombination ist dann einfach vorbelegt.
-function renderVergleichsAuswahl(){
-  const el = document.getElementById('vergleichs-auswahl');
-  if(state.activeTab !== 'vergleichen' || vergleichsKombinationen.length < 2){
-    el.style.display = 'none'; el.innerHTML = ''; return;
-  }
-  el.style.display = 'flex'; el.style.flexWrap = 'wrap'; el.style.gap = '6px';
-  const aktuelleKats = state.slots.vergleichen.map(name => { const p = state.pool.find(x=>x.name===name); return p ? p.cat : null; }).filter(Boolean);
-  el.innerHTML = vergleichsKombinationen.map(vk=>{
-    const aktiv = vk.kombination.length===aktuelleKats.length && vk.kombination.every(k=>aktuelleKats.includes(k));
-    const namen = vk.kombination.map(k=>CATS[k].label).join(' ↔ ');
-    return `<button class="navbtn ${aktiv?'active':''}" style="font-size:11px; text-align:left;" onclick='waehleVergleichsKombination(${JSON.stringify(vk.kombination)})'>${namen}</button>`;
-  }).join('');
-}
-function waehleVergleichsKombination(kombination){
-  const vk = vergleichsKombinationen.find(v => v.kombination.length===kombination.length && v.kombination.every(k=>kombination.includes(k)));
-  if(!vk) return;
-  wendeVergleichsKombinationAn(vk);
-  state.automatischBefuellt = false;
-  renderDashboard();
-}
-// [NEU] Verbindungsfrage-Karte: bei genau einer hinterlegten Variante wie bisher ein
-// einzelner Satz, bei mehreren zusätzlich eine Chip-Leiste zum spontanen Umschalten. Die
-// Auswahl setzt sich zurück auf die erste Variante, sobald ein ANDERER Textbaustein aktiv
-// wird (z.B. weil die Lehrkraft die Slot-Kombination geändert hat) -- nicht bei jedem Rerender.
-function renderAnschlussfrage(textbaustein){
-  const card = document.getElementById('anschlussfrage-card');
-  const varianten = (textbaustein && textbaustein.verbindungsfragen) || [];
-  if(!varianten.length){ card.style.display = 'none'; card.innerHTML = ''; return; }
-  if(textbaustein !== _letzterTextbausteinFuerVbf){ verbindungsfrageIndex = 0; _letzterTextbausteinFuerVbf = textbaustein; }
-  const idx = Math.min(verbindungsfrageIndex, varianten.length - 1);
-  card.style.display = 'block';
-  card.innerHTML = `
-    <div class="ts" style="font-size:11px;"><i class="ti ti-arrows-join-2"></i> Mögliche Anschlussfrage</div>
-    ${varianten.length > 1 ? `<div class="row" style="gap:6px; flex-wrap:wrap; margin:6px 0 8px;">
-      ${varianten.map((v,i)=>`<button class="vbf-chip ${i===idx?'active':''}" onclick="waehleVerbindungsfrage(${i})">${v.label}</button>`).join('')}
+// Eine Antwort-Karte innerhalb eines aufgelösten Bausteins: Zitat, Live-Frage, "auf
+// Tafel/nicht auf Tafel"-Status (bei schrittweiser Zuschaltung), plus zwei Auswahlfelder --
+// "anderes Kind" (gleiche Kategorie, reine Umsortierung, IMMER sichtbar, auch ohne
+// Alternative) und "Kategorie wechseln" (weicht von der Empfehlung ab).
+function renderEmpfSlotKarte(blockIndex, slotIdx, kategorieIds, namen, pools, onTafel){
+  const name = namen[slotIdx];
+  const katId = kategorieIds[slotIdx];
+  const child = state.pool.find(p=>p.name===name);
+  const cat = CATS[katId];
+  if(!child || !cat) return '<div class="slot-empty">Antwort nicht mehr verfügbar</div>';
+  const geschwister = state.pool.filter(p=>p.cat===katId && p.name!==name);
+  const istVergleich = namen.length > 1;
+  const POOL_LABEL_KURZ = { fehler: 'Fehler', tragfaehig: 'tragfähig' };
+  const rollenLabel = istVergleich ? (POOL_LABEL_KURZ[pools[slotIdx]] || '') + ': ' : '';
+  const alternativeKategorien = Object.keys(CATS).filter(k => CATS[k].typ === cat.typ && k !== katId && state.pool.some(p=>p.cat===k));
+  return `<div>
+    <div class="${cat.color}" style="border-radius:var(--radius) var(--radius) 0 0; padding:6px 8px;">
+      <div class="row" style="justify-content:space-between;">
+        <b style="font-size:12px;">${rollenLabel}${child.name} · ${cat.label}</b>
+        <span class="tag" style="background:${onTafel?'var(--bg-success)':'var(--surface-1)'}; color:${onTafel?'var(--text-success)':'var(--text-muted)'};">${onTafel?'auf Tafel':'nicht auf Tafel'}</span>
+      </div>
+    </div>
+    <div class="quote-box" style="border-top:none; border-radius:0 0 var(--radius) var(--radius); margin-top:0;">"${child.quote}"</div>
+    ${cat.nachfrage ? `<div class="live-frage-box">
+      <div class="live-frage-label"><i class="ti ti-message-circle"></i> direkt stellbar</div>
+      <div class="live-frage-text">${cat.nachfrage}</div>
     </div>` : ''}
-    <div class="t" style="font-size:13px;">${varianten[idx].frage}</div>`;
+    <div class="row" style="gap:6px; margin-top:6px; flex-wrap:wrap;">
+      <select class="navbtn" style="font-size:10px;" ${geschwister.length?'':'disabled'} onchange="empfKindTauschen(${blockIndex},${slotIdx},this.value); this.selectedIndex=0;">
+        <option value="">${geschwister.length ? 'anderes Kind, gleiche Kategorie…' : 'keine weitere Antwort dieser Kategorie'}</option>
+        ${geschwister.map(g=>`<option value="${g.name}">${g.name}</option>`).join('')}
+      </select>
+      ${alternativeKategorien.length ? `<select class="navbtn" style="font-size:10px;" onchange="empfKategorieWechseln(${blockIndex},${slotIdx},this.value); this.selectedIndex=0;">
+        <option value="">Kategorie wechseln…</option>
+        ${alternativeKategorien.map(k=>`<option value="${k}">${CATS[k].label}</option>`).join('')}
+      </select>` : ''}
+    </div>
+  </div>`;
 }
-function renderDashboard(){
-  document.querySelectorAll('.tabbtn').forEach(b=>{
-    b.classList.toggle('active', b.dataset.tab===state.activeTab);
-  });
-  renderVergleichsAuswahl();
-  const artLabel = document.getElementById('vergleichs-art-label');
-  if(state.activeTab === 'vergleichen' && state.slots.vergleichen.length >= 2){
-    const kats = state.slots.vergleichen.map(name => { const p = state.pool.find(x=>x.name===name); return p ? p.cat : null; }).filter(Boolean);
-    artLabel.style.display = 'block';
-    artLabel.textContent = 'Ihr vergleicht: ' + vergleichsArt(kats).label;
-  } else {
-    artLabel.style.display = 'none';
+// [NEU] "Empfohlene Reihenfolge": rendert state.empfBloecke. Übersprungene Bausteine (auto
+// = keine passende Kategorie vorgekommen, manuell = von der Lehrkraft abgewählt) erscheinen
+// als schmale Hinweiszeile statt als Karte. state.slots.empfohlen wird hier rein ABGELEITET
+// (flach, in Reihenfolge) neu gesetzt, nur für renderPool()'s "ist Teil der Abfolge"-Markierung
+// -- für die TAFEL zählt nicht diese Liste, sondern state.empfAktivBlock (s. renderTafel()):
+// dort ist immer nur EIN Block sichtbar (ein Vergleichs-Block mit beiden Antworten auf
+// einmal), frühere Schritte werden beim Weiterschalten ersetzt, nicht angehäuft.
+function renderEmpfohlen(){
+  state.slots.empfohlen = state.empfBloecke.filter(b=>!b.uebersprungen).flatMap(b=>b.namen);
+  const area = document.getElementById('empfohlen-area');
+  if(!state.empfBloecke.length){
+    area.innerHTML = '<div class="ts" style="text-align:center; padding:20px;">Für diese Aufgabe ist keine Abfolge hinterlegt (Feld "bausteine" fehlt).</div>';
+    document.getElementById('empfehlung-erklaerung').textContent = '—';
+    return;
   }
-  const textbaustein = waehleTextbaustein(state.activeTab);
-  document.getElementById('impuls-text').textContent = textbaustein ? textbaustein.einstiegssatz : "(kein automatischer Impuls im Frei-Modus)";
-  renderAnschlussfrage(textbaustein);
-  // [NEU] Begründung der Sequenzierungs-Reihenfolge, nur im "reihenfolge"-Tab und nur wenn
-  // die Aufgabe eine hinterlegt hat -- macht die Logik der Reihenfolge nachvollziehbar,
-  // statt dass sie unbegründet dasteht.
-  const begrEl = document.getElementById('reihenfolge-begruendung');
-  if(state.activeTab === 'reihenfolge' && textbaustein && textbaustein.reihenfolgeBegruendung){
-    begrEl.style.display = 'block';
-    begrEl.innerHTML = `<div class="reihenfolge-badge"><i class="ti ti-arrows-sort"></i> Reihenfolge: ${textbaustein.reihenfolgeBegruendung}</div>`;
+  const sichtbar = state.empfBloecke.filter(b=>!b.uebersprungen);
+  if(!sichtbar.length){
+    area.innerHTML = '<div class="ts" style="text-align:center; padding:20px;">Noch keine passenden Antworten eingegangen — sobald welche eintreffen, erscheinen hier Vorschläge.</div>';
   } else {
-    begrEl.style.display = 'none'; begrEl.innerHTML = '';
+    let laufendeNummer = 0;
+    let sichtbarLaufindex = -1; // Index innerhalb der SICHTBAREN Blöcke -- vergleichbar mit state.empfAktivBlock
+    area.innerHTML = state.empfBloecke.map((b,i)=>{
+      if(b.uebersprungen === 'auto'){
+        return `<div class="ts" style="font-size:11px; padding:8px 10px; margin-bottom:8px; border:1px dashed var(--border); border-radius:var(--radius);">Schritt entfällt: ${b.begruendung}</div>`;
+      }
+      if(b.uebersprungen === 'manuell'){
+        return `<div class="row" style="justify-content:space-between; align-items:center; font-size:11px; padding:8px 10px; margin-bottom:8px; background:var(--surface-1); border-radius:var(--radius);">
+          <span class="ts">Schritt übersprungen (${b.kategorieIds.map(k=>CATS[k].label).join(' ↔ ')})</span>
+          <button class="navbtn" style="font-size:10px;" onclick="empfSchrittReaktivieren(${i})">wieder aufnehmen</button>
+        </div>`;
+      }
+      laufendeNummer++;
+      sichtbarLaufindex++;
+      // [NEU] Block-basiert statt Antwort-basiert: EIN Schritt = EIN Block (bei "vergleich"
+      // erscheinen beide Antworten gemeinsam), und nur der aktuell aktive Block ist auf der
+      // Tafel -- vorherige Schritte werden ERSETZT, nicht angehäuft (s. renderTafel()).
+      const istAktiverSchritt = sichtbarLaufindex === state.empfAktivBlock;
+      const kartenHtml = b.namen.map((n,slotIdx)=>renderEmpfSlotKarte(i, slotIdx, b.kategorieIds, b.namen, b.pools, istAktiverSchritt)).join('');
+      return `<div class="card" style="margin-bottom:10px; ${istAktiverSchritt?'outline:2px solid var(--border-accent);':''}">
+        <div class="row" style="justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+          <div>
+            <div class="ts" style="font-size:11px; font-weight:600; color:var(--text-accent);">Schritt ${laufendeNummer} — ${b.typ==='isoliert'?'einzeln':'Vergleich'}</div>
+            <div class="ts" style="font-size:13px; margin-top:2px;">${b.einstiegssatz}</div>
+          </div>
+          <button class="navbtn" style="font-size:10px; flex-shrink:0;" onclick="empfSchrittUeberspringen(${i})">überspringen</button>
+        </div>
+        ${b.kategorieAbweichend ? `<div class="ts" style="font-size:10px; color:var(--text-warning); margin-bottom:6px;"><i class="ti ti-alert-triangle"></i> weicht von der empfohlenen Abfolge ab</div>` : ''}
+        <div style="display:${b.namen.length>1?'grid':'block'}; grid-template-columns:${b.namen.length>1?'repeat(2,minmax(0,1fr))':'none'}; gap:8px;">
+          ${kartenHtml}
+        </div>
+      </div>`;
+    }).join('');
+    const aktivLabel = state.empfAktivBlock < 0 ? 'noch kein Schritt auf der Tafel' : `Schritt ${state.empfAktivBlock+1} von ${sichtbar.length} auf der Tafel`;
+    area.innerHTML += `<div class="card" style="margin-bottom:10px;">
+      <div class="ts" style="font-size:11px; margin-bottom:6px;">${aktivLabel}</div>
+      <div class="row" style="gap:8px;">
+        <button class="btn" onclick="seqStep(-1)"><i class="ti ti-eye-off"></i> vorherigen Schritt zeigen</button>
+        <button class="btn btn-primary" onclick="seqStep(1)"><i class="ti ti-eye"></i> nächsten Schritt zeigen</button>
+      </div>
+    </div>`;
   }
-  const slotIds = state.slots[state.activeTab];
+  const begrHtml = sichtbar.length
+    ? sichtbar.map((b,idx)=>`<div style="margin-bottom:4px;"><b>Schritt ${idx+1}:</b> ${b.begruendung}</div>`).join('')
+    : 'Noch keine Kategorie ist unter den eingegangenen Antworten vertreten.';
+  document.getElementById('empfehlung-erklaerung').innerHTML = begrHtml;
+}
+// "Frei": wie bisher manuell aus dem Pool bestückte Slots, jetzt mit einer Layout-Wahl
+// (nebeneinander/untereinander) statt eigener Tabs -- "untereinander" übernimmt das
+// frühere schrittweise Zuschalten (state.visibleCount.frei), "nebeneinander" zeigt alles
+// gleichzeitig im Grid.
+function setFreiLayout(layout){
+  state.freiLayout = layout;
+  if(layout === 'nebeneinander') state.visibleCount.frei = state.slots.frei.length;
+  renderDashboard();
+}
+function renderFrei(){
+  document.getElementById('layout-nebeneinander').classList.toggle('active', state.freiLayout==='nebeneinander');
+  document.getElementById('layout-untereinander').classList.toggle('active', state.freiLayout==='untereinander');
+  const slotIds = state.slots.frei;
   const area = document.getElementById('slots-area');
+  // [NEU] "gestapelt" (früher "isSeq") ist jetzt reine OPTIK -- nummeriert & untereinander
+  // vs. Grid nebeneinander. Das Zuschalten selbst (state.visibleCount.frei) gilt IMMER,
+  // unabhängig vom Layout: auch "nebeneinander" schaltet Antworten einzeln zu, zeigt die
+  // bereits zugeschalteten dann aber im Grid nebeneinander statt nummeriert untereinander.
+  const gestapelt = state.freiLayout === 'untereinander';
+  area.className = gestapelt ? '' : 'grid2';
   area.innerHTML = "";
-  const isSeq = state.activeTab === 'reihenfolge';
   slotIds.forEach((name,i)=>{
     const child = state.pool.find(p=>p.name===name);
     const div = document.createElement('div');
     div.style.cursor = 'pointer';
     if(child){
       const cat = CATS[child.cat];
-      const onTafel = !isSeq || i < state.visibleCount.reihenfolge;
+      const onTafel = i < state.visibleCount.frei;
       div.onclick = ()=> openDetail(child.name);
       div.innerHTML = `<div class="${cat.color}" style="border-radius:var(--radius) var(--radius) 0 0; padding:6px 8px;">
         <div class="row" style="justify-content:space-between;"><b style="font-size:12px;">${i+1}. ${child.name} · ${cat.label}</b>
         <span style="display:flex; gap:6px; align-items:center;">
-          ${isSeq ? `<span class="tag" style="background:${onTafel?'var(--bg-success)':'var(--surface-1)'}; color:${onTafel?'var(--text-success)':'var(--text-muted)'};">${onTafel?'auf Tafel':'noch verdeckt'}</span>` : ''}
+          <span class="tag" style="background:${onTafel?'var(--bg-success)':'var(--surface-1)'}; color:${onTafel?'var(--text-success)':'var(--text-muted)'};">${onTafel?'auf Tafel':'noch verdeckt'}</span>
           ${i>0 ? `<button class="navbtn" style="padding:4px 6px;" onclick="event.stopPropagation(); moveSlot(${i},-1)"><i class="ti ti-arrow-up" style="font-size:12px;"></i></button>` : ''}
           ${i<slotIds.length-1 ? `<button class="navbtn" style="padding:4px 6px;" onclick="event.stopPropagation(); moveSlot(${i},1)"><i class="ti ti-arrow-down" style="font-size:12px;"></i></button>` : ''}
         </span></div></div>
@@ -1633,33 +1586,48 @@ function renderDashboard(){
     area.appendChild(div);
   });
   const seqControls = document.getElementById('seq-controls');
-  if(isSeq){
-    seqControls.style.display = 'block';
-    seqControls.innerHTML = `
-      <div class="ts" style="font-size:11px; margin-bottom:6px;">${state.visibleCount.reihenfolge} von ${slotIds.length} auf der Tafel sichtbar</div>
-      <div class="row" style="gap:8px;">
-        <button class="btn" onclick="seqStep(-1)"><i class="ti ti-eye-off"></i> vorherige verbergen</button>
-        <button class="btn btn-primary" onclick="seqStep(1)"><i class="ti ti-eye"></i> nächste zuschalten</button>
-      </div>`;
-  } else { seqControls.style.display = 'none'; }
+  seqControls.style.display = 'block';
+  seqControls.innerHTML = `
+    <div class="ts" style="font-size:11px; margin-bottom:6px;">${state.visibleCount.frei} von ${slotIds.length} auf der Tafel sichtbar</div>
+    <div class="row" style="gap:8px;">
+      <button class="btn" onclick="seqStep(-1)"><i class="ti ti-eye-off"></i> vorherige verbergen</button>
+      <button class="btn btn-primary" onclick="seqStep(1)"><i class="ti ti-eye"></i> nächste zuschalten</button>
+    </div>`;
+}
+function renderDashboard(){
+  document.querySelectorAll('.tabbtn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.tab===state.activeTab);
+  });
+  document.getElementById('empfohlen-area').style.display = state.activeTab==='empfohlen' ? 'block' : 'none';
+  document.getElementById('frei-area').style.display = state.activeTab==='frei' ? 'block' : 'none';
+  if(state.activeTab === 'empfohlen'){
+    if(state.empfAutomatisch) state.empfBloecke = berechneEmpfBloecke();
+    renderEmpfohlen();
+  } else {
+    renderFrei();
+  }
   renderPool();
   renderTafel();
   renderLegende('kategorie-legende', false, true);
-  document.getElementById('antworten-toggle').textContent = state.answersVisibleOnTafel ? 'An' : 'Aus';
+  document.getElementById('antworten-toggle').checked = state.answersVisibleOnTafel;
   const tafelBtn = document.getElementById('antworten-toggle-tafel');
-  if(tafelBtn) tafelBtn.textContent = state.answersVisibleOnTafel ? 'An' : 'Aus';
+  if(tafelBtn) tafelBtn.checked = state.answersVisibleOnTafel;
 }
 function seqStep(dir){
-  const max = state.slots.reihenfolge.length;
-  state.visibleCount.reihenfolge = Math.max(0, Math.min(max, state.visibleCount.reihenfolge + dir));
+  if(state.activeTab === 'empfohlen'){
+    const max = state.empfBloecke.filter(b=>!b.uebersprungen).length;
+    state.empfAktivBlock = Math.max(-1, Math.min(max-1, state.empfAktivBlock + dir));
+  } else {
+    const max = state.slots[state.activeTab].length;
+    state.visibleCount[state.activeTab] = Math.max(0, Math.min(max, state.visibleCount[state.activeTab] + dir));
+  }
   renderDashboard();
 }
 function moveSlot(i, dir){
-  const arr = state.slots[state.activeTab];
+  const arr = state.slots.frei;
   const j = i + dir;
   if(j<0 || j>=arr.length) return;
   [arr[i], arr[j]] = [arr[j], arr[i]];
-  state.automatischBefuellt = false;
   renderDashboard();
 }
 function renderSprachauswahl(){
@@ -1761,9 +1729,8 @@ function renderTafelQR(){
   }
 }
 function addSlot(){
-  const unused = state.pool.find(p=>!state.slots[state.activeTab].includes(p.name));
-  if(unused) state.slots[state.activeTab].push(unused.name);
-  state.automatischBefuellt = false; // manueller Eingriff -- Empfehlung überschreibt ab jetzt nichts mehr
+  const unused = state.pool.find(p=>!state.slots.frei.includes(p.name));
+  if(unused) state.slots.frei.push(unused.name);
   renderDashboard();
 }
 function recode(name, newCat){
@@ -1794,7 +1761,7 @@ function renderLegende(containerId, includeStatus, filterable){
     const fg = active ? 'var(--text-accent)' : 'var(--text-muted)';
     const cursor = filterable ? 'cursor:pointer;' : '';
     const onclick = filterable ? `onclick="setPoolFilter('${k}')"` : '';
-    html += `<span ${onclick} style="font-size:10px; ${cursor} padding:2px 7px; border-radius:10px; background:${bg}; color:${fg};"><span class="${cat.color}" style="display:inline-block;width:10px;height:10px;border-radius:3px; margin-right:4px;"></span>${cat.label}${cat.typ==='Fehlvorstellung'?' (Fehlvorstellung)':''}</span>`;
+    html += `<span ${onclick} style="font-size:10px; ${cursor} padding:2px 7px; border-radius:10px; background:${bg}; color:${fg};"><span class="${cat.color}" style="display:inline-block;width:10px;height:10px;border-radius:3px; margin-right:4px;"></span>${cat.label}${cat.typ==='Fehler'?' (Fehler)':''}</span>`;
   });
   el.innerHTML = html;
 }
@@ -1817,7 +1784,7 @@ function renderPool(){
     const fn = didaktischeFunktion(p.cat);
     const fnIcon = fn ? DIDAKTISCHE_FUNKTION_META[fn].icon+' ' : '';
     div.innerHTML = `<div class="row" style="justify-content:space-between;"><b style="font-size:12px;">${p.name}${inSlot?' <i class="ti ti-check" style="font-size:10px;"></i>':''}</b><span style="font-size:9px;">${fnIcon}${cat.label}</span></div>
-      <div class="ts" style="font-size:10px; margin-top:2px;">${cat.def}</div>`;
+      <div class="ts" style="font-size:10px; margin-top:2px;">"${p.quote}"</div>`;
     area.appendChild(div);
   });
 }
@@ -1842,7 +1809,7 @@ function renderDetail(){
       <b style="font-size:14px;">${child.name}</b>
       <span class="row" style="gap:4px;">
         ${child.wahl ? `<span class="tag" style="background:var(--surface-1); color:var(--text-secondary);">${child.wahl==='ja'?'Ja':'Nein'}</span>` : ''}
-        <span class="tag ${cat.color}">${cat.typ==='Fehlvorstellung'?'⚠ ':''}${cat.label}</span>
+        <span class="tag ${cat.color}">${cat.typ==='Fehler'?'⚠ ':''}${cat.label}</span>
       </span>
     </div>
     <div class="quote-box">"${child.quote}"</div>
@@ -1857,9 +1824,9 @@ function renderDetail(){
         ${Object.keys(CATS).filter(k=>!child.wahl || !CATS[k].gueltig_fuer || CATS[k].gueltig_fuer===child.wahl).map(k=>`<option value="${k}">${CATS[k].label}</option>`).join('')}
       </select>
     </div>
-    <button class="btn ${inSlot?'':'btn-primary'}" style="margin-top:14px;" onclick="toggleSlotFromDetail()">
-      ${inSlot ? '<i class="ti ti-x"></i> Von der Tafel entfernen' : '<i class="ti ti-plus"></i> Für die Tafel auswählen ('+state.activeTab+')'}
-    </button>
+    ${state.activeTab === 'frei' ? `<button class="btn ${inSlot?'':'btn-primary'}" style="margin-top:14px;" onclick="toggleSlotFromDetail()">
+      ${inSlot ? '<i class="ti ti-x"></i> Von der Tafel entfernen' : '<i class="ti ti-plus"></i> Für die Tafel auswählen'}
+    </button>` : `<div class="ts" style="font-size:11px; margin-top:14px;">Tafel-Auswahl erfolgt im Modus "Empfohlene Reihenfolge" über die Schritte selbst (Kind/Kategorie tauschen, überspringen).</div>`}
     <button class="btn" style="margin-top:8px;" onclick="closeDetail()">Schließen</button>
   `;
 }
@@ -1867,21 +1834,20 @@ function toggleSlotFromDetail(){
   const idx = state.slots[state.activeTab].indexOf(detailChild);
   if(idx>-1) state.slots[state.activeTab].splice(idx,1);
   else state.slots[state.activeTab].push(detailChild);
-  state.automatischBefuellt = false;
   renderDetail();
   renderDashboard();
 }
-function toggleAntwortenSichtbar(){
-  state.answersVisibleOnTafel = !state.answersVisibleOnTafel;
-  const label = state.answersVisibleOnTafel ? 'An' : 'Aus';
+function toggleAntwortenSichtbar(checked){
+  state.answersVisibleOnTafel = checked;
   const btn1 = document.getElementById('antworten-toggle');
   const btn2 = document.getElementById('antworten-toggle-tafel');
-  if(btn1) btn1.textContent = label;
-  if(btn2) btn2.textContent = label;
+  if(btn1) btn1.checked = checked;
+  if(btn2) btn2.checked = checked;
   renderTafel();
 }
 function renderTafel(){
   renderTafelQR();
+  renderTafelSteuerung();
   const area = document.getElementById('tafel-slots');
   const aufgabeEl = document.getElementById('tafel-aufgabe');
   if(qrAufTafel){
@@ -1894,31 +1860,78 @@ function renderTafel(){
     area.innerHTML = '<div class="ts" style="text-align:center; padding:24px;"><i class="ti ti-eye-off" style="font-size:20px;"></i><div style="margin-top:6px;">Antworten sind noch ausgeblendet</div></div>';
     return;
   }
-  area.className = state.activeTab === 'reihenfolge' ? '' : 'grid2';
+  // [NEU] "Empfohlene Reihenfolge": ERSETZEN statt anhäufen -- nur der aktuell zugeschaltete
+  // Block ist auf der Tafel, frühere Schritte verschwinden wieder. Ein Vergleichs-Block hat
+  // zwei Antworten, die dann gemeinsam (nebeneinander, grid2) erscheinen -- kein zweiter Klick
+  // nötig, ein Schritt = ein Zuschalten.
+  if(state.activeTab === 'empfohlen'){
+    area.className = 'grid2';
+    area.innerHTML = "";
+    const sichtbareBloecke = state.empfBloecke.filter(b=>!b.uebersprungen);
+    const aktuellerBlock = sichtbareBloecke[state.empfAktivBlock];
+    if(!aktuellerBlock){
+      area.innerHTML = '<div class="ts" style="text-align:center; padding:24px; grid-column:1/-1;">Noch kein Schritt zugeschaltet</div>';
+      return;
+    }
+    aktuellerBlock.namen.forEach(name=>{
+      const child = state.pool.find(p=>p.name===name);
+      if(!child) return;
+      const cat = CATS[child.cat];
+      const div = document.createElement('div');
+      div.className = cat.color;
+      div.style.cssText = "border-radius:12px; padding:14px; font-size:14px;";
+      div.innerHTML = child.quote;
+      area.appendChild(div);
+    });
+    return;
+  }
+  const gestapelt = state.activeTab === 'frei' && state.freiLayout === 'untereinander';
+  area.className = gestapelt ? '' : 'grid2';
   area.innerHTML = "";
   const slotIds = state.slots[state.activeTab];
-  const isSeq = state.activeTab === 'reihenfolge';
   slotIds.forEach((name,i)=>{
-    if(isSeq && i >= state.visibleCount.reihenfolge) return;
+    if(i >= state.visibleCount[state.activeTab]) return; // Zuschalten gilt in "frei" IMMER, unabhängig vom Layout
     const child = state.pool.find(p=>p.name===name);
     if(!child) return;
     const cat = CATS[child.cat];
     const div = document.createElement('div');
     div.className = cat.color;
-    div.style.cssText = "border-radius:12px; padding:14px; font-size:14px;" + (isSeq ? " margin-bottom:12px; display:flex; gap:10px; align-items:flex-start;" : "");
-    div.innerHTML = isSeq
+    div.style.cssText = "border-radius:12px; padding:14px; font-size:14px;" + (gestapelt ? " margin-bottom:12px; display:flex; gap:10px; align-items:flex-start;" : "");
+    div.innerHTML = gestapelt
       ? `<div style="font-size:20px; font-weight:600; opacity:0.5; min-width:24px;">${i+1}</div><div>${child.quote}</div>`
       : child.quote;
     area.appendChild(div);
   });
 }
-function toggleTafelAufgabe(){
+// [NEU] Steuerung DIREKT auf der Tafel-Ansicht (nicht nur im LK-Dashboard) -- falls nur ein
+// Smartboard vorhanden ist, auf dem die Lehrkraft ohnehin steht, muss sie nicht zwischen
+// Dashboard und Tafel hin- und herwechseln, um den nächsten Schritt zuzuschalten. Nutzt
+// dieselbe seqStep()-Funktion wie die Steuerung im Dashboard -- beide bleiben synchron.
+function renderTafelSteuerung(){
+  const el = document.getElementById('tafel-schritt-steuerung');
+  if(!el) return;
+  if(qrAufTafel){ el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  let text;
+  if(state.activeTab === 'empfohlen'){
+    const anzahl = state.empfBloecke.filter(b=>!b.uebersprungen).length;
+    text = state.empfAktivBlock < 0 ? `noch kein Schritt gezeigt (0 von ${anzahl})` : `Schritt ${state.empfAktivBlock+1} von ${anzahl}`;
+  } else {
+    text = `${state.visibleCount.frei} von ${state.slots.frei.length} sichtbar`;
+  }
+  el.innerHTML = `
+    <button class="btn" style="flex:1;" onclick="seqStep(-1)"><i class="ti ti-chevron-left"></i> vorheriger Schritt</button>
+    <span class="ts" style="font-size:12px; white-space:nowrap;">${text}</span>
+    <button class="btn btn-primary" style="flex:1;" onclick="seqStep(1)">nächster Schritt <i class="ti ti-chevron-right"></i></button>`;
+}
+function toggleTafelAufgabe(checked){
   if(qrAufTafel){
     qrAufTafel = false;
     document.getElementById('qr-toggle-btn').innerHTML = '<i class="ti ti-qrcode"></i> QR-Code auf Tafel anzeigen';
   }
-  const el = document.getElementById('tafel-aufgabe');
-  el.style.display = el.style.display==='none' ? 'block' : 'none';
+  document.getElementById('tafel-aufgabe').style.display = checked ? 'block' : 'none';
+  const toggle = document.getElementById('aufgabe-toggle');
+  if(toggle) toggle.checked = checked;
   renderTafel();
 }
 // [NEU] Verteilung der drei didaktischen Funktionen über alle bisher eingegangenen
@@ -2195,9 +2208,9 @@ function uebersetzungFuerSprache(lang){
   const eintrag = AUFGABE_UEBERSETZUNGEN.find(u=>u.sprache===lang);
   return eintrag ? eintrag.text : null;
 }
-function toggleAnonym(){
-  anonymMode = !anonymMode;
-  document.getElementById('anonym-toggle').textContent = anonymMode ? 'An' : 'Aus';
+function toggleAnonym(checked){
+  anonymMode = checked;
+  document.getElementById('anonym-toggle').checked = anonymMode;
   document.getElementById('ausfuell-blatt-btn').style.display = anonymMode ? 'block' : 'none';
   renderKinderliste();
 }
@@ -2353,6 +2366,13 @@ function canvasClick(e){
   sitzplanState.armed = null;
   renderSitzplan();
 }
+// [FIX] wendeAufgabeAufUIAn() lief bisher NUR nach einem Aufgaben-Upload (aktiviereAufgabe()).
+// Beim allerersten Laden (Demo-Zustand, bevor überhaupt etwas hochgeladen wurde) blieben
+// die statischen HTML-Platzhalter stehen -- u.a. auf der Tafel nur "6 T 2 H 42 Z 5 E" statt
+// des vollständigen AUFGABE_TEXT ("Wie würdest du ... schreiben? Erkläre."). Einmaliger
+// Aufruf hier synchronisiert alle Textstellen (Tafel, Dashboard, Aufnahme-Anweisung, ...)
+// mit den bereits gesetzten Demo-Konstanten, genau wie nach einem echten Upload.
+wendeAufgabeAufUIAn();
 reinitialisiereKinderZustand(true); // Anfangszustand: Demo-Kinderliste mit ein paar Beispielwerten
 if(istKindGeraet && sitzungscode){
   // Kindgerät, das über den QR-Code/Link beigetreten ist:
@@ -2370,9 +2390,9 @@ if(istKindGeraet && sitzungscode){
 } else {
   // LK-Gerät: falls noch eine gültige Anmeldung besteht (z.B. nach Reload), direkt
   // zur Klassenraum-Ansicht statt erneut nach Zugangsname/Passwort zu fragen.
-  sb.auth.getSession().then(async ({ data }) => {
+  sb.auth.getSession().then(({ data }) => {
     if(data.session && data.session.user){
-      await uebernehmeLogin(data.session.user);
+      uebernehmeLogin(data.session.user);
       show('login');
     } else {
       show('start');

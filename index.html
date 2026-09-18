@@ -46,6 +46,14 @@
   .c-teal { background: #9FE1CB; } .c-coral { background: #F0997B; } .c-purple { background: #AFA9EC; }
   .c-gray { background: #D3D1C7; } .c-blue { background: #B5D4F4; } .c-amber { background: #FAC775; }
   .c-mint { background: #C9EAA8; } .c-rose { background: #F2AEBE; }
+  /* [NEU] Farbfamilien nach Kategorietyp -- s. FARBEN_FEHLER/FARBEN_TRAGFAEHIG weiter unten.
+     Bewusst keine Ampel-Farben (kein reines Rot/Grün): "kühle" Familie für Fehler-Kategorien,
+     "warme" (aber nicht signalrote) Familie für tragfähige Strategien. */
+  .c-cyan { background: #92D8D8; } .c-indigo { background: #A6A0E8; } .c-petrol { background: #7FC2C2; }
+  .c-peach { background: #F5C6A0; } .c-gold { background: #E8C468; } .c-terra { background: #E0A98D; }
+  /* [NEU] Neutrale Karte für die Tafelansicht -- ersetzt cat.color dort, damit die Farbfamilie
+     (und damit implizit der Kategorietyp) nicht unbeschriftet vor der Klasse landet. */
+  .c-tafel-neutral { background: var(--surface-2); border: 1.5px solid var(--border-strong); }
   .tag { font-size: 10px; padding: 3px 9px; border-radius: 10px; display:inline-block; }
   .icon-circle { width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:15px; }
   h2.scr-title { font-family: var(--font-heading); font-weight: 400; font-size: 19px; margin: 0 0 14px; color: var(--text-secondary); letter-spacing: 0.01em; }
@@ -647,7 +655,18 @@ let aktiverAnzeigename = null;
 // dieser Datei erwarteten globalen Konstanten. Siehe handleAufgabeUpload() weiter
 // unten für den tatsächlichen Datei-Upload, der ladeAufgabe()/aktiviereAufgabe() aufruft.
 // ============================================================
-const KATEGORIE_FARBEN = ['c-teal', 'c-mint', 'c-coral', 'c-purple', 'c-amber', 'c-rose', 'c-blue'];
+// [NEU] Zwei Farbfamilien statt einer gemeinsamen Palette, jede mit eigenem Zähler in
+// ladeAufgabe(): Fehler-Kategorien bekommen automatisch die nächste "kühle" Farbe,
+// tragfähige Strategien die nächste "warme" (aber nicht signalrote/-grüne) Farbe. Damit
+// ist die Farbfamilie im LK-Dashboard weiterhin auf einen Blick unterscheidbar, OHNE dass
+// Rot/Grün ein Richtig/Falsch-Urteil vorwegnimmt -- und man muss beim Anlegen einer Aufgabe
+// nicht wissen, wie viele Kategorien welchen Typs am Ende vorkommen, da jede Familie
+// unabhängig durchgezählt wird. Auf der Tafel wird KEINE dieser Farben verwendet, s.
+// c-tafel-neutral weiter oben und renderTafel() weiter unten -- sonst würde die Familie
+// (kühl=Fehler / warm=tragfähig) dort unbeschriftet dasselbe verraten, was Kategorie-Labels
+// heute schon bewusst nicht tun (s. Anforderungsdokument 2.4b).
+const FARBEN_FEHLER = ['c-teal', 'c-blue', 'c-purple', 'c-cyan', 'c-indigo', 'c-petrol'];
+const FARBEN_TRAGFAEHIG = ['c-coral', 'c-amber', 'c-rose', 'c-peach', 'c-gold', 'c-terra'];
 const FARBE_HOUSEKEEPING = 'c-gray';
 
 function ladeAufgabe(config) {
@@ -673,7 +692,10 @@ function ladeAufgabe(config) {
 
   const kategorienListe = (a.taxonomie && a.taxonomie.kategorien) || [];
   const CATS = {};
-  let farbIndex = 0;
+  // [NEU] Ein Zähler PRO Kategorietyp statt eines gemeinsamen -- s. FARBEN_FEHLER/
+  // FARBEN_TRAGFAEHIG weiter oben.
+  const farbIndex = { 'Fehler': 0, 'tragfähige Strategie': 0 };
+  const FARBEN_NACH_TYP = { 'Fehler': FARBEN_FEHLER, 'tragfähige Strategie': FARBEN_TRAGFAEHIG };
 
   kategorienListe.forEach(k => {
     if (!k.kategorie_id) { fehler.push('Eine Kategorie ohne kategorie_id gefunden.'); return; }
@@ -691,14 +713,18 @@ function ladeAufgabe(config) {
       fehler.push(`Kategorie "${k.kategorie_id}": gueltig_fuer muss "ja" oder "nein" sein, nicht "${k.gueltig_fuer}".`);
     }
 
+    // [NEU] Farbfamilie richtet sich nach kategorietyp statt nach reiner Reihenfolge. Ein
+    // (noch) ungültiger kategorietyp bekommt vorläufig Housekeeping-Grau -- die eigentliche
+    // Fehlermeldung dazu kommt weiter unten unverändert.
     let color;
-    if (istHousekeeping) {
+    const palette = !istHousekeeping ? FARBEN_NACH_TYP[k.kategorietyp] : null;
+    if (istHousekeeping || !palette) {
       color = FARBE_HOUSEKEEPING;
-    } else if (farbIndex >= KATEGORIE_FARBEN.length) {
-      fehler.push(`Mehr als ${KATEGORIE_FARBEN.length} inhaltliche Kategorien in dieser Aufgabe -- die Farbpalette in der CSS muss zuerst erweitert werden.`);
+    } else if (farbIndex[k.kategorietyp] >= palette.length) {
+      fehler.push(`Mehr als ${palette.length} Kategorien vom Typ "${k.kategorietyp}" in dieser Aufgabe -- die Farbfamilie in der CSS muss zuerst erweitert werden.`);
       color = FARBE_HOUSEKEEPING;
     } else {
-      color = KATEGORIE_FARBEN[farbIndex++];
+      color = palette[farbIndex[k.kategorietyp]++];
     }
 
     if (k.kategorietyp === 'tragfähige Strategie' && k.praezision && !['praezise','unpraezise'].includes(k.praezision)) {
@@ -1876,9 +1902,12 @@ function renderTafel(){
     aktuellerBlock.namen.forEach(name=>{
       const child = state.pool.find(p=>p.name===name);
       if(!child) return;
-      const cat = CATS[child.cat];
       const div = document.createElement('div');
-      div.className = cat.color;
+      // [NEU] Auf der Tafel bewusst KEINE Kategorie-Farbe mehr (s. c-tafel-neutral, Kap.
+      // CSS) -- sonst würde die Farbfamilie (kühl=Fehler/warm=tragfähig) unbeschriftet
+      // genau das verraten, was Kategorie-Labels hier schon bisher nicht tun sollen.
+      // Unterscheidung der nebeneinanderliegenden Karten erfolgt allein über Position + Text.
+      div.className = 'c-tafel-neutral';
       div.style.cssText = "border-radius:12px; padding:14px; font-size:14px;";
       div.innerHTML = child.quote;
       area.appendChild(div);
@@ -1893,9 +1922,10 @@ function renderTafel(){
     if(i >= state.visibleCount[state.activeTab]) return; // Zuschalten gilt in "frei" IMMER, unabhängig vom Layout
     const child = state.pool.find(p=>p.name===name);
     if(!child) return;
-    const cat = CATS[child.cat];
     const div = document.createElement('div');
-    div.className = cat.color;
+    // [NEU] s. Kommentar im "empfohlen"-Zweig weiter oben -- auch im Frei-Tab keine
+    // Kategorie-Farbe auf der Tafel, nur Position (und bei "untereinander" die Nummer).
+    div.className = 'c-tafel-neutral';
     div.style.cssText = "border-radius:12px; padding:14px; font-size:14px;" + (gestapelt ? " margin-bottom:12px; display:flex; gap:10px; align-items:flex-start;" : "");
     div.innerHTML = gestapelt
       ? `<div style="font-size:20px; font-weight:600; opacity:0.5; min-width:24px;">${i+1}</div><div>${child.quote}</div>`

@@ -208,7 +208,7 @@
           <div class="t" id="aufgabe-verstehenskern" style="font-size:15px; font-weight:500;">Bündeln und Entbündeln von Zahlen</div>
           <div class="ts" id="aufgabe-text-anzeige" style="font-size:12px; margin-top:4px;">Wie würdest du die Zahl 6 T 2 H 42 Z 5 E in die Stellenwerttafel und als Zahl schreiben? Erkläre.</div>
         </div>
-        <i class="ti ti-info-circle" style="font-size:18px; color:var(--text-accent);" onclick="showInfo('Hintergrundmaterial', 'Kurzer Hinweis zu Grundvorstellungen additiver Zerlegung + Link zu Video (Demo).')"></i>
+        <i class="ti ti-info-circle" style="font-size:18px; color:var(--text-accent); cursor:pointer;" onclick="zeigeHintergrundInfo()"></i>
       </div>
       <div class="ts" id="aufgabe-kinder-status" style="font-size:12px;">— Kinder: aufnahmefähig</div>
     </div>
@@ -306,7 +306,7 @@
         <div class="t" id="dashboard-aufgabe-text" style="font-size:14px; font-weight:500;">6 T 2 H 42 Z 5 E</div>
         <div class="ts" id="dashboard-verstehenskern" style="font-size:11px; margin-top:2px;">Verstehenskern: Bündeln und Entbündeln von Zahlen</div>
       </div>
-      <i class="ti ti-info-circle" style="font-size:18px; color:var(--text-accent);"></i>
+      <i class="ti ti-info-circle" style="font-size:18px; color:var(--text-accent); cursor:pointer;" onclick="zeigeHintergrundInfo()"></i>
     </div>
     <div class="banner" style="background:var(--bg-success); color:var(--text-success); margin-bottom:10px;">
       Hier bereiten Sie das Plenumsgespräch vor: die empfohlene Abfolge übernehmen (und bei Bedarf Schritte tauschen/überspringen), oder die Tafel komplett frei gestalten.
@@ -646,6 +646,10 @@ let AKTUELLE_AUFGABE_KONFIGURATION = null; // die roh hochgeladene Aufgabe, wird
 let AUFGABE_TEXT = "Wie würdest du die Zahl 6 T 2 H 42 Z 5 E in die Stellenwerttafel und als Zahl schreiben? Erkläre.";
 let AUFGABE_VERSTEHENSKERN = "Bündeln und Entbündeln von Zahlen";
 let AUFGABE_FORMAT = "Zahlen bündeln und entbündeln";
+// [NEU] Zusatzmaterial zum Verstehenskern (Text/Video), abrufbar über die Info-Icons neben
+// "Aufgabe" -- s. zeigeHintergrundInfo() weiter unten. Vorher wurde dieses Feld zwar
+// eingelesen (ladeAufgabe() gibt es schon zurück), aber nirgends angezeigt.
+let AUFGABE_HINTERGRUND = null;
 let aktiveKlassenraum = "3b";    // Fallback fürs Demo-Sprungmenü ohne echten Login; wird nach lkAnmelden() überschrieben
 let aktiverAnzeigename = null;
 
@@ -740,7 +744,11 @@ function ladeAufgabe(config) {
 
     CATS[k.kategorie_id] = {
       label: k.bezeichnung, color, typ: k.kategorietyp ?? null, praezision: k.praezision ?? null,
-      gueltig_fuer: k.gueltig_fuer ?? null, def: k.kurzdefinition, nachfrage: k.nachfrage_impuls ?? null
+      gueltig_fuer: k.gueltig_fuer ?? null, def: k.kurzdefinition, nachfrage: k.nachfrage_impuls ?? null,
+      // [NEU] Referenzbeispiele werden jetzt tatsächlich mitgespeichert -- vorher wurden sie
+      // beim Einlesen geparst, aber nirgends abgelegt und erreichten dadurch nie die
+      // KI-Kategorisierung, obwohl der Standard-Klassifikations-Prompt genau das behauptet.
+      beispiele: Array.isArray(k.referenzbeispiele) ? k.referenzbeispiele.filter(r => (r||'').trim()) : []
     };
   });
 
@@ -834,6 +842,7 @@ function aktiviereAufgabe(config) {
   AUFGABE_TEXT = ergebnis.aufgabentext || "";
   AUFGABE_VERSTEHENSKERN = ergebnis.verstehenskern || "";
   AUFGABE_FORMAT = ergebnis.aufgabenformat || "";
+  AUFGABE_HINTERGRUND = ergebnis.hintergrundmaterial || null;
   KLASSIFIKATIONS_PROMPT = ergebnis.klassifikations_prompt || KLASSIFIKATIONS_PROMPT;
   KLASSIFIKATIONS_PROMPT_JA = ergebnis.klassifikations_prompt_ja;
   KLASSIFIKATIONS_PROMPT_NEIN = ergebnis.klassifikations_prompt_nein;
@@ -1354,7 +1363,8 @@ async function finishAnswer(){
   // schicken (gueltig_fuer null = zweigunabhängig, z.B. keine_bearbeitung/unklar).
   const kategorienFuerPrompt = Object.entries(CATS)
     .filter(([id, k]) => !wahl || !k.gueltig_fuer || k.gueltig_fuer === wahl)
-    .map(([id, k]) => ({ kategorie_id: id, bezeichnung: k.label, kurzdefinition: k.def }));
+    // [NEU] referenzbeispiele gehen jetzt mit -- s. Kommentar bei CATS[...] in ladeAufgabe().
+    .map(([id, k]) => ({ kategorie_id: id, bezeichnung: k.label, kurzdefinition: k.def, referenzbeispiele: k.beispiele }));
   const promptFuerAnfrage = HAT_WAHL
     ? (wahl === 'ja' ? KLASSIFIKATIONS_PROMPT_JA : KLASSIFIKATIONS_PROMPT_NEIN)
     : KLASSIFIKATIONS_PROMPT;
@@ -1694,6 +1704,30 @@ function showInfo(title, text){
     <div class="ts" style="font-size:13px; line-height:1.5;">${text}</div>
     <button class="btn btn-primary" style="margin-top:14px;" onclick="document.getElementById('info-modal').classList.remove('visible')">Schließen</button>`;
   document.getElementById('info-modal').classList.add('visible');
+}
+// [NEU] Zeigt das Hintergrundmaterial (aufgabe.hintergrundmaterial.text/.video) der aktuell
+// aktiven Aufgabe -- aufgerufen von beiden Info-Icons neben "Aufgabe" (Vorbereitungs-Screen
+// und LK-Dashboard). Eigene Funktion statt Text direkt ins onclick-Attribut zu schreiben,
+// weil Freitext aus der YAML Anführungszeichen/Zeilenumbrüche enthalten kann, die ein
+// inline onclick="showInfo('...','...')" sonst kaputt machen würden.
+function zeigeHintergrundInfo(){
+  const h = AUFGABE_HINTERGRUND;
+  const hatText = h && (h.text || '').trim();
+  const hatVideo = h && (h.video || '').trim();
+  if(!hatText && !hatVideo){
+    showInfo('Hintergrundmaterial', 'Für diese Aufgabe ist kein zusätzliches Hintergrundmaterial hinterlegt.');
+    return;
+  }
+  const textHtml = hatText ? escapeHtml(h.text).replace(/\n/g,'<br>') : '';
+  const videoHtml = hatVideo ? `<div style="margin-top:${hatText?'10px':'0'};"><a href="${escapeHtml(h.video)}" target="_blank" rel="noopener"><i class="ti ti-video"></i> Video öffnen</a></div>` : '';
+  showInfo('Hintergrundmaterial', textHtml + videoHtml);
+}
+// Kleine Sicherung gegen kaputtes HTML/versehentliche Tags in freien YAML-Textfeldern --
+// hintergrundmaterial.text kommt direkt aus der Konfigurationsdatei des Fachdidaktik-Teams.
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
 }
 // Platzhalter-Texte -- KEINE rechtsgültigen Dokumente. Vor Veröffentlichung mit echten
 // Angaben füllen und von der/dem Datenschutzbeauftragten der TU Dortmund prüfen lassen

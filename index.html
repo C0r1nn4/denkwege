@@ -18,30 +18,67 @@
        var(--fill-accent) etc. in style.background schreibt) muss dadurch nicht angefasst werden. */
     --surface-2: #fffaf1; --surface-1: #f2e6d3; --surface-0: #ecdcc0;
     --text-primary: #201e1d; --text-secondary: #5c5348; --text-muted: #8c8175;
-    --border: rgba(32,30,29,0.14); --border-strong: rgba(32,30,29,0.32); --border-accent: #c67139;
+    --border: rgba(32,30,29,0.22); --border-strong: rgba(32,30,29,0.45); --border-accent: #c67139;
     --bg-accent: #fbe7d8; --text-accent: #7a3d16; --fill-accent: #c67139; --on-accent: #fff;
     --bg-success: #eef6df; --text-success: #3d4a28; --fill-success: #7c8f5c; --on-success: #fff;
     --bg-warning: #FAEEDA; --text-warning: #633806; --fill-warning: #EF9F27;
     --fill-danger: #E24B4A; --on-danger: #fff; --radius: 12px; --radius-lg: 18px;
     --shadow-md: 0 4px 16px rgba(46,43,37,0.18);
+    /* [NEU] Eigenständige "Systemhinweis"-Farbe (z. B. Dev-Banner) -- bewusst NEUTRAL statt
+       --fill-warning, damit sie sich klar von echten inhaltlichen Warnungen unterscheidet
+       (s. Nutzungsregel in Punkt 2: --bg-warning bleibt echten Warnungen vorbehalten). */
+    --bg-system: #3a352e; --text-on-system: #fdf8ef;
     --font-body: "Figtree", -apple-system, "Segoe UI", Roboto, sans-serif;
     --font-heading: "Caprasimo", var(--font-body);
     font-family: var(--font-body);
+    /* [NEU] Einheitliche Typografie-Skala -- ersetzt die zuvor über 15 frei vergebenen
+       Font-Größen. --fs-kid deckt bewusst nur die untere Kind-Textgrenze ab (30px); echte
+       Icon-/Button-Großformate in der Kind-Ansicht (Aufnahme-Knopf, Emoji, Symbol-Bestätigung
+       etc.) bleiben unverändert eigene, größere Literalwerte -- sonst ginge die absichtliche
+       Größenstaffelung dort verloren. */
+    --fs-micro: 11px;  /* Meta-Zeilen, Labels, Tags */
+    --fs-small: 13px;  /* sekundärer Text */
+    --fs-body: 15px;   /* Standardtext, Zitate */
+    --fs-title: 18px;  /* Card-/Screen-Titel */
+    --fs-lead: 24px;   /* große Aussagen, z. B. Einstiegssatz */
+    --fs-kid: 30px;    /* Kind-Ansicht, untere Grenze -- größere Werte bleiben literal */
   }
   * { box-sizing: border-box; }
-  body { background: var(--surface-0); margin: 0; color: var(--text-primary); font-size: 15px; }
+  body { background: var(--surface-0); margin: 0; color: var(--text-primary); font-size:var(--fs-body); }
   .app { max-width: 680px; margin: 0 auto; min-height: 100vh; background: var(--surface-1); padding-bottom: 30px; }
-  .topbar { display:flex; align-items:center; gap:8px; padding: 10px 14px; background: var(--surface-2); border-bottom: 0.5px solid var(--border); position: sticky; top:0; z-index: 10; flex-wrap: wrap; }
-  .topbar b { font-size: 13px; margin-right: auto; }
-  .navbtn { font-size: 12px; padding: 7px 12px; border-radius: var(--radius); border: 0.5px solid var(--border); background: var(--surface-1); cursor: pointer; }
+  .topbar { display:flex; align-items:center; gap:8px; padding: 10px 14px; background: var(--surface-2); border-bottom: 1px solid var(--border); position: sticky; top:0; z-index: 10; flex-wrap: wrap; }
+  .topbar b { font-size:var(--fs-small); margin-right: auto; }
+  .navbtn { font-size:var(--fs-small); padding: 7px 12px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface-1); cursor: pointer; }
   .navbtn.active { background: var(--bg-accent); color: var(--text-accent); border-color: var(--border-accent); }
+  /* [NEU] 5g: Segmented Control für den Empfohlen/Frei-Umschalter -- ein zusammenhängender
+     Hintergrund statt zwei einzelner Buttons, aktives Segment farbig hervorgehoben. */
+  .segmented { display:flex; gap:2px; background: var(--surface-0); border: 1px solid var(--border); border-radius: var(--radius); padding: 3px; overflow-x:auto; }
+  .seg-btn { flex:1; text-align:center; white-space:nowrap; padding: 8px 12px; font-size: var(--fs-body); border: none; border-radius: calc(var(--radius) - 3px); background: transparent; color: var(--text-secondary); cursor:pointer; font-family: inherit; }
+  .seg-btn.active { background: var(--fill-accent); color: var(--on-accent); font-weight: 600; }
+  /* [NEU] "Alle Antworten ansehen" als vollwertiger Menüpunkt statt kleiner
+     Textzeile -- eigener, größerer Klickbereich mit Icon + Chevron statt Browser-Standard-Dreieck. */
+  .dash-menu-summary { display:flex; align-items:center; gap:10px; padding:12px 14px; background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius); font-size:var(--fs-body); font-weight:600; color:var(--text-primary); cursor:pointer; list-style:none; }
+  .dash-menu-summary::-webkit-details-marker { display:none; }
+  .dash-menu-summary .chevron { font-size:var(--fs-body); color:var(--text-muted); transition:transform 0.15s; }
+  details[open] > .dash-menu-summary .chevron { transform:rotate(180deg); }
   .screen { display: none; padding: 20px; }
   .screen.visible { display: block; }
   button { font-family: inherit; cursor: pointer; border-radius: var(--radius); }
-  .btn { padding: 14px 16px; border: 0.5px solid var(--border); background: var(--surface-2); width: 100%; font-size: 15px; }
+  button:disabled, .btn:disabled { opacity:0.4; cursor:not-allowed; }
+  .btn { padding: 14px 16px; border: 1px solid var(--border); background: var(--surface-2); width: 100%; font-size:var(--fs-body); }
   .btn-primary { background: var(--fill-accent); color: var(--on-accent); border: none; }
   .btn-success { background: var(--fill-success); color: var(--on-success); border: none; }
-  .card { background: var(--surface-2); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 14px; }
+  .btn-danger { background: var(--fill-danger); color: var(--on-danger); border: none; }
+  .btn-warning { background: var(--fill-warning); color: var(--text-warning); border: none; }
+  /* [NEU] Outline-Variante für Aktionen, die räumlich/gewichtsmäßig zurückgenommen werden
+     sollen, obwohl sie eine "gefährliche" Bedeutung haben (z. B. "Sitzung beenden") -- s. 5f. */
+  .btn-danger-outline { background: transparent; border: 1px solid var(--fill-danger); color: var(--fill-danger); }
+  .tag-danger { background: var(--fill-danger); color: var(--on-danger); }
+  .tag-warning { background: var(--bg-warning); color: var(--text-warning); }
+  .tag-success { background: var(--bg-success); color: var(--text-success); }
+  .tag-accent { background: var(--bg-accent); color: var(--text-accent); }
+  .tag-neutral { background: var(--surface-1); color: var(--text-secondary); }
+  .card { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 14px; }
   .t { color: var(--text-primary); } .ts { color: var(--text-secondary); }
   .c-teal { background: #9FE1CB; } .c-coral { background: #F0997B; } .c-purple { background: #AFA9EC; }
   .c-gray { background: #D3D1C7; } .c-blue { background: #B5D4F4; } .c-amber { background: #FAC775; }
@@ -54,18 +91,21 @@
   /* [NEU] Neutrale Karte für die Tafelansicht -- ersetzt cat.color dort, damit die Farbfamilie
      (und damit implizit der Kategorietyp) nicht unbeschriftet vor der Klasse landet. */
   .c-tafel-neutral { background: var(--surface-2); border: 1.5px solid var(--border-strong); }
-  .tag { font-size: 10px; padding: 3px 9px; border-radius: 10px; display:inline-block; }
-  .icon-circle { width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:15px; }
-  h2.scr-title { font-family: var(--font-heading); font-weight: 400; font-size: 19px; margin: 0 0 14px; color: var(--text-secondary); letter-spacing: 0.01em; }
+  .tag { font-size:var(--fs-micro); padding: 3px 9px; border-radius: 10px; display:inline-block; }
+  .icon-circle { width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:var(--fs-body); }
+  h2.scr-title { font-family: var(--font-heading); font-weight: 400; font-size:var(--fs-title); margin: 0 0 14px; color: var(--text-primary); letter-spacing: 0.01em; }
   .row { display:flex; align-items:center; gap:10px; }
   .grid2 { display:grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap:8px; }
   .grid4 { display:grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap:16px; }
-  .pool-item { display:flex; align-items:center; gap:8px; padding:8px; border-radius:var(--radius); border:0.5px solid var(--border); background: var(--surface-2); margin-bottom:6px; }
-  .pool-item button { font-size: 10px; padding: 4px 8px; }
-  .slot-empty { border: 1px dashed var(--border-strong); border-radius: var(--radius); padding: 16px; text-align:center; font-size:11px; color:var(--text-muted); }
-  .quote-box { background: var(--surface-1); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 8px; font-size:12px; margin-top:6px; }
-  .banner { background: var(--bg-warning); color: var(--text-warning); font-size:11px; padding:8px; border-radius:var(--radius); margin-bottom:10px; }
-  textarea, .editable { width:100%; font-size:13px; padding:8px; border-radius:var(--radius); border:0.5px solid var(--border); }
+  .pool-item { display:flex; align-items:center; gap:8px; padding:8px; border-radius:var(--radius); border:1px solid var(--border); background: var(--surface-2); margin-bottom:6px; }
+  .pool-item button { font-size:var(--fs-micro); padding: 4px 8px; }
+  .slot-empty { border: 1px dashed var(--border-strong); border-radius: var(--radius); padding: 16px; text-align:center; font-size:var(--fs-micro); color:var(--text-muted); }
+  .quote-box { background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px; font-size:var(--fs-small); margin-top:6px; }
+  /* [NEU] Reduzierte, box-freie Zitat-Optik innerhalb bereits farbig umrandeter Karten (Schritt-
+     /Slot-Karten im Dashboard) -- ersetzt dort .quote-box, um Box-in-Box zu vermeiden (s. 5b). */
+  .quote-plain { font-style: italic; color: var(--text-secondary); border-left: 3px solid var(--border-strong); padding: 6px 0 6px 10px; margin-top: 6px; font-size: var(--fs-small); }
+  .banner { background: var(--bg-warning); color: var(--text-warning); font-size:var(--fs-micro); padding:8px; border-radius:var(--radius); margin-bottom:10px; }
+  textarea, .editable { width:100%; font-size:var(--fs-small); padding:8px; border-radius:var(--radius); border:1px solid var(--border); }
   .modal-bg { position: fixed; inset:0; background: rgba(0,0,0,0.4); display:none; align-items:center; justify-content:center; z-index: 50; }
   .modal-bg.visible { display:flex; }
   .modal { background: var(--surface-2); border-radius: var(--radius-lg); padding:16px; width: 90%; max-width: 360px; max-height: 80vh; overflow-y: auto; }
@@ -74,32 +114,36 @@
      statt Buchstaben, große Antipp-Flächen, große Schrift. Nur für die drei
      kindgerichteten Screens skaliert; LK-Dashboard bleibt kompakt/informationsdicht. */
   #scr-symbolauswahl, #scr-aufnahme, #scr-code-eingabe { padding: 28px 20px; }
-  #scr-symbolauswahl h2.scr-title, #scr-code-eingabe > div:nth-child(2) { font-size: 30px; font-family: var(--font-heading); font-weight: 400; color: var(--text-primary); }
+  #scr-symbolauswahl h2.scr-title, #scr-code-eingabe > div:nth-child(2) { font-size:var(--fs-kid); font-family: var(--font-heading); font-weight: 400; color: var(--text-primary); }
   .kid-symbol-btn { aspect-ratio: 1; border-radius: 50%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; background: var(--surface-2); border: 2px solid var(--border); box-shadow: var(--shadow-md); }
   .kid-symbol-btn .emoji { font-size: 44px; }
-  .kid-symbol-btn .name { font-size: 14px; font-weight: 600; color: var(--text-secondary); }
+  .kid-symbol-btn .name { font-size:var(--fs-body); font-weight: 600; color: var(--text-secondary); }
   .kid-big-icon-btn { width: 92px; height: 92px; border-radius: 50%; display:flex; align-items:center; justify-content:center; }
   .kid-record-btn { width: 220px; height: 220px; border-radius: 50%; box-shadow: var(--shadow-md); }
   .kid-mode-btn { width: 92px; height: 92px; border-radius: 50%; }
   .sticky-header { position: sticky; top: 0; z-index: 10; }
-  .dev-banner { background: var(--fill-warning); color: #201e1d; font-size: 12px; line-height: 1.5; padding: 9px 14px; text-align: center; font-weight: 600; }
+  .dev-banner { background: var(--bg-system); color: var(--text-on-system); font-size:var(--fs-small); line-height: 1.5; padding: 9px 14px; text-align: center; font-weight: 600; }
 
   /* [NEU] Verbindungsfrage mit mehreren Richtungen: Chip-Auswahl statt Fixtext. */
-  .vbf-chip { font-size: 11px; padding: 5px 10px; border-radius: 999px; border: 0.5px solid var(--border-strong); background: var(--surface-2); color: var(--text-secondary); }
+  .vbf-chip { font-size:var(--fs-micro); padding: 5px 10px; border-radius: 999px; border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text-secondary); }
   .vbf-chip.active { background: var(--fill-accent); border-color: var(--fill-accent); color: var(--on-accent); font-weight: 600; }
   /* [NEU] Live-Frage: hervorgehobener, direkt vorlesbarer Impuls statt kleiner grauer Zeile;
      die frühere Notiz bleibt zusätzlich als untergeordneter Hintergrund-Hinweis erhalten. */
-  .live-frage-box { background: var(--bg-warning); border-radius: var(--radius); padding: 8px 10px; margin-top: 6px; }
-  .live-frage-label { font-size: 10px; color: var(--text-warning); margin-bottom: 2px; display: flex; align-items: center; gap: 4px; }
-  .live-frage-text { font-size: 13px; color: var(--text-primary); }
+  /* [NEU] "direkt stellbar"-Nachfrage ist ein Hinweis, keine Warnung -- daher --bg-accent
+     statt --bg-warning (s. Punkt 2: --bg-warning bleibt echten Warnungen vorbehalten). Radius
+     entfernt, linke Akzentlinie statt Vollflächen-Box, damit sie sich in der Karte dieselbe
+     Formensprache wie .quote-plain teilt (s. 5b: nicht mehr 3 verschiedene Boxenformen). */
+  .live-frage-box { background: var(--bg-accent); border-left: 3px solid var(--fill-accent); border-radius: 0; padding: 8px 10px; margin-top: 6px; }
+  .live-frage-label { font-size:var(--fs-micro); color: var(--text-accent); margin-bottom: 2px; display: flex; align-items: center; gap: 4px; }
+  .live-frage-text { font-size:var(--fs-small); color: var(--text-primary); }
   /* [NEU] Sichtbar gemachte Begründung der Sequenzierungs-Reihenfolge, analog zur
      "Warum diese Empfehlung?"-Erklärung beim Modus-Tab. */
-  .reihenfolge-badge { display:flex; align-items:center; gap:6px; background: var(--bg-accent); color: var(--text-accent); border-radius: var(--radius); padding: 7px 10px; font-size: 12px; font-weight: 600; margin-bottom: 10px; }
+  .reihenfolge-badge { display:flex; align-items:center; gap:6px; background: var(--bg-accent); color: var(--text-accent); border-radius: var(--radius); padding: 7px 10px; font-size:var(--fs-small); font-weight: 600; margin-bottom: 10px; }
   /* [NEU] Echter Toggle-Switch statt An/Aus-Button -- die Stellung der Wippe zeigt den
      Zustand selbst, unabhängig von Text (kein "zeigt es das AN, oder schalte ich es AN?"). */
   .switch { position: relative; display: inline-flex; width: 40px; height: 23px; flex-shrink: 0; cursor: pointer; }
   .switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
-  .switch .slider { position: absolute; inset: 0; background: var(--surface-1); border: 0.5px solid var(--border-strong); border-radius: 999px; transition: background-color .15s, border-color .15s; }
+  .switch .slider { position: absolute; inset: 0; background: var(--surface-1); border: 1px solid var(--border-strong); border-radius: 999px; transition: background-color .15s, border-color .15s; }
   .switch .slider::before { content: ""; position: absolute; top: 2px; left: 2px; width: 17px; height: 17px; border-radius: 50%; background: var(--surface-2); box-shadow: 0 1px 2px rgba(0,0,0,0.25); transition: transform .15s; }
   .switch input:checked + .slider { background: var(--fill-success); border-color: var(--fill-success); }
   .switch input:checked + .slider::before { transform: translateX(17px); }
@@ -118,8 +162,8 @@
         <button class="navbtn" id="role-kind" onclick="switchRole('kind')"><i class="ti ti-child"></i> Kind</button>
       </div>
     </div>
-    <div style="font-size:9px; color:var(--text-muted); text-align:right; margin-bottom:4px;">nur zum Vorführen — im echten Tool meldet sich jede Person am eigenen Gerät an</div>
-    <details style="font-size:10px;">
+    <div style="font-size:var(--fs-micro); color:var(--text-muted); text-align:right; margin-bottom:4px;">nur zum Vorführen — im echten Tool meldet sich jede Person am eigenen Gerät an</div>
+    <details style="font-size:var(--fs-micro);">
       <summary style="color:var(--text-muted); cursor:pointer;">Demo-Sprungmenü (nicht Teil des echten Ablaufs — nur zum Vorführen)</summary>
       <div class="row" style="gap:6px; flex-wrap:wrap; margin-top:6px;">
         <button class="navbtn" onclick="show('login')">Login</button>
@@ -137,7 +181,7 @@
   <!-- LOGIN / KLASSENRAUM -->
   <!-- START: ROLLENWAHL -->
   <div id="scr-start" class="screen" style="text-align:center; padding-top:40px;">
-    <div style="font-size:16px; font-weight:500; margin-bottom:20px;">Wer bist du?</div>
+    <div style="font-size:var(--fs-title); font-weight:500; margin-bottom:20px;">Wer bist du?</div>
     <button class="btn btn-primary" style="margin-bottom:10px; padding:16px;" onclick="show('lk-login')"><i class="ti ti-chalkboard"></i> Ich bin Lehrkraft</button>
     <button class="btn" style="padding:16px;" onclick="show('code-eingabe')"><i class="ti ti-child"></i> Ich bin Schüler:in</button>
   </div>
@@ -146,10 +190,10 @@
        damit auch Kinder mitmachen können, die noch nicht sicher lesen/schreiben. -->
   <div id="scr-code-eingabe" class="screen" style="text-align:center; padding-top:30px;">
     <button class="navbtn" style="margin-bottom:16px;" onclick="show('start')"><i class="ti ti-arrow-left"></i> zurück</button>
-    <div style="font-size:26px; font-family:var(--font-heading); font-weight:400; margin-bottom:10px;">Tippe die drei Bilder</div>
-    <div class="ts" style="font-size:16px; margin-bottom:20px;">Sie stehen in dieser Reihenfolge auf der Tafel.</div>
+    <div style="font-size:var(--fs-kid); font-family:var(--font-heading); font-weight:400; margin-bottom:10px;">Tippe die drei Bilder</div>
+    <div class="ts" style="font-size:var(--fs-title); margin-bottom:20px;">Sie stehen in dieser Reihenfolge auf der Tafel.</div>
     <div id="code-eingabe-slots" class="row" style="justify-content:center; gap:18px; margin-bottom:20px;"></div>
-    <div id="code-eingabe-fehler" class="ts" style="display:none; color:var(--fill-danger); font-size:15px; margin-bottom:14px;">Das passt noch nicht — probiere es nochmal.</div>
+    <div id="code-eingabe-fehler" class="ts" style="display:none; color:var(--fill-danger); font-size:var(--fs-body); margin-bottom:14px;">Das passt noch nicht — probiere es nochmal.</div>
     <div id="code-eingabe-grid" style="display:grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap:14px; margin-bottom:18px;"></div>
     <button class="btn" style="padding:14px;" onclick="codeEingabeZurueck()"><i class="ti ti-backspace"></i> Letztes Bild löschen</button>
   </div>
@@ -159,12 +203,12 @@
     <button class="navbtn" style="margin-bottom:10px;" onclick="show('start')"><i class="ti ti-arrow-left"></i> zurück</button>
     <h2 class="scr-title">Anmelden</h2>
     <div class="card">
-      <label class="ts" style="font-size:12px;">Zugangsname</label>
-      <input id="lk-email" type="text" placeholder="von der Projektleitung erhalten" style="width:100%; font-size:13px; padding:8px; margin:4px 0 10px; border-radius:var(--radius); border:0.5px solid var(--border);">
-      <label class="ts" style="font-size:12px;">Passwort</label>
-      <input id="lk-passwort" type="password" placeholder="••••••••" style="width:100%; font-size:13px; padding:8px; margin:4px 0 4px; border-radius:var(--radius); border:0.5px solid var(--border);">
+      <label class="ts" style="font-size:var(--fs-small);">Zugangsname</label>
+      <input id="lk-email" type="text" placeholder="von der Projektleitung erhalten" style="width:100%; font-size:var(--fs-small); padding:8px; margin:4px 0 10px; border-radius:var(--radius); border:1px solid var(--border);">
+      <label class="ts" style="font-size:var(--fs-small);">Passwort</label>
+      <input id="lk-passwort" type="password" placeholder="••••••••" style="width:100%; font-size:var(--fs-small); padding:8px; margin:4px 0 4px; border-radius:var(--radius); border:1px solid var(--border);">
     </div>
-    <div id="lk-login-fehler" class="ts" style="display:none; color:var(--fill-danger); font-size:12px; margin-bottom:10px;"></div>
+    <div id="lk-login-fehler" class="ts" style="display:none; color:var(--fill-danger); font-size:var(--fs-small); margin-bottom:10px;"></div>
     <button class="btn btn-primary" onclick="lkAnmelden()"><i class="ti ti-login"></i> Anmelden</button>
   </div>
 
@@ -174,12 +218,13 @@
     <div class="card row" onclick="show('pool')" style="cursor:pointer;">
       <div class="icon-circle c-blue"><i class="ti ti-school"></i></div>
       <div style="flex:1;">
-        <div class="t" id="klassenraum-name-anzeige" style="font-size:14px;">Klasse 3b</div>
-        <div class="ts" id="klassenraum-anzahl-anzeige" style="font-size:11px;">24 Kinder</div>
+        <div class="t" id="klassenraum-name-anzeige" style="font-size:var(--fs-body);">Klasse 3b</div>
+        <div class="ts" id="klassenraum-anzahl-anzeige" style="font-size:var(--fs-micro);">24 Kinder</div>
       </div>
-      <span id="klasse-3b-sitzplan-badge" class="tag" style="background:var(--bg-warning); color:var(--text-warning); display:none;"><i class="ti ti-alert-triangle" style="font-size:10px;"></i> Sitzplan fehlt</span>
+      <span id="klasse-3b-sitzplan-badge" class="tag tag-warning" style="display:none;"><i class="ti ti-alert-triangle" style="font-size:var(--fs-micro);"></i> Sitzplan fehlt</span>
     </div>
     <button class="btn" onclick="show('verwaltung')"><i class="ti ti-settings"></i> Klassenraum verwalten</button>
+    <button class="btn" id="aufgaben-admin-btn" style="display:none; margin-top:8px;" onclick="show('aufgaben-admin')"><i class="ti ti-database"></i> Aufgaben-Verwaltung</button>
   </div>
 
 
@@ -187,14 +232,20 @@
   <div id="scr-pool" class="screen">
     <button class="navbtn" style="margin-bottom:10px;" onclick="show('login')"><i class="ti ti-arrow-left"></i> Klassenraum-Übersicht</button>
     <h2 class="scr-title">Aufgabe wählen — Klasse 3b</h2>
-    <div class="card row" onclick="show('aufgabe')" style="cursor:pointer;">
-      <div class="icon-circle c-amber"><i class="ti ti-calculator"></i></div>
-      <div><div class="t" id="pool-aufgabe-format" style="font-size:14px;">Zahlen bündeln und entbündeln</div><div class="ts" id="pool-aufgabe-text" style="font-size:11px;">Wie würdest du die Zahl 6 T 2 H 42 Z 5 E in die Stellenwerttafel und als Zahl schreiben? Erkläre.</div></div>
+    <div id="pool-liste"></div>
+  </div>
+
+  <!-- AUFGABEN-VERWALTUNG (versteckt -- nur mit ?admin in der URL + Admin-Rolle sichtbar) -->
+  <div id="scr-aufgaben-admin" class="screen">
+    <button class="navbtn" style="margin-bottom:10px;" onclick="show('login')"><i class="ti ti-arrow-left"></i> Klassenraum-Übersicht</button>
+    <h2 class="scr-title">Aufgaben-Verwaltung</h2>
+    <div style="padding:12px; background:var(--surface-2); border-radius:var(--radius); margin-bottom:16px; border:1px solid var(--border);">
+      <div style="font-size:var(--fs-small); font-weight:500; margin-bottom:2px;">Neue Aufgabe hochladen</div>
+      <div class="ts" style="font-size:var(--fs-micro); margin-bottom:8px;">.yaml/.yml oder .json-Datei einer Aufgabenkonfiguration. Landet zunächst als Entwurf (inaktiv) in der Bibliothek — Lehrkräfte sehen sie erst nach Freigabe unten.</div>
+      <input type="file" accept=".yaml,.yml,.json" onchange="handleAufgabeUploadInDB(event)" style="font-size:var(--fs-micro); width:100%;">
     </div>
-    <div class="card row" style="opacity:0.5;">
-      <div class="icon-circle c-gray"><i class="ti ti-stack-2"></i></div>
-      <div><div class="t" style="font-size:14px;">Zahlenmauer A</div><div class="ts" style="font-size:11px;">(Demo: nicht aktiv)</div></div>
-    </div>
+    <div class="ts" style="font-size:var(--fs-small); margin-bottom:4px;">Aufgabenbibliothek</div>
+    <div id="aufgaben-admin-liste"></div>
   </div>
 
   <!-- AUFGABE DETAIL -->
@@ -204,41 +255,47 @@
     <div class="card">
       <div class="row" style="justify-content:space-between; margin-bottom:8px;">
         <div>
-          <div class="ts" style="font-size:11px;">Verstehenskern</div>
-          <div class="t" id="aufgabe-verstehenskern" style="font-size:15px; font-weight:500;">Bündeln und Entbündeln von Zahlen</div>
-          <div class="ts" id="aufgabe-text-anzeige" style="font-size:12px; margin-top:4px;">Wie würdest du die Zahl 6 T 2 H 42 Z 5 E in die Stellenwerttafel und als Zahl schreiben? Erkläre.</div>
+          <div class="ts" style="font-size:var(--fs-micro);">Verstehenskern</div>
+          <div class="t" id="aufgabe-verstehenskern" style="font-size:var(--fs-body); font-weight:500;">Bündeln und Entbündeln von Zahlen</div>
+          <div class="ts" id="aufgabe-text-anzeige" style="font-size:var(--fs-small); margin-top:4px;">Wie würdest du die Zahl 6 T 2 H 42 Z 5 E in die Stellenwerttafel und als Zahl schreiben? Erkläre.</div>
         </div>
-        <i class="ti ti-info-circle" style="font-size:18px; color:var(--text-accent); cursor:pointer;" onclick="zeigeHintergrundInfo()"></i>
+        <i class="ti ti-info-circle" style="font-size:var(--fs-title); color:var(--text-accent); cursor:pointer;" onclick="zeigeHintergrundInfo()"></i>
       </div>
-      <div class="ts" id="aufgabe-kinder-status" style="font-size:12px;">— Kinder: aufnahmefähig</div>
+      <div class="ts" id="aufgabe-kinder-status" style="font-size:var(--fs-small);">— Kinder: aufnahmefähig</div>
     </div>
     <div id="aufgabe-sitzplan-warning" class="banner" style="display:none;">
       <i class="ti ti-alert-triangle"></i> Sitzplan noch nicht eingerichtet — die Sitzplatz-Heatmap kann während der Erarbeitung dann nichts anzeigen.
       <button class="navbtn" style="margin-top:6px;" onclick="show('sitzplan')">Zurück zum Sitzplan →</button>
     </div>
     <button class="btn btn-primary" onclick="startSitzung()"><i class="ti ti-player-play"></i> Sitzung starten</button>
-    <div class="ts" style="font-size:11px; margin-top:10px; text-align:center;">→ Kinder arbeiten jetzt parallel an ihren eigenen Geräten (Rolle "Kind" oben)</div>
+    <div class="ts" style="font-size:var(--fs-micro); margin-top:10px; text-align:center;">→ Kinder arbeiten jetzt parallel an ihren eigenen Geräten (Rolle "Kind" oben)</div>
   </div>
 
   <!-- KIND: SYMBOLAUSWAHL -->
   <div id="scr-symbolauswahl" class="screen" style="text-align:center;">
     <h2 class="scr-title">Wer bist du?</h2>
     <div id="symbolauswahl-inaktiv" class="card" style="display:none;">
-      <i class="ti ti-moon" style="font-size:24px; color:var(--text-muted);"></i>
-      <div class="ts" style="font-size:13px; margin-top:8px;">Gerade läuft keine Aufgabe. Warte, bis deine Lehrkraft startet.</div>
+      <i class="ti ti-moon" style="font-size:var(--fs-lead); color:var(--text-muted);"></i>
+      <div class="ts" style="font-size:var(--fs-small); margin-top:8px;">Gerade läuft keine Aufgabe. Warte, bis deine Lehrkraft startet.</div>
     </div>
     <div class="grid4" id="symbol-grid" style="margin-bottom:16px;"></div>
-    <div id="symbol-confirm" class="card c-blue" style="display:none; text-align:center;">
+  </div>
+
+  <!-- [NEU] "Bist du das?" jetzt als echtes Pop-up statt als Karte unterhalb der
+       Symbol-Auswahl -- bei bis zu 35 Kindern ging die Karte sonst unter den vielen
+       Bildern unter/verlangte Scrollen. -->
+  <div class="modal-bg" id="symbol-confirm">
+    <div class="modal" style="text-align:center;">
       <div id="symbol-confirm-icon" style="font-size:88px; margin-bottom:10px;"></div>
-      <div style="font-size:24px; font-weight:600; margin-bottom:18px;">Bist du das?</div>
+      <div style="font-size:var(--fs-lead); font-weight:600; margin-bottom:18px;">Bist du das?</div>
       <div class="row" style="justify-content:center; gap:40px;">
         <div style="text-align:center;">
           <button class="kid-big-icon-btn" style="border:2px solid var(--border-strong); background:var(--surface-2);" onclick="cancelSymbol()"><i class="ti ti-x" style="font-size:36px;"></i></button>
-          <div class="ts" style="font-size:14px; margin-top:6px;">Nein</div>
+          <div class="ts" style="font-size:var(--fs-body); margin-top:6px;">Nein</div>
         </div>
         <div style="text-align:center;">
           <button class="kid-big-icon-btn" style="background:var(--fill-success);color:var(--on-success);border:none;" onclick="confirmSymbol()"><i class="ti ti-check" style="font-size:40px;"></i></button>
-          <div class="ts" style="font-size:14px; margin-top:6px;">Ja</div>
+          <div class="ts" style="font-size:var(--fs-body); margin-top:6px;">Ja</div>
         </div>
       </div>
     </div>
@@ -247,8 +304,8 @@
   <!-- KIND: AUFNAHME -->
   <div id="scr-aufnahme" class="screen" style="text-align:center;">
     <div class="card c-blue">
-      <div id="aufnahme-anweisung" class="t" style="font-size:24px; font-weight:600; line-height:1.35; margin-bottom:10px;">Wie würdest du die Zahl 6 T 2 H 42 Z 5 E in die Stellenwerttafel und als Zahl schreiben? Erkläre.</div>
-      <div style="width:100%; height:80px; background:var(--surface-2); border-radius:16px; display:flex; align-items:center; justify-content:center; color:var(--text-muted);"><i class="ti ti-photo" style="font-size:30px;"></i></div>
+      <div id="aufnahme-anweisung" class="t" style="font-size:var(--fs-lead); font-weight:600; line-height:1.35; margin-bottom:10px;">Wie würdest du die Zahl 6 T 2 H 42 Z 5 E in die Stellenwerttafel und als Zahl schreiben? Erkläre.</div>
+      <div style="width:100%; height:80px; background:var(--surface-2); border-radius:16px; display:flex; align-items:center; justify-content:center; color:var(--text-muted);"><i class="ti ti-photo" style="font-size:var(--fs-kid);"></i></div>
       <div class="row" style="justify-content:center; gap:10px; margin-top:10px;">
         <div id="sprachauswahl" class="row" style="justify-content:center; gap:10px; flex-wrap:wrap;"></div>
       </div>
@@ -256,71 +313,79 @@
     <!-- Nur bei Aufgaben mit vorgeschobener Ja/Nein-Frage sichtbar (HAT_WAHL) -- das
          Kind muss erst wählen, bevor es begründen/aufnehmen kann. -->
     <div id="wahl-bereich" style="display:none; margin: 22px 0;">
-      <div class="ts" style="font-size:16px; margin-bottom:12px;">Was denkst du?</div>
+      <div class="ts" style="font-size:var(--fs-title); margin-bottom:12px;">Was denkst du?</div>
       <div class="row" style="justify-content:center; gap:20px;">
-        <button id="wahl-ja" class="btn" style="width:130px; padding:20px; font-size:22px; font-weight:600;" onclick="waehleJaNein('ja')">Ja</button>
-        <button id="wahl-nein" class="btn" style="width:130px; padding:20px; font-size:22px; font-weight:600;" onclick="waehleJaNein('nein')">Nein</button>
+        <button id="wahl-ja" class="btn" style="width:130px; padding:20px; font-size:var(--fs-lead); font-weight:600;" onclick="waehleJaNein('ja')">Ja</button>
+        <button id="wahl-nein" class="btn" style="width:130px; padding:20px; font-size:var(--fs-lead); font-weight:600;" onclick="waehleJaNein('nein')">Nein</button>
       </div>
     </div>
     <div id="begruendung-bereich">
     <div class="row" style="justify-content:center; gap:32px; margin: 22px 0;">
       <div style="text-align:center;">
-        <button id="mode-speak" class="kid-mode-btn" style="background:var(--fill-accent);color:var(--on-accent);border:none;" onclick="setMode('speak')"><i class="ti ti-microphone" style="font-size:32px;"></i></button>
-        <div class="ts" style="font-size:14px; margin-top:6px;">Sprechen</div>
+        <button id="mode-speak" class="kid-mode-btn" style="background:var(--fill-accent);color:var(--on-accent);border:none;" onclick="setMode('speak')"><i class="ti ti-microphone" style="font-size:var(--fs-kid);"></i></button>
+        <div class="ts" style="font-size:var(--fs-body); margin-top:6px;">Sprechen</div>
       </div>
       <div style="text-align:center;">
-        <button id="mode-type" class="kid-mode-btn" style="border:0.5px solid var(--border-strong);" onclick="setMode('type')"><i class="ti ti-keyboard" style="font-size:32px;"></i></button>
-        <div class="ts" style="font-size:14px; margin-top:6px;">Tippen</div>
+        <button id="mode-type" class="kid-mode-btn" style="border:1px solid var(--border-strong);" onclick="setMode('type')"><i class="ti ti-keyboard" style="font-size:var(--fs-kid);"></i></button>
+        <div class="ts" style="font-size:var(--fs-body); margin-top:6px;">Tippen</div>
       </div>
     </div>
     <div id="record-area" style="text-align:center;">
-      <button id="record-btn" class="kid-record-btn" style="background:var(--fill-danger);color:var(--on-danger);border:6px solid var(--surface-2);" onclick="toggleRecord()"><i id="record-icon" class="ti ti-microphone" style="font-size:76px;"></i></button>
-      <div class="ts" id="record-label" style="font-size:18px; font-weight:600; margin-top:14px;">Aufnehmen</div>
+      <button id="record-btn" class="kid-record-btn btn-danger" style="border:6px solid var(--surface-2);" onclick="toggleRecord()"><i id="record-icon" class="ti ti-microphone" style="font-size:76px;"></i></button>
+      <div class="ts" id="record-label" style="font-size:var(--fs-title); font-weight:600; margin-top:14px;">Aufnehmen</div>
     </div>
     <div id="review-area" style="display:none; border-top:2px dashed var(--border); padding-top:18px; margin-top:20px; text-align:left;">
-      <div class="ts" style="font-size:16px; margin-bottom:10px; text-align:center;">So haben wir dich verstanden — du kannst es auch verbessern</div>
-      <textarea id="transcript-edit" rows="4" style="font-size:20px; padding:14px; min-height:130px;"></textarea>
+      <div class="ts" style="font-size:var(--fs-title); margin-bottom:10px; text-align:center;">So haben wir dich verstanden — du kannst es auch verbessern</div>
+      <textarea id="transcript-edit" rows="4" style="font-size:var(--fs-lead); padding:14px; min-height:130px;"></textarea>
       <div class="row" style="justify-content:center; gap:32px; margin-top:16px;">
         <div style="text-align:center;">
-          <button class="kid-mode-btn" style="border:0.5px solid var(--border-strong);" onclick="rerecord()"><i class="ti ti-refresh" style="font-size:32px;"></i></button>
-          <div class="ts" style="font-size:14px; margin-top:6px;">Nochmal</div>
+          <button class="kid-mode-btn" style="border:1px solid var(--border-strong);" onclick="rerecord()"><i class="ti ti-refresh" style="font-size:var(--fs-kid);"></i></button>
+          <div class="ts" style="font-size:var(--fs-body); margin-top:6px;">Nochmal</div>
         </div>
         <div style="text-align:center;">
-          <button class="kid-mode-btn" style="background:var(--fill-success);color:var(--on-success);border:none;" onclick="finishAnswer()"><i class="ti ti-check" style="font-size:32px;"></i></button>
-          <div class="ts" style="font-size:14px; margin-top:6px;">Fertig</div>
+          <button class="kid-mode-btn" style="background:var(--fill-success);color:var(--on-success);border:none;" onclick="finishAnswer()"><i class="ti ti-check" style="font-size:var(--fs-kid);"></i></button>
+          <div class="ts" style="font-size:var(--fs-body); margin-top:6px;">Fertig</div>
         </div>
       </div>
     </div>
     </div>
     <div id="done-area" style="display:none; border-top:2px dashed var(--border); padding-top:18px; margin-top:20px;">
-      <div class="card c-teal" style="text-align:center;"><i class="ti ti-check" style="font-size:40px;"></i><div style="font-size:19px; margin-top:8px;">Aufgenommen — <span id="done-name"></span> ist fertig.</div></div>
+      <div class="card" style="text-align:center; background:var(--bg-success); border-color:var(--fill-success);"><i class="ti ti-check" style="font-size:40px; color:var(--text-success);"></i><div style="font-size:var(--fs-title); margin-top:8px; color:var(--text-success);">Aufgenommen — <span id="done-name"></span> ist fertig.</div></div>
       <button class="btn btn-primary" style="margin-top:14px; padding:18px;" onclick="show('symbolauswahl')">Nächstes Kind</button>
     </div>
   </div>
 
   <!-- LK DASHBOARD -->
   <div id="scr-dashboard" class="screen">
-    <div class="row" style="justify-content:space-between; align-items:flex-start; margin-bottom:12px; padding-bottom:10px; border-bottom:0.5px solid var(--border);">
+    <div class="row" style="justify-content:space-between; align-items:flex-start; margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid var(--border);">
       <div>
-        <div class="ts" style="font-size:11px;">Aufgabe</div>
-        <div class="t" id="dashboard-aufgabe-text" style="font-size:14px; font-weight:500;">6 T 2 H 42 Z 5 E</div>
-        <div class="ts" id="dashboard-verstehenskern" style="font-size:11px; margin-top:2px;">Verstehenskern: Bündeln und Entbündeln von Zahlen</div>
+        <div class="ts" style="font-size:var(--fs-micro);">Aufgabe</div>
+        <div class="t" id="dashboard-aufgabe-text" style="font-size:var(--fs-body); font-weight:500;">6 T 2 H 42 Z 5 E</div>
+        <div class="ts" id="dashboard-verstehenskern" style="font-size:var(--fs-micro); margin-top:2px;">Verstehenskern: Bündeln und Entbündeln von Zahlen</div>
       </div>
-      <i class="ti ti-info-circle" style="font-size:18px; color:var(--text-accent); cursor:pointer;" onclick="zeigeHintergrundInfo()"></i>
+      <i class="ti ti-info-circle" style="font-size:var(--fs-title); color:var(--text-accent); cursor:pointer;" onclick="zeigeHintergrundInfo()"></i>
     </div>
     <div class="banner" style="background:var(--bg-success); color:var(--text-success); margin-bottom:10px;">
       Hier bereiten Sie das Plenumsgespräch vor: die empfohlene Abfolge übernehmen (und bei Bedarf Schritte tauschen/überspringen), oder die Tafel komplett frei gestalten.
     </div>
-    <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:4px;">
-      <div class="ts" style="font-size:11px;">Wie ins Gespräch einsteigen?</div>
-      <span class="ts" style="font-size:10px; text-decoration:underline; cursor:pointer;" onclick="toggleErklaerung()">Warum diese Reihenfolge?</span>
-    </div>
-    <div id="empfehlung-erklaerung" class="ts" style="display:none; font-size:11px; background:var(--bg-accent); color:var(--text-accent); padding:8px; border-radius:var(--radius); margin-bottom:8px;">
-      Jeder Schritt ist einem "Baustein" der Aufgabenanlage zugeordnet (einzeln oder Vergleich). Welche Kategorie einen Baustein konkret füllt, ergibt sich aus der jeweiligen Prioritätsliste (Fehler bzw. tragfähige Antworten) UND daraus, was in dieser Klasse tatsächlich vorgekommen ist — pro Kategorie wird die zuerst eingegangene passende Antwort vorbelegt. Kommt eine vorgesehene Kategorie gar nicht vor, entfällt ihr Schritt automatisch. Die Lehrkraft kann jeden Schritt überspringen oder die Antwort/Kategorie darin manuell tauschen.
-    </div>
-    <div class="row" style="gap:6px; margin-bottom:14px; overflow-x:auto; padding-top:10px; margin-top:-10px;">
-      <button class="tabbtn navbtn" data-tab="empfohlen" onclick="switchTab('empfohlen')" style="position:relative;">Empfohlene Reihenfolge<span class="empf-badge" style="display:none; position:absolute;top:-7px;right:-6px;background:var(--fill-accent);color:var(--on-accent);font-size:8px;font-weight:600;padding:2px 5px;border-radius:8px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,0.25);">empf.</span></button>
-      <button class="tabbtn navbtn" data-tab="frei" onclick="switchTab('frei')">Frei</button>
+
+    <!-- [NEU] "Alle Antworten ansehen" jetzt ganz oben, als eigenständiger,
+         größerer Menüpunkt statt einer kleinen Textzeile -- davor sah man ihn leicht gar
+         nicht, obwohl er einen schnellen Überblick über alle eingegangenen Antworten gibt,
+         bevor man sich die vorgeschlagene Gesprächsstruktur ansieht. -->
+    <details style="margin-bottom:14px;">
+      <summary class="dash-menu-summary">
+        <i class="ti ti-list-details" style="font-size:var(--fs-title);"></i>
+        <span style="flex:1;">Alle Antworten ansehen</span>
+        <i class="ti ti-chevron-down chevron"></i>
+      </summary>
+      <div id="kategorie-legende" style="display:flex; flex-wrap:wrap; gap:8px; margin:10px 0;"></div>
+      <div class="grid2" id="pool-area"></div>
+    </details>
+
+    <div class="segmented" style="margin-bottom:14px;">
+      <button class="tabbtn seg-btn" data-tab="empfohlen" onclick="switchTab('empfohlen')">Empfohlene Reihenfolge</button>
+      <button class="tabbtn seg-btn" data-tab="frei" onclick="switchTab('frei')">Frei</button>
     </div>
 
     <!-- EMPFOHLENE REIHENFOLGE -->
@@ -330,54 +395,55 @@
     <div id="frei-area" style="display:none;">
       <div class="card">
         <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <div class="ts" style="font-size:11px;">Layout auf der Tafel</div>
+          <div class="ts" style="font-size:var(--fs-micro);">Layout auf der Tafel</div>
           <div class="row" style="gap:4px;">
             <button class="navbtn" id="layout-nebeneinander" onclick="setFreiLayout('nebeneinander')">Nebeneinander</button>
             <button class="navbtn" id="layout-untereinander" onclick="setFreiLayout('untereinander')">Untereinander</button>
           </div>
         </div>
-        <div class="ts" style="font-size:11px; margin-bottom:6px;">Für die Tafel ausgewählt:</div>
+        <div class="ts" style="font-size:var(--fs-micro); margin-bottom:6px;">Für die Tafel ausgewählt:</div>
         <div class="grid2" id="slots-area" style="margin-bottom:8px;"></div>
-        <div id="seq-controls" style="display:none; margin-bottom:8px;"></div>
         <button class="btn" onclick="addSlot()"><i class="ti ti-plus"></i> Weiteres Feld für die Tafel hinzufügen</button>
       </div>
     </div>
 
-
-    <details style="margin-bottom:12px;">
-
-      <summary style="font-size:13px; font-weight:500; cursor:pointer; color:var(--text-secondary);">Alle Kategorien anzeigen/anpassen ▾</summary>
-      <div id="kategorie-legende" style="display:flex; flex-wrap:wrap; gap:8px; margin:10px 0;"></div>
-      <div class="grid2" id="pool-area"></div>
-    </details>
-    <div class="row" style="justify-content:space-between; align-items:center; padding:8px 10px; background:var(--surface-2); border-radius:var(--radius); border:0.5px solid var(--border); margin-top:8px;">
-      <span style="font-size:12px;">Antworten auf der Tafel zeigen</span>
-      <label class="switch"><input type="checkbox" id="antworten-toggle" onchange="toggleAntwortenSichtbar(this.checked)"><span class="slider"></span></label>
-    </div>
     <button class="btn btn-primary" style="margin-top:8px;" onclick="show('tafel')"><i class="ti ti-presentation"></i> Tafelansicht anzeigen (Erweitern-Modus)</button>
     <button class="btn" style="margin-top:8px;" onclick="show('heatmap')"><i class="ti ti-map-2"></i> Zurück zum Sitzplan mit Antwortübersicht</button>
-    <button class="btn" style="margin-top:8px; border-color:var(--fill-danger); color:var(--fill-danger);" onclick="endSession()"><i class="ti ti-square-x"></i> Sitzung beenden</button>
+    <div style="margin-top:22px; padding-top:14px; border-top:1px dashed var(--border-strong);">
+      <button class="btn btn-danger-outline" onclick="endSession()"><i class="ti ti-square-x"></i> Sitzung beenden</button>
+    </div>
+
+    <!-- [NEU] 5d/5e: Master-Schalter + Schritt-Navigation als sticky Footer -- bleiben beim
+         Scrollen durch die Schritt-Karten immer erreichbar, statt in der Liste unterzugehen.
+         Ein gemeinsamer Container für beide Tabs (nur der jeweils aktive Tab befüllt ihn). -->
+    <div id="dashboard-sticky-footer" style="position:sticky; bottom:0; margin:18px -20px 0; padding:10px 20px calc(10px + env(safe-area-inset-bottom, 0px)); background:var(--surface-1); border-top:1px solid var(--border-strong); box-shadow:0 -4px 12px rgba(46,43,37,0.12);">
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:var(--bg-accent); border-radius:var(--radius); margin-bottom:8px;">
+        <span style="font-size:var(--fs-small); color:var(--text-accent); font-weight:600;">Antworten auf der Tafel zeigen</span>
+        <label class="switch"><input type="checkbox" id="antworten-toggle" onchange="toggleAntwortenSichtbar(this.checked)"><span class="slider"></span></label>
+      </div>
+      <div id="dashboard-step-nav"></div>
+    </div>
   </div>
 
   <!-- TAFELANSICHT -->
   <div id="scr-tafel" class="screen">
     <div class="banner"><i class="ti ti-projector"></i> Demo: Dies ist die Projektions-Ansicht — im echten Betrieb liefe sie parallel (eigenes Fenster) neben dem LK-Dashboard, kein Hin-und-Zurück-Navigieren nötig.</div>
-    <div class="row" style="justify-content:space-between; align-items:center; padding:8px 10px; background:var(--surface-2); border-radius:var(--radius); border:0.5px solid var(--border); margin-bottom:12px;">
-      <span style="font-size:12px;">Antworten auf der Tafel zeigen</span>
+    <div class="row" style="justify-content:space-between; align-items:center; padding:8px 10px; background:var(--surface-2); border-radius:var(--radius); border:1px solid var(--border); margin-bottom:12px;">
+      <span style="font-size:var(--fs-small);">Antworten auf der Tafel zeigen</span>
       <label class="switch"><input type="checkbox" id="antworten-toggle-tafel" onchange="toggleAntwortenSichtbar(this.checked)"><span class="slider"></span></label>
     </div>
-    <div class="row" style="justify-content:space-between; align-items:center; padding:8px 10px; background:var(--surface-2); border-radius:var(--radius); border:0.5px solid var(--border); margin-bottom:12px;">
-      <span style="font-size:12px;">Aufgabentext auf der Tafel zeigen</span>
+    <div class="row" style="justify-content:space-between; align-items:center; padding:8px 10px; background:var(--surface-2); border-radius:var(--radius); border:1px solid var(--border); margin-bottom:12px;">
+      <span style="font-size:var(--fs-small);">Aufgabentext auf der Tafel zeigen</span>
       <label class="switch"><input type="checkbox" id="aufgabe-toggle" onchange="toggleTafelAufgabe(this.checked)"><span class="slider"></span></label>
     </div>
     <div id="tafel-qr-section" style="display:none; text-align:center; background:var(--surface-2); border-radius:12px; padding:16px; margin-bottom:12px;">
-      <div class="ts" style="font-size:12px; margin-bottom:10px;">Scanne den Code, oder gib ihn auf deinem Gerät ein:</div>
+      <div class="ts" style="font-size:var(--fs-small); margin-bottom:10px;">Scanne den Code, oder gib ihn auf deinem Gerät ein:</div>
       <div id="tafel-qr-box" style="display:flex; justify-content:center; margin-bottom:10px;"></div>
       <div id="tafel-code-anzeige" style="font-size:52px; font-weight:600; letter-spacing:10px; color:var(--text-accent);">⭐⭐⭐</div>
     </div>
-    <div id="tafel-aufgabe" class="t" style="text-align:center; font-size:20px; font-weight:600; margin-bottom:12px; padding:10px; background:var(--surface-2); border-radius:12px; display:none;">6 T 2 H 42 Z 5 E</div>
+    <div id="tafel-aufgabe" class="t" style="text-align:center; font-size:var(--fs-lead); font-weight:600; margin-bottom:12px; padding:10px; background:var(--surface-2); border-radius:12px; display:none;">6 T 2 H 42 Z 5 E</div>
     <div id="tafel-slots"></div>
-    <div id="tafel-schritt-steuerung" class="row" style="justify-content:center; align-items:center; gap:10px; margin-top:14px; padding:10px; background:var(--surface-2); border-radius:var(--radius); border:0.5px solid var(--border);"></div>
+    <div id="tafel-schritt-steuerung" class="row" style="justify-content:center; align-items:center; gap:10px; margin-top:14px; padding:10px; background:var(--surface-2); border-radius:var(--radius); border:1px solid var(--border);"></div>
     <div class="row" style="justify-content:center; gap:8px; margin-top:14px;">
       <button class="navbtn" onclick="show('heatmap')"><i class="ti ti-map-2"></i> zum Sitzplan mit Antwortübersicht</button>
     </div>
@@ -387,8 +453,8 @@
   <div id="scr-heatmap" class="screen">
     <h2 class="scr-title">Sitzplan mit Antwortübersicht — Kinder arbeiten gerade</h2>
     <div class="card" style="text-align:center; background:var(--bg-accent);">
-      <div class="ts" style="font-size:11px;">Sitzungscode für die Kindgeräte</div>
-      <div id="sitzungscode-anzeige" style="font-size:26px; font-weight:600; letter-spacing:6px; color:var(--text-accent);">⭐⭐⭐</div>
+      <div class="ts" style="font-size:var(--fs-micro);">Sitzungscode für die Kindgeräte</div>
+      <div id="sitzungscode-anzeige" style="font-size:var(--fs-kid); font-weight:600; letter-spacing:6px; color:var(--text-accent);">⭐⭐⭐</div>
     </div>
     <div id="heatmap-sitzplan-warning" class="banner" style="display:none;">
       <i class="ti ti-alert-triangle"></i> Es ist noch kein Sitzplan eingerichtet — ohne Sitzplan kann die Heatmap Kinder nicht anzeigen.
@@ -401,17 +467,17 @@
     <div id="prioritaets-leiste" style="display:flex; flex-direction:column; gap:6px; margin-bottom:14px;"></div>
 
     <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:4px;">
-      <span class="ts" style="font-size:10px;"><i class="ti ti-podium"></i> Tafel</span>
-      <button class="navbtn" id="rohtext-toggle-btn" style="font-size:10px; padding:5px 9px;" onclick="toggleRohtextLayer()"><i class="ti ti-message-2"></i> Antworten im Sitzplan lesen</button>
+      <span class="ts" style="font-size:var(--fs-micro);"><i class="ti ti-podium"></i> Tafel</span>
+      <button class="navbtn" id="rohtext-toggle-btn" style="font-size:var(--fs-micro); padding:5px 9px;" onclick="toggleRohtextLayer()"><i class="ti ti-message-2"></i> Antworten im Sitzplan lesen</button>
     </div>
-    <div id="heatmap-canvas" style="position:relative; width:100%; height:260px; background:var(--surface-2); border:0.5px solid var(--border); border-radius:12px; margin-bottom:8px;"></div>
-    <div id="heatmap-fortschritt" class="row" style="justify-content:center; gap:6px; margin-bottom:8px; font-size:12px;"></div>
+    <div id="heatmap-canvas" style="position:relative; width:100%; height:260px; background:var(--surface-2); border:1px solid var(--border); border-radius:12px; margin-bottom:8px;"></div>
+    <div id="heatmap-fortschritt" class="row" style="justify-content:center; gap:6px; margin-bottom:8px; font-size:var(--fs-small);"></div>
     <div id="heatmap-legende" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;"></div>
 
     <!-- [NEU] Liste: jede Antwort ohne Antippen vollständig lesbar (Text, nicht nur Farbe). -->
     <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:8px;">
-      <div style="font-size:13px; font-weight:500;">Alle Antworten</div>
-      <select id="liste-sortierung" class="navbtn" style="font-size:11px;" onchange="renderAntwortenliste()">
+      <div style="font-size:var(--fs-small); font-weight:500;">Alle Antworten</div>
+      <select id="liste-sortierung" class="navbtn" style="font-size:var(--fs-micro);" onchange="renderAntwortenliste()">
         <option value="funktion">nach Handlungsbedarf</option>
         <option value="kategorie">nach Kategorie</option>
         <option value="name">nach Name</option>
@@ -421,7 +487,7 @@
 
     <button class="btn" id="qr-toggle-btn" style="margin-bottom:8px;" onclick="toggleTafelQR()"><i class="ti ti-qrcode"></i> QR-Code auf Tafel anzeigen</button>
     <button class="btn btn-primary" onclick="show('dashboard')">Weiter zum Dashboard (Plenum vorbereiten) →</button>
-    <div class="ts" style="font-size:11px; text-align:center; margin-top:6px;">Du musst nicht warten, bis alle fertig sind — schon wenige Antworten reichen für einen guten Einstieg.</div>
+    <div class="ts" style="font-size:var(--fs-micro); text-align:center; margin-top:6px;">Du musst nicht warten, bis alle fertig sind — schon wenige Antworten reichen für einen guten Einstieg.</div>
   </div>
 
   <!-- VERWALTUNG -->
@@ -432,20 +498,14 @@
       <button class="btn" onclick="show('sitzplan')"><i class="ti ti-armchair"></i> Sitzplan</button>
       <button class="btn" onclick="show('lernverlauf')"><i class="ti ti-chart-bar"></i> Verlauf</button>
     </div>
-    <div style="padding:10px; background:var(--surface-2); border-radius:var(--radius); margin-bottom:16px; border:0.5px solid var(--border);">
-      <div style="font-size:13px; font-weight:500; margin-bottom:2px;">Aufgabe laden</div>
-      <div class="ts" style="font-size:11px; margin-bottom:8px;">.yaml/.yml oder .json-Datei einer Aufgabenkonfiguration. Ersetzt die aktuell aktive Aufgabe für dieses Gerät.</div>
-      <input type="file" accept=".yaml,.yml,.json" onchange="handleAufgabeUpload(event)" style="font-size:11px; width:100%;">
-      <div id="aufgabe-lade-status" class="ts" style="font-size:11px; margin-top:6px;">Aktuell aktiv: <span id="aufgabe-lade-aktuell">buendeln_6t2h42z5e</span></div>
-    </div>
-    <div class="row" style="justify-content:space-between; align-items:center; padding:10px; background:var(--surface-2); border-radius:var(--radius); margin-bottom:12px; border:0.5px solid var(--border);">
+    <div class="row" style="justify-content:space-between; align-items:center; padding:10px; background:var(--surface-2); border-radius:var(--radius); margin-bottom:12px; border:1px solid var(--border);">
       <div>
-        <div style="font-size:13px; font-weight:500;">Anonym arbeiten</div>
-        <div class="ts" style="font-size:11px;">Nur Symbole digital — Namen kennt nur die Lehrkraft, auf Papier</div>
+        <div style="font-size:var(--fs-small); font-weight:500;">Anonym arbeiten</div>
+        <div class="ts" style="font-size:var(--fs-micro);">Nur Symbole digital — Namen kennt nur die Lehrkraft, auf Papier</div>
       </div>
       <label class="switch"><input type="checkbox" id="anonym-toggle" onchange="toggleAnonym(this.checked)"><span class="slider"></span></label>
     </div>
-    <div class="ts" style="font-size:12px; margin-bottom:4px;" id="kinder-count">Kinder</div>
+    <div class="ts" style="font-size:var(--fs-small); margin-bottom:4px;" id="kinder-count">Kinder</div>
     <div class="banner" id="kein-zugang-hinweis" style="display:none;">
       <i class="ti ti-info-circle"></i> Kinder ohne Einwilligung nehmen nicht digital am Tool teil. Sie bearbeiten die Aufgabe stattdessen schriftlich auf Papier ("Blatt erzeugen").
     </div>
@@ -459,7 +519,7 @@
   <div id="scr-schnellanlage" class="screen">
     <button class="navbtn" style="margin-bottom:10px;" onclick="show('verwaltung')"><i class="ti ti-arrow-left"></i> Verwaltung</button>
     <h2 class="scr-title">Kinder anlegen</h2>
-    <div class="ts" style="font-size:12px; margin-bottom:8px;">Ein Name pro Zeile — bis zu 35 Kinder pro Klassenraum</div>
+    <div class="ts" style="font-size:var(--fs-small); margin-bottom:8px;">Ein Name pro Zeile — bis zu 35 Kinder pro Klassenraum</div>
     <textarea id="schnellanlage-input" rows="6">Mika
 Lian
 Ben
@@ -475,10 +535,10 @@ Neu</textarea>
   <!-- SITZPLAN -->
   <div id="scr-sitzplan" class="screen">
     <h2 class="scr-title">Sitzplan (freie Fläche — bildet jede Raumform ab)</h2>
-    <div class="ts" style="font-size:11px; margin-bottom:8px;" id="sitzplan-hint">Kind unten antippen, dann auf die Fläche tippen, um es zu platzieren.</div>
-    <div class="ts" style="text-align:center; font-size:10px; margin-bottom:4px;"><i class="ti ti-podium"></i> Tafel</div>
-    <div id="sitzplan-canvas" style="position:relative; width:100%; height:260px; background:var(--surface-2); border:0.5px solid var(--border); border-radius:12px; margin-bottom:12px; overflow:hidden;" onclick="canvasClick(event)"></div>
-    <div class="ts" style="font-size:12px; margin-bottom:6px;">Noch zu platzieren</div>
+    <div class="ts" style="font-size:var(--fs-micro); margin-bottom:8px;" id="sitzplan-hint">Kind unten antippen, dann auf die Fläche tippen, um es zu platzieren.</div>
+    <div class="ts" style="text-align:center; font-size:var(--fs-micro); margin-bottom:4px;"><i class="ti ti-podium"></i> Tafel</div>
+    <div id="sitzplan-canvas" style="position:relative; width:100%; height:260px; background:var(--surface-2); border:1px solid var(--border); border-radius:12px; margin-bottom:12px; overflow:hidden;" onclick="canvasClick(event)"></div>
+    <div class="ts" style="font-size:var(--fs-small); margin-bottom:6px;">Noch zu platzieren</div>
     <div class="row" id="sitzplan-pool" style="gap:8px; flex-wrap:wrap;"></div>
     <button class="btn" style="margin-top:16px;" onclick="show('verwaltung')">Fertig → zurück zur Verwaltung</button>
     <button class="btn btn-primary" style="margin-top:8px;" onclick="show('pool')"><i class="ti ti-arrow-right"></i> Weiter zur Aufgabenauswahl</button>
@@ -487,15 +547,15 @@ Neu</textarea>
   <!-- LERNVERLAUF -->
   <div id="scr-lernverlauf" class="screen">
     <div class="row" style="margin-bottom:14px;">
-      <div class="icon-circle c-teal">🐻</div><span style="font-size:15px; font-weight:500;">Mika</span>
+      <div class="icon-circle c-teal">🐻</div><span style="font-size:var(--fs-body); font-weight:500;">Mika</span>
     </div>
-    <div class="ts" style="font-size:12px; margin-bottom:6px;">Zahlen bündeln und entbündeln</div>
-    <div class="pool-item"><span class="ts" style="font-size:11px; width:56px;">12.09.</span><span style="font-size:12px; flex:1;">6 T 2 H 42 Z 5 E</span><span class="tag c-teal">richtig, begründet</span></div>
-    <div class="pool-item"><span class="ts" style="font-size:11px; width:56px;">05.09.</span><span style="font-size:12px; flex:1;">3 T 15 H 2 Z 8 E</span><span class="tag c-teal">richtig, begründet</span></div>
+    <div class="ts" style="font-size:var(--fs-small); margin-bottom:6px;">Zahlen bündeln und entbündeln</div>
+    <div class="pool-item"><span class="ts" style="font-size:var(--fs-micro); width:56px;">12.09.</span><span style="font-size:var(--fs-small); flex:1;">6 T 2 H 42 Z 5 E</span><span class="tag c-teal">richtig, begründet</span></div>
+    <div class="pool-item"><span class="ts" style="font-size:var(--fs-micro); width:56px;">05.09.</span><span style="font-size:var(--fs-small); flex:1;">3 T 15 H 2 Z 8 E</span><span class="tag c-teal">richtig, begründet</span></div>
     <button class="btn" style="margin-top:8px;" onclick="show('verwaltung')">zurück</button>
   </div>
 
-  <div style="text-align:center; padding:22px 16px 8px; font-size:11px; color:var(--text-muted);">
+  <div style="text-align:center; padding:22px 16px 8px; font-size:var(--fs-micro); color:var(--text-muted);">
     <span style="cursor:pointer; text-decoration:underline;" onclick="showRechtliches('impressum')">Impressum</span>
     &nbsp;·&nbsp;
     <span style="cursor:pointer; text-decoration:underline;" onclick="showRechtliches('datenschutz')">Datenschutz</span>
@@ -505,12 +565,12 @@ Neu</textarea>
 
 <div class="modal-bg" id="confirm-end-modal">
   <div class="modal" style="text-align:center;">
-    <i class="ti ti-alert-triangle" style="font-size:28px; color:var(--fill-warning);"></i>
-    <div style="font-size:14px; font-weight:500; margin:8px 0;">Sitzung wirklich beenden?</div>
-    <div class="ts" style="font-size:12px; margin-bottom:14px;">Die Kindgeräte werden deaktiviert und zeigen danach keine aktive Aufgabe mehr.</div>
+    <i class="ti ti-alert-triangle" style="font-size:var(--fs-kid); color:var(--fill-warning);"></i>
+    <div style="font-size:var(--fs-body); font-weight:500; margin:8px 0;">Sitzung wirklich beenden?</div>
+    <div class="ts" style="font-size:var(--fs-small); margin-bottom:14px;">Die Kindgeräte werden deaktiviert und zeigen danach keine aktive Aufgabe mehr.</div>
     <div class="row" style="gap:8px;">
       <button class="btn" onclick="document.getElementById('confirm-end-modal').classList.remove('visible')">Abbrechen</button>
-      <button class="btn" style="background:var(--fill-danger); color:var(--on-danger); border:none;" onclick="confirmEndSession()">Ja, beenden</button>
+      <button class="btn btn-danger" onclick="confirmEndSession()">Ja, beenden</button>
     </div>
   </div>
 </div>
@@ -525,7 +585,7 @@ Neu</textarea>
 
 <div class="modal-bg" id="feedback-modal">
   <div class="modal">
-    <div style="font-size:14px; font-weight:500; margin-bottom:10px;">Wie wurde die Empfehlung genutzt?</div>
+    <div style="font-size:var(--fs-body); font-weight:500; margin-bottom:10px;">Wie wurde die Empfehlung genutzt?</div>
     <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:10px;">
       <button class="btn" onclick="closeFeedback()">genau so</button>
       <button class="btn" onclick="closeFeedback()">abgewandelt</button>
@@ -578,7 +638,7 @@ function uebernehmeAntwort(row){
   const symbolEntry = SYMBOLS.find(s => s.kindId === row.kind_id);
   const name = symbolEntry ? symbolEntry.name : "Unbekannt";
   state.pool = state.pool.filter(p=>p.name!==name);
-  state.pool.push({name, cat: row.kategorie, quote: row.transkript, audioPfad: row.audio_pfad || null, wahl: row.antwort_wahl || null});
+  state.pool.push({name, cat: row.kategorie, quote: row.transkript, audioPfad: row.audio_pfad || null, wahl: row.antwort_wahl || null, evidenz: [1,2,3].includes(row.evidenz) ? row.evidenz : null});
   if(row.symbol_id) state.heatmapStatus[row.symbol_id] = row.kategorie;
 }
 function aktualisierenAnsicht(){
@@ -596,13 +656,15 @@ function aktualisierenAnsicht(){
 // oder anderen Feldern abgeleitet. Ob eine tragfähige Kategorie ein bereits ausgereiftes
 // ("praezise") oder ein noch unterwegs befindliches Verständnis ("unpraezise")
 // repräsentiert, ist ein inhaltliches Urteil über die Kategorie selbst.
+// [NEU] "bezug" (Bezug zum Verstehenskern) in den Demo-Kategorien nur als PLATZHALTER -- die echten
+// Formulierungen schreibt das Fachdidaktik-Team pro Aufgabe im Aufgaben-Autor:innen-Tool.
 let CATS = {
-  korrekt_begruendet: {label:"richtig, begründet", color:"c-teal", typ:"tragfähige Strategie", praezision:"praezise", gueltig_fuer:null, def:"Zahl 6625 korrekt UND eine Stellenwert- oder Bündelungsregel wird erkennbar als Begründung genannt.", nachfrage:"Warum musstest du die 42 Zehner überhaupt umwandeln?"},
-  korrekt_unbegruendet: {label:"richtig, unbegründet", color:"c-mint", typ:"tragfähige Strategie", praezision:"unpraezise", gueltig_fuer:null, def:"Zahl 6625 korrekt, aber keine erkennbare inhaltliche Begründung -- das Verständnis ist noch nicht ausdifferenziert genug, um es zu artikulieren.", nachfrage:"Wie bist du auf die 6625 gekommen? Was ist mit den 42 Zehnern passiert?"},
-  fehler_unbundled: {label:"Fehler: nicht entbündelt (62425)", color:"c-coral", typ:"Fehler", gueltig_fuer:null, def:"42 Zehner werden unverändert/roh in die Zehnerspalte übernommen, keine Regruppierung stattgefunden.", nachfrage:"Darf in einem Kästchen der Stellenwerttafel mehr als eine Ziffer stehen?"},
-  fehler_stellenwert_ignoriert: {label:"Fehler: Stellenwert ignoriert (6247)", color:"c-purple", typ:"Fehler", gueltig_fuer:null, def:"Die '2' von 42 wird fälschlich als Einer-Ziffer gedeutet und zu den 5 Einern addiert.", nachfrage:"Was bedeutet die '2' in '42 Zehner' — ist das eine Einer-Ziffer?"},
-  fehler_mit_buendelungsversuch: {label:"Fehler, mit Bündelungsansatz", color:"c-amber", typ:"Fehler", gueltig_fuer:null, def:"Andere falsche Endzahl, aber im Text wird erkennbar eine Bündelungs- oder Stellenwertregel artikuliert.", nachfrage:"Deine Erklärung zur Umwandlung klingt richtig — wo genau ist beim Rechnen etwas schiefgelaufen?"},
-  fehler_ohne_erklaerung: {label:"Fehler ohne Begründung", color:"c-rose", typ:"Fehler", gueltig_fuer:null, def:"Andere falsche Endzahl, ohne dass eine inhaltliche Begründung erkennbar ist.", nachfrage:"Wie bist du vorgegangen? Erzähl mal Schritt für Schritt."},
+  korrekt_begruendet: {label:"richtig, begründet", color:"c-teal", typ:"tragfähige Strategie", praezision:"praezise", gueltig_fuer:null, def:"Zahl 6625 korrekt UND eine Stellenwert- oder Bündelungsregel wird erkennbar als Begründung genannt.", nachfrage:"Warum musstest du die 42 Zehner überhaupt umwandeln?", bezug:"Macht sichtbar, dass 10 Zehner zu 1 Hunderter gebündelt werden und die Ziffern deshalb in der Stellenwerttafel stimmen."},
+  korrekt_unbegruendet: {label:"richtig, unbegründet", color:"c-mint", typ:"tragfähige Strategie", praezision:"unpraezise", gueltig_fuer:null, def:"Zahl 6625 korrekt, aber keine erkennbare inhaltliche Begründung -- das Verständnis ist noch nicht ausdifferenziert genug, um es zu artikulieren.", nachfrage:"Wie bist du auf die 6625 gekommen? Was ist mit den 42 Zehnern passiert?", bezug:"Das Ergebnis stimmt, der Bündelungsgedanke bleibt aber unausgesprochen – Anlass, ihn gemeinsam zu explizieren."},
+  fehler_unbundled: {label:"Fehler: nicht entbündelt (62425)", color:"c-coral", typ:"Fehler", gueltig_fuer:null, def:"42 Zehner werden unverändert/roh in die Zehnerspalte übernommen, keine Regruppierung stattgefunden.", nachfrage:"Darf in einem Kästchen der Stellenwerttafel mehr als eine Ziffer stehen?", bezug:"Zeigt, dass Zehner gezählt, aber nicht zu Hundertern gebündelt werden – die Regel 10 Zehner = 1 Hunderter fehlt."},
+  fehler_stellenwert_ignoriert: {label:"Fehler: Stellenwert ignoriert (6247)", color:"c-purple", typ:"Fehler", gueltig_fuer:null, def:"Die '2' von 42 wird fälschlich als Einer-Ziffer gedeutet und zu den 5 Einern addiert.", nachfrage:"Was bedeutet die '2' in '42 Zehner' — ist das eine Einer-Ziffer?", bezug:"Zeigt, dass die Ziffer 2 nicht als Anzahl der Zehner gedeutet wird – der Stellenwert der Ziffer wird verfehlt."},
+  fehler_mit_buendelungsversuch: {label:"Fehler, mit Bündelungsansatz", color:"c-amber", typ:"Fehler", gueltig_fuer:null, def:"Andere falsche Endzahl, aber im Text wird erkennbar eine Bündelungs- oder Stellenwertregel artikuliert.", nachfrage:"Deine Erklärung zur Umwandlung klingt richtig — wo genau ist beim Rechnen etwas schiefgelaufen?", bezug:"Die Bündelungsidee ist da, wird beim Rechnen aber nicht konsequent umgesetzt – Anschlussstelle für gezieltes Nachfragen."},
+  fehler_ohne_erklaerung: {label:"Fehler ohne Begründung", color:"c-rose", typ:"Fehler", gueltig_fuer:null, def:"Andere falsche Endzahl, ohne dass eine inhaltliche Begründung erkennbar ist.", nachfrage:"Wie bist du vorgegangen? Erzähl mal Schritt für Schritt.", bezug:"Der Denkweg ist nicht erkennbar – er muss erst sichtbar werden, bevor der Verstehenskern berührt werden kann."},
   keine_bearbeitung: {label:"keine Bearbeitung", color:"c-gray", typ:null, gueltig_fuer:null, def:"Kein Eintrag / keine Antwort vorhanden.", nachfrage:""},
   unklar: {label:"unklar", color:"c-gray", typ:null, gueltig_fuer:null, def:"Keiner Kategorie sicher zuordenbar", nachfrage:""}
 };
@@ -650,8 +712,12 @@ let AUFGABE_FORMAT = "Zahlen bündeln und entbündeln";
 // "Aufgabe" -- s. zeigeHintergrundInfo() weiter unten. Vorher wurde dieses Feld zwar
 // eingelesen (ladeAufgabe() gibt es schon zurück), aber nirgends angezeigt.
 let AUFGABE_HINTERGRUND = null;
+// [NEU] Optionaler, aufgabenspezifischer Text für "Warum diese Reihenfolge?" -- ersetzt den
+// generischen Standardtext, wenn bei der Aufgabenanlage gesetzt (Feld aufgabe.empfehlung_erklaerung).
+let AUFGABE_EMPFEHLUNG_ERKLAERUNG = null;
 let aktiveKlassenraum = "3b";    // Fallback fürs Demo-Sprungmenü ohne echten Login; wird nach lkAnmelden() überschrieben
 let aktiverAnzeigename = null;
+let istAdmin = false;            // s. uebernehmeLogin() -- steuert nur die Sichtbarkeit des Admin-Buttons; der eigentliche Schutz läuft über RLS auf "aufgaben"
 
 // ============================================================
 // AUFGABEN-LADE-SYSTEM (aus dem anderen Chat übernommen, unverändert in der Logik)
@@ -745,6 +811,9 @@ function ladeAufgabe(config) {
     CATS[k.kategorie_id] = {
       label: k.bezeichnung, color, typ: k.kategorietyp ?? null, praezision: k.praezision ?? null,
       gueltig_fuer: k.gueltig_fuer ?? null, def: k.kurzdefinition, nachfrage: k.nachfrage_impuls ?? null,
+      // [NEU] Bezug zum Verstehenskern: nur für die Lehrkraft (Kartendetail + "Warum diese Reihenfolge?"),
+      // geht NICHT an die KI-Kategorisierung und erscheint nie auf der Tafel.
+      bezug: (k.verstehenskern_bezug || '').trim() || null,
       // [NEU] Referenzbeispiele werden jetzt tatsächlich mitgespeichert -- vorher wurden sie
       // beim Einlesen geparst, aber nirgends abgelegt und erreichten dadurch nie die
       // KI-Kategorisierung, obwohl der Standard-Klassifikations-Prompt genau das behauptet.
@@ -779,6 +848,9 @@ function ladeAufgabe(config) {
   // gleicher-Pool-Vergleich zwei, aber nur eine ist da), entfällt der Baustein automatisch,
   // s. berechneEmpfBloecke(). Eine "Anschlussfrage" gibt es bewusst nicht mehr als eigenes
   // Feld -- Einstiegssatz (Impuls) und die Live-Frage je Kategorie decken das ab.
+  // [NEU] Optionales Feld "begruendung" je Baustein: fachdidaktische Begründung (Bezug: Verstehenskern),
+  // die unter "Warum diese Reihenfolge?" erscheint. Ersetzt die frühere Rang-Angabe aus der
+  // Prioritätsliste, die nur den Algorithmus beschrieb, nicht den didaktischen Grund.
   const ERLAUBTE_POOLS = ['fehler', 'tragfaehig'];
   const FEHLER_PRIORITAET = a.fehler_prioritaet || [];
   pruefeKombination(FEHLER_PRIORITAET, 'fehler_prioritaet');
@@ -796,16 +868,16 @@ function ladeAufgabe(config) {
     if (b.typ === 'isoliert') {
       const pool = b.pool || 'fehler';
       if (!ERLAUBTE_POOLS.includes(pool)) fehler.push(`bausteine[${i}]: pool muss "fehler" oder "tragfaehig" sein, nicht "${b.pool}".`);
-      return { typ: b.typ, pools: [pool], einstiegssatz: (b.einstiegssatz || '').trim() };
+      return { typ: b.typ, pools: [pool], einstiegssatz: (b.einstiegssatz || '').trim(), begruendung: (b.begruendung || '').trim() };
     }
     if (b.typ === 'vergleich') {
       const pools = b.pools || ['fehler', 'tragfaehig'];
       if (!Array.isArray(pools) || pools.length !== 2 || pools.some(p => !ERLAUBTE_POOLS.includes(p))) {
         fehler.push(`bausteine[${i}]: pools muss ein Array aus genau zwei Werten "fehler"/"tragfaehig" sein.`);
       }
-      return { typ: b.typ, pools, einstiegssatz: (b.einstiegssatz || '').trim() };
+      return { typ: b.typ, pools, einstiegssatz: (b.einstiegssatz || '').trim(), begruendung: (b.begruendung || '').trim() };
     }
-    return { typ: b.typ, pools: [], einstiegssatz: (b.einstiegssatz || '').trim() };
+    return { typ: b.typ, pools: [], einstiegssatz: (b.einstiegssatz || '').trim(), begruendung: (b.begruendung || '').trim() };
   });
 
   const AUFGABE_UEBERSETZUNGEN = (a.uebersetzungen || []).map(u => ({ sprache: u.sprache, text: u.text }));
@@ -820,6 +892,7 @@ function ladeAufgabe(config) {
   return {
     fehler: [], AUFGABE_ID, HAT_WAHL, RICHTIGE_ANTWORT, CATS, BAUSTEINE, FEHLER_PRIORITAET, TRAGFAEHIG_PRIORITAET, AUFGABE_UEBERSETZUNGEN,
     aufgabentext: a.aufgabentext, verstehenskern: a.verstehenskern, hintergrundmaterial: a.hintergrundmaterial || null,
+    empfehlung_erklaerung: a.empfehlung_erklaerung || null,
     aufgabenformat: a.aufgabenformat || null, druckbare_version: !!a.druckbare_version,
     klassifikations_prompt: (a.taxonomie && a.taxonomie.klassifikations_prompt) || null,
     klassifikations_prompt_ja: (a.taxonomie && a.taxonomie.klassifikations_prompt_ja) || null,
@@ -843,6 +916,7 @@ function aktiviereAufgabe(config) {
   AUFGABE_VERSTEHENSKERN = ergebnis.verstehenskern || "";
   AUFGABE_FORMAT = ergebnis.aufgabenformat || "";
   AUFGABE_HINTERGRUND = ergebnis.hintergrundmaterial || null;
+  AUFGABE_EMPFEHLUNG_ERKLAERUNG = ergebnis.empfehlung_erklaerung || null;
   KLASSIFIKATIONS_PROMPT = ergebnis.klassifikations_prompt || KLASSIFIKATIONS_PROMPT;
   KLASSIFIKATIONS_PROMPT_JA = ergebnis.klassifikations_prompt_ja;
   KLASSIFIKATIONS_PROMPT_NEIN = ergebnis.klassifikations_prompt_nein;
@@ -873,7 +947,6 @@ function wendeAufgabeAufUIAn(){
   const dashText = document.getElementById('dashboard-aufgabe-text'); if(dashText) dashText.textContent = AUFGABE_TEXT;
   const dashVerst = document.getElementById('dashboard-verstehenskern'); if(dashVerst) dashVerst.textContent = 'Verstehenskern: ' + AUFGABE_VERSTEHENSKERN;
   const tafel = document.getElementById('tafel-aufgabe'); if(tafel) tafel.textContent = AUFGABE_TEXT;
-  const ladeAktuell = document.getElementById('aufgabe-lade-aktuell'); if(ladeAktuell) ladeAktuell.textContent = AUFGABE_ID;
   if(typeof renderDashboard === 'function' && document.getElementById('scr-dashboard').classList.contains('visible')) renderDashboard();
 }
 
@@ -885,14 +958,23 @@ function zeigeLadeFehler(fehlerListe){
   showInfo('Aufgabe konnte nicht geladen werden', `<ul style="padding-left:18px; margin:0;">${liste}</ul>`);
 }
 
-// Liest eine hochgeladene .yaml/.yml/.json-Datei, parst sie passend zur Endung und
-// aktiviert sie. js-yaml wird nur für YAML-Dateien gebraucht (siehe <script>-Einbindung
-// im <head>). Bei Erfolg kurze Bestätigung, bei Fehler übernimmt zeigeLadeFehler().
-function handleAufgabeUpload(event){
+// ============================================================
+// AUFGABEN-BIBLIOTHEK (Supabase-Tabelle "aufgaben", RLS-gestützt)
+// Ersetzt den früheren rein lokalen, pro-Gerät-Upload: Aufgaben landen jetzt zentral in
+// der DB, Lehrkräfte sehen nur freigegebene ("aktiv"), die Admin-Rolle sieht alles
+// (inkl. Entwürfe) über die versteckte Aufgaben-Verwaltung (?admin in der URL +
+// app_metadata.rolle==='admin', durchgesetzt per RLS-Policy, nicht nur im Client geprüft).
+// ============================================================
+
+// Liest eine hochgeladene .yaml/.yml/.json-Datei, parst sie passend zur Endung und legt
+// sie als Entwurf (aktiv:false) in der Aufgabenbibliothek ab. Die Validierung über
+// ladeAufgabe() ist dieselbe wie beim direkten Aktivieren -- nur landet das Ergebnis jetzt
+// in der DB statt sofort im laufenden Gerät.
+function handleAufgabeUploadInDB(event){
   const datei = event.target.files[0];
   if(!datei) return;
   const reader = new FileReader();
-  reader.onload = () => {
+  reader.onload = async () => {
     let config;
     try {
       if(datei.name.endsWith('.json')) config = JSON.parse(reader.result);
@@ -902,14 +984,86 @@ function handleAufgabeUpload(event){
       event.target.value = '';
       return;
     }
-    const erfolg = aktiviereAufgabe(config);
-    if(erfolg){
-      alert('Aufgabe geladen: ' + AUFGABE_ID + (HAT_WAHL ? ' (mit Ja/Nein-Frage)' : ''));
+    const ergebnis = ladeAufgabe(config);
+    if(ergebnis.fehler.length){
+      zeigeLadeFehler(ergebnis.fehler);
+      event.target.value = '';
+      return;
     }
-    event.target.value = ''; // gleiche Datei danach erneut auswählbar machen
+    const { error } = await sb.from('aufgaben').insert({
+      aufgabe_id: ergebnis.AUFGABE_ID,
+      aufgabenformat: ergebnis.aufgabenformat,
+      aufgabentext: ergebnis.aufgabentext,
+      verstehenskern: ergebnis.verstehenskern,
+      konfiguration: config,
+      aktiv: false
+    });
+    if(error){
+      zeigeLadeFehler(['Konnte nicht in der Aufgabenbibliothek gespeichert werden: ' + error.message]);
+      event.target.value = '';
+      return;
+    }
+    alert('Als Entwurf gespeichert: ' + ergebnis.AUFGABE_ID + '. Zur Freigabe unten in der Liste antippen.');
+    event.target.value = '';
+    ladeAufgabenAdminListe();
   };
   reader.readAsText(datei, 'utf-8');
 }
+
+// Lädt/rendert die komplette Aufgabenbibliothek (inkl. Entwürfe) -- nur für Admin sichtbar
+// dank RLS-Policy "admin_liest_alle_aufgaben"; eine normale LK bekäme hier nur die aktiven.
+async function ladeAufgabenAdminListe(){
+  const el = document.getElementById('aufgaben-admin-liste');
+  if(!el) return;
+  el.innerHTML = 'Lädt…';
+  const { data, error } = await sb.from('aufgaben').select('*').order('erstellt_am', { ascending: false });
+  if(error){ el.innerHTML = `<div class="ts" style="font-size:var(--fs-small);">Fehler beim Laden: ${error.message}</div>`; return; }
+  if(!data.length){ el.innerHTML = `<div class="ts" style="font-size:var(--fs-small);">Noch keine Aufgaben in der Bibliothek.</div>`; return; }
+  el.innerHTML = data.map(a => `
+    <div class="card row" style="justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <div>
+        <div class="t" style="font-size:var(--fs-small);">${a.aufgabenformat || a.aufgabe_id}</div>
+        <div class="ts" style="font-size:var(--fs-micro);">${a.aufgabe_id}</div>
+      </div>
+      <button class="tag ${a.aktiv?'tag-success':'tag-neutral'}" style="border:none; cursor:pointer;" onclick="toggleAufgabeAktiv('${a.id}', ${!a.aktiv})">${a.aktiv ? 'Aktiv' : 'Entwurf'}</button>
+    </div>`).join('');
+}
+
+async function toggleAufgabeAktiv(id, neuerStatus){
+  const { error } = await sb.from('aufgaben').update({ aktiv: neuerStatus }).eq('id', id);
+  if(error){ alert('Status konnte nicht geändert werden: ' + error.message); return; }
+  ladeAufgabenAdminListe();
+}
+
+// Lädt/rendert den Aufgabenpool für die LK -- nur aktive (freigegebene) Aufgaben, dank
+// RLS-Policy "lk_liest_aktive_aufgaben" auch ohne Admin-Rolle lesbar. Gruppiert nach
+// aufgabenformat, damit dasselbe Feld später auch den Lernverlauf gruppieren kann (2.9).
+async function ladeAufgabenPool(){
+  const el = document.getElementById('pool-liste');
+  if(!el) return;
+  el.innerHTML = 'Lädt…';
+  const { data, error } = await sb.from('aufgaben').select('*').eq('aktiv', true).order('aufgabenformat');
+  if(error){ el.innerHTML = `<div class="ts" style="font-size:var(--fs-small);">Aufgaben konnten nicht geladen werden: ${error.message}</div>`; return; }
+  if(!data.length){ el.innerHTML = `<div class="ts" style="font-size:var(--fs-small);">Noch keine freigegebene Aufgabe verfügbar. Bei der Aufgaben-Verwaltung nachfragen, falls das nicht erwartet war.</div>`; return; }
+  const gruppen = {};
+  data.forEach(a => { const g = a.aufgabenformat || 'Ohne Gruppe'; (gruppen[g] = gruppen[g] || []).push(a); });
+  el.innerHTML = Object.entries(gruppen).map(([gruppe, liste]) => `
+    <div class="ts" style="font-size:var(--fs-micro); text-transform:uppercase; margin:10px 0 4px;">${gruppe}</div>
+    ${liste.map(a => `
+      <div class="card row" onclick="waehleAufgabeAusPool('${a.id}')" style="cursor:pointer;">
+        <div class="icon-circle c-amber"><i class="ti ti-calculator"></i></div>
+        <div><div class="t" style="font-size:var(--fs-body);">${a.aufgabenformat || a.aufgabe_id}</div><div class="ts" style="font-size:var(--fs-micro);">${a.aufgabentext || ''}</div></div>
+      </div>`).join('')}`).join('');
+}
+
+// LK tippt eine Karte im Pool an: volle Konfiguration nachladen und wie bisher aktivieren.
+async function waehleAufgabeAusPool(id){
+  const { data, error } = await sb.from('aufgaben').select('konfiguration').eq('id', id).single();
+  if(error || !data){ zeigeLadeFehler(['Aufgabe konnte nicht geladen werden.']); return; }
+  const erfolg = aktiviereAufgabe(data.konfiguration);
+  if(erfolg) show('aufgabe');
+}
+
 
 
 async function lkAnmelden(){
@@ -923,13 +1077,43 @@ async function lkAnmelden(){
     fehler.style.display = 'block';
     return;
   }
-  uebernehmeLogin(data.user);
+  await uebernehmeLogin(data.user);
   show('login');
 }
-function uebernehmeLogin(user){
+async function uebernehmeLogin(user){
   aktiveKlassenraum = user.user_metadata?.klassenraum || "3b";
   aktiverAnzeigename = user.user_metadata?.anzeige_name || user.email;
   document.getElementById('klassenraum-name-anzeige').textContent = "Klasse " + aktiveKlassenraum;
+  // Admin-Button nur sichtbar mit ?admin in der URL UND echter Admin-Rolle im Account
+  // (app_metadata -- vom Client nicht änderbar, nur über das Supabase-Dashboard). Reine
+  // UI-Bequemlichkeit: der eigentliche Schutz läuft über die RLS-Policies auf "aufgaben".
+  istAdmin = new URLSearchParams(window.location.search).has('admin') && user.app_metadata?.rolle === 'admin';
+  document.getElementById('aufgaben-admin-btn').style.display = istAdmin ? '' : 'none';
+  // Echten Kinderliste-Stand aus Supabase holen, statt bei den lokalen Demo-/Alt-Namen zu
+  // bleiben -- wichtig VOR jeder Bearbeitung/Sync, s. ladeKinderlisteAusSupabase().
+  await ladeKinderlisteAusSupabase();
+}
+// Holt den TATSÄCHLICHEN Stand der Kinderliste dieses Klassenraums aus Supabase und ersetzt
+// SYMBOLS komplett damit (reines SELECT, kein Upsert). syncKinderMitSupabase() schreibt nur
+// -- ohne diese Funktion blieb SYMBOLS nach einem Reload/Neu-Login beim lokalen Demo-/
+// Browser-Stand hängen (u.a. sichtbar an falschen/veralteten Symbolen bzw. Icons), und ein
+// längst gelöschtes Kind konnte beim nächsten Speichern per Upsert wieder auftauchen. Wird
+// beim Login (uebernehmeLogin) und bei jedem Öffnen der Verwaltung aufgerufen.
+async function ladeKinderlisteAusSupabase(){
+  const { data, error } = await sb.from('kinder')
+    .select('id, symbol_id, name, icon, einwilligung')
+    .eq('klassenraum', aktiveKlassenraum)
+    .order('symbol_id');
+  if(error){
+    console.error('Kinderliste konnte nicht aus Supabase geladen werden:', error.message);
+    return false;
+  }
+  SYMBOLS = data.map(row => ({ id: row.symbol_id, icon: row.icon, name: row.name, kindId: row.id }));
+  data.forEach(row => { consentState[row.symbol_id] = row.einwilligung; });
+  if(document.getElementById('kinderliste')) renderKinderliste();
+  const anzahlAnzeige = document.getElementById('klassenraum-anzahl-anzeige');
+  if(anzahlAnzeige) anzahlAnzeige.textContent = SYMBOLS.length + " Kinder";
+  return true;
 }
 async function lkAbmelden(){
   await sb.auth.signOut();
@@ -979,15 +1163,16 @@ async function ladeAufgabeFuerSitzung(code){
   aktiviereAufgabe(data);
 }
 
+// [NEU] "evidenz" der Demo-Kinder nur als PLATZHALTER (echte Sitzungen bekommen den Wert von kategorisieren.ts).
 let state = {
   pool: [
-    {name:"Mika", cat:"korrekt_begruendet", quote:"10 Zehner sind ein Hunderter, also sind 42 Zehner 4 Hunderter und 2 Zehner übrig. Mit den 6 Tausendern, 2 Hundertern und 5 Einern macht das 6625."},
-    {name:"Tom", cat:"korrekt_begruendet", quote:"Ich hab 42 mal 10 gerechnet, das sind 420. Plus 6000, 200 und 5 macht 6625."},
-    {name:"Ida", cat:"korrekt_unbegruendet", quote:"6625, weil ich das so eingetragen habe."},
-    {name:"Lian", cat:"fehler_mit_buendelungsversuch", quote:"6000+200+40+7=6247, weil die Zehner zu Hundertern werden."},
-    {name:"Ada", cat:"fehler_unbundled", quote:"6 Tausender, 2 Hunderter, 42 Zehner, 5 Einer -- also 62425."},
-    {name:"Ben", cat:"fehler_stellenwert_ignoriert", quote:"Ich hab die 2 von der 42 zur 5 von den Einern gerechnet."},
-    {name:"Nora", cat:"fehler_ohne_erklaerung", quote:"42 + 5 = 47."}
+    {name:"Mika", cat:"korrekt_begruendet", quote:"10 Zehner sind ein Hunderter, also sind 42 Zehner 4 Hunderter und 2 Zehner übrig. Mit den 6 Tausendern, 2 Hundertern und 5 Einern macht das 6625.", evidenz:3},
+    {name:"Tom", cat:"korrekt_begruendet", quote:"Ich hab 42 mal 10 gerechnet, das sind 420. Plus 6000, 200 und 5 macht 6625.", evidenz:2},
+    {name:"Ida", cat:"korrekt_unbegruendet", quote:"6625, weil ich das so eingetragen habe.", evidenz:1},
+    {name:"Lian", cat:"fehler_mit_buendelungsversuch", quote:"6000+200+40+7=6247, weil die Zehner zu Hundertern werden.", evidenz:3},
+    {name:"Ada", cat:"fehler_unbundled", quote:"6 Tausender, 2 Hunderter, 42 Zehner, 5 Einer -- also 62425.", evidenz:2},
+    {name:"Ben", cat:"fehler_stellenwert_ignoriert", quote:"Ich hab die 2 von der 42 zur 5 von den Einern gerechnet.", evidenz:2},
+    {name:"Nora", cat:"fehler_ohne_erklaerung", quote:"42 + 5 = 47.", evidenz:1}
   ],
   slots: {
     empfohlen: [],
@@ -1017,26 +1202,63 @@ let state = {
 // Ein Vergleich könnte stattdessen genauso pools:["fehler","fehler"] (zwei unterschiedliche
 // Fehler gegeneinander) oder ["tragfaehig","tragfaehig"] (zwei unterschiedliche tragfähige
 // Wege) sein -- s. buendeln_6t2h42z5e.yaml für ein Beispiel mit Fehler-gegen-Fehler.
+// [NEU] "begruendung" hier nur als PLATZHALTER für die Demo -- die echten Formulierungen schreibt
+// das Fachdidaktik-Team pro Aufgabe im Aufgaben-Autor:innen-Tool.
 let BAUSTEINE = [
-  { typ: "isoliert", pools: ["fehler"], einstiegssatz: "Schauen wir uns erst an, wie ein Kind mit den 42 Zehnern umgegangen ist." },
-  { typ: "isoliert", pools: ["fehler"], einstiegssatz: "Hier ist noch ein anderer Weg mit den 42 Zehnern." },
-  { typ: "vergleich", pools: ["fehler", "tragfaehig"], einstiegssatz: "Jetzt vergleichen wir das mit einer Erklärung, die zur richtigen Zahl führt." }
+  { typ: "isoliert", pools: ["fehler"], einstiegssatz: "Schauen wir uns erst an, wie ein Kind mit den 42 Zehnern umgegangen ist.",
+    begruendung: "Ein einzelner Weg macht sichtbar, was beim Bündeln und Entbündeln passiert, bevor verglichen wird." },
+  { typ: "isoliert", pools: ["fehler"], einstiegssatz: "Hier ist noch ein anderer Weg mit den 42 Zehnern.",
+    begruendung: "Ein zweiter Weg zeigt, dass der Umgang mit den 42 Zehnern unterschiedlich ausfallen kann – die Klasse fragt, was das Bündeln jeweils leistet." },
+  { typ: "vergleich", pools: ["fehler", "tragfaehig"], einstiegssatz: "Jetzt vergleichen wir das mit einer Erklärung, die zur richtigen Zahl führt.",
+    begruendung: "Der Vergleich führt zum Verstehenskern zurück: Warum muss gebündelt werden, damit der Stellenwert stimmt?" }
 ];
 // [NEU] Reihenfolge = Priorität. Die höchstpriorisierten tatsächlich vorgekommenen Fehler
 // füllen zuerst die Isoliert-Bausteine, der nächste verbleibende füllt den Vergleich.
 let FEHLER_PRIORITAET = ["fehler_stellenwert_ignoriert", "fehler_unbundled", "fehler_mit_buendelungsversuch", "fehler_ohne_erklaerung"];
 let TRAGFAEHIG_PRIORITAET = ["korrekt_begruendet", "korrekt_unbegruendet"];
 
+// [NEU] Kindauswahl je Kategorie: statt "das erste Kind" wird die gehaltvollste Antwort
+// vorgeschlagen. Reihenfolge der Kriterien:
+//   1. Evidenz (1-3, KI-Einschätzung in kategorisieren.ts: wie deutlich wird der Denkweg
+//      erkennbar) -- fehlt der Wert (ältere Antworten, KI-Ausfall), zählt er als 0
+//   2. bereinigte Länge des Transkripts (ohne Füllwörter und unmittelbare Wiederholungen,
+//      bei LAENGE_DECKEL Wörtern gedeckelt, damit Vielreden nicht automatisch gewinnt)
+//   3. bei Gleichstand: das früher eingegangene Kind (Reihenfolge im Pool)
+// Nur ein VORSCHLAG -- die Lehrkraft kann jederzeit über "anderes Kind" tauschen.
+const FUELLWOERTER = new Set(['äh','ähm','öh','hm','hmm','also','halt','quasi','ok','okay']);
+const LAENGE_DECKEL = 40;
+function inhaltswoerterAnzahl(text){
+  const woerter = (text || '').toLowerCase().replace(/[.,;:!?()\"„“]/g, ' ').split(/\s+/).filter(Boolean);
+  let anzahl = 0, vorheriges = null;
+  for(const w of woerter){
+    if(FUELLWOERTER.has(w) || w === vorheriges) continue;
+    anzahl++; vorheriges = w;
+  }
+  return anzahl;
+}
+function bestesKind(katId){
+  let bestes = null, besteWerte = null;
+  state.pool.forEach(p => {
+    if(p.cat !== katId) return;
+    const werte = [p.evidenz || 0, Math.min(inhaltswoerterAnzahl(p.quote), LAENGE_DECKEL)];
+    const besser = !bestes || werte[0] > besteWerte[0] || (werte[0] === besteWerte[0] && werte[1] > besteWerte[1]);
+    if(besser){ bestes = p; besteWerte = werte; }
+  });
+  return bestes;
+}
+
 // [NEU] Löst BAUSTEINE gegen die tatsächlich eingegangenen Antworten auf: pro Baustein die
-// konkrete(n) Kategorie(n) + das (zuerst eingegangene) Kind dazu, oder uebersprungen:'auto',
+// konkrete(n) Kategorie(n) + das (gehaltvollste, s. bestesKind()) Kind dazu, oder uebersprungen:'auto',
 // wenn keine passende Kategorie vorkam. Generisch über beide Pools (fehler/tragfaehig) --
 // ein Vergleichs-Baustein kann je nach "pools" zwei Fehler, zwei tragfähige Wege, oder einen
 // von jedem gegenüberstellen; jeder Pool wird unabhängig fortlaufend "verbraucht", damit
 // derselbe Fall nicht doppelt auftaucht. Wird NUR aufgerufen, solange state.empfAutomatisch
 // true ist -- sobald die Lehrkraft manuell eingreift, bleibt state.empfBloecke unverändert.
 function berechneEmpfBloecke(){
-  const PRIOLISTE = { fehler: FEHLER_PRIORITAET, tragfaehig: TRAGFAEHIG_PRIORITAET };
   const POOL_LABEL = { fehler: 'Fehler', tragfaehig: 'tragfähige Antwort' };
+  // Neutraler Standardsatz, falls für einen Baustein keine begruendung hinterlegt ist (bewusst
+  // OHNE Rang-/Prioritätsangabe: die Zahl sagt der Lehrkraft nichts über den didaktischen Grund).
+  const FALLBACK_BEGRUENDUNG = 'Aus den eingegangenen Antworten gewählt, in der für diese Aufgabe festgelegten Reihenfolge.';
   const vorhanden = {
     fehler: FEHLER_PRIORITAET.filter(id => state.pool.some(p=>p.cat===id)),
     tragfaehig: TRAGFAEHIG_PRIORITAET.filter(id => state.pool.some(p=>p.cat===id))
@@ -1055,10 +1277,10 @@ function berechneEmpfBloecke(){
         return { typ:'isoliert', pools:b.pools, index:i, einstiegssatz:b.einstiegssatz, uebersprungen:'auto',
           kategorieIds:[], namen:[], begruendung:`Kein weiterer, bisher nicht gezeigter Fall aus "${POOL_LABEL[pool]}" ist in dieser Klasse vorgekommen.` };
       }
-      const kind = state.pool.find(p=>p.cat===katId);
+      const kind = bestesKind(katId);
       return { typ:'isoliert', pools:b.pools, index:i, einstiegssatz:b.einstiegssatz, uebersprungen:false,
         kategorieIds:[katId], namen:[kind.name],
-        begruendung:`Höchste Priorität (Rang ${PRIOLISTE[pool].indexOf(katId)+1} von ${PRIOLISTE[pool].length}) unter den bisher noch nicht gezeigten "${POOL_LABEL[pool]}"-Kategorien.` };
+        begruendung: b.begruendung || FALLBACK_BEGRUENDUNG };
     }
     const [poolA, poolB] = b.pools;
     const katA = ziehen(poolA);
@@ -1070,21 +1292,17 @@ function berechneEmpfBloecke(){
         kategorieIds:[], namen:[],
         begruendung: !katA ? `Kein weiterer Fall aus "${POOL_LABEL[poolA]}" für den Vergleich vorgekommen.` : `Kein weiterer Fall aus "${POOL_LABEL[poolB]}" für den Vergleich vorgekommen.` };
     }
-    const kindA = state.pool.find(p=>p.cat===katA);
-    const kindB = state.pool.find(p=>p.cat===katB);
+    const kindA = bestesKind(katA);
+    const kindB = bestesKind(katB);
     return { typ:'vergleich', pools:b.pools, index:i, einstiegssatz:b.einstiegssatz, uebersprungen:false,
       kategorieIds:[katA, katB], namen:[kindA.name, kindB.name],
-      begruendung:`Höchste Priorität je Seite unter den noch nicht gezeigten Kategorien (${POOL_LABEL[poolA]} Rang ${PRIOLISTE[poolA].indexOf(katA)+1}; ${POOL_LABEL[poolB]} Rang ${PRIOLISTE[poolB].indexOf(katB)+1}).` };
+      begruendung: b.begruendung || FALLBACK_BEGRUENDUNG };
   });
 }
 
-// Ersetzt die alte MOST-Empfehlung: löst die Bausteine auf (solange automatisch), und
-// schaltet die Empfehlungs-Bubble auf dem "Empfohlene Reihenfolge"-Tab sichtbar, sobald
-// mindestens ein Schritt tatsächlich etwas zu zeigen hat.
+// Ersetzt die alte MOST-Empfehlung: löst die Bausteine auf (solange automatisch).
 function aktualisiereEmpfehlung(){
   if(state.empfAutomatisch) state.empfBloecke = berechneEmpfBloecke();
-  const hatEtwas = state.empfBloecke.some(b => !b.uebersprungen);
-  document.querySelectorAll('.empf-badge').forEach(b=>{ b.style.display = hatEtwas ? 'inline-block' : 'none'; });
 }
 // Schritt manuell überspringen/wieder aufnehmen. Reaktivieren ist nur möglich, wenn der
 // Schritt manuell übersprungen wurde (uebersprungen==='manuell') -- ein automatisch
@@ -1124,7 +1342,8 @@ function show(id){
   document.getElementById('topbar-label').textContent = {
     start:"Start", "lk-login":"Anmelden", login:"Login", pool:"Aufgabenpool", aufgabe:"Aufgabe", symbolauswahl:"Kind: wer bist du?",
     aufnahme:"Kind: Aufnahme", dashboard:"LK-Dashboard", tafel:"Tafelansicht", heatmap:"Sitzplan mit Antwortübersicht",
-    verwaltung:"Verwaltung", schnellanlage:"Kinder anlegen", sitzplan:"Sitzplan", lernverlauf:"Lernverlauf"
+    verwaltung:"Verwaltung", schnellanlage:"Kinder anlegen", sitzplan:"Sitzplan", lernverlauf:"Lernverlauf",
+    "aufgaben-admin":"Aufgaben-Verwaltung"
   }[id] || "Demo";
   const role = (id==='symbolauswahl'||id==='aufnahme') ? 'kind' : 'lk';
   roleLastScreen[role] = id;
@@ -1135,8 +1354,13 @@ function show(id){
   if(id==='dashboard'){ aktualisiereEmpfehlung(); renderDashboard(); }
   if(id==='tafel') renderTafel();
   if(id==='heatmap') renderHeatmap();
-  if(id==='verwaltung') renderKinderliste();
+  if(id==='verwaltung'){ renderKinderliste(); ladeKinderlisteAusSupabase(); }
   if(id==='sitzplan') renderSitzplan();
+  if(id==='pool') ladeAufgabenPool();
+  if(id==='aufgaben-admin'){
+    if(!istAdmin){ show('login'); return; }
+    ladeAufgabenAdminListe();
+  }
   if(id==='aufgabe'){
     document.getElementById('aufgabe-sitzplan-warning').style.display = Object.keys(sitzplanState.placed).length>0 ? 'none' : 'block';
     const ohneEinwilligung = SYMBOLS.filter(s=>!consentState[s.id]).length;
@@ -1198,7 +1422,7 @@ function renderSymbols(){
   const inactive = document.getElementById('symbolauswahl-inaktiv');
   if(!state.sessionActive){
     g.innerHTML = "";
-    document.getElementById('symbol-confirm').style.display='none';
+    document.getElementById('symbol-confirm').classList.remove('visible');
     inactive.style.display = 'block';
     return;
   }
@@ -1211,15 +1435,16 @@ function renderSymbols(){
     b.onclick = ()=>selectSymbol(s);
     g.appendChild(b);
   });
-  document.getElementById('symbol-confirm').style.display='none';
+  document.getElementById('symbol-confirm').classList.remove('visible');
 }
 function selectSymbol(s){
   state.selectedSymbol = s;
-  document.getElementById('symbol-confirm').style.display='block';
+  document.getElementById('symbol-confirm').classList.add('visible');
   document.getElementById('symbol-confirm-icon').textContent = s.icon;
 }
-function cancelSymbol(){ document.getElementById('symbol-confirm').style.display='none'; }
+function cancelSymbol(){ document.getElementById('symbol-confirm').classList.remove('visible'); }
 function confirmSymbol(){
+  document.getElementById('symbol-confirm').classList.remove('visible');
   show('aufnahme');
   document.getElementById('record-area').style.display='block';
   document.getElementById('review-area').style.display='none';
@@ -1370,12 +1595,14 @@ async function finishAnswer(){
     : KLASSIFIKATIONS_PROMPT;
 
   let cat = "unklar";
+  let evidenz = null; // [NEU] 1-3 (KI-Einschätzung, wie deutlich der Denkweg erkennbar wird) oder null
   try {
     const { data, error } = await sb.functions.invoke('kategorisieren', {
       body: { transkript: text, aufgabe_id: AUFGABE_ID, wahl, prompt: promptFuerAnfrage, kategorien: kategorienFuerPrompt }
     });
     if(!error && data && data.kategorie && CATS[data.kategorie]) cat = data.kategorie;
     else cat = heuristischeKategorie(text);
+    if(!error && data && [1,2,3].includes(data.evidenz)) evidenz = data.evidenz;
   } catch(e) {
     cat = heuristischeKategorie(text);
   }
@@ -1383,20 +1610,28 @@ async function finishAnswer(){
   if(sitzungscode){
     // Echte Sitzung: an Supabase senden, LK-Gerät sieht es live.
     // Bewusst KEIN Klarname hier -- nur die pseudonyme kind_id (Kap. 4.4/2.13 Nutzerfluss-Dokument).
-    const { error } = await sb.from('antworten').insert({
+    const zeile = {
       sitzungscode: sitzungscode,
       kind_id: state.selectedSymbol ? state.selectedSymbol.kindId : null,
       symbol_id: state.selectedSymbol ? state.selectedSymbol.id : null,
       transkript: text,
       kategorie: cat,
       antwort_wahl: wahl,
-      audio_pfad: letzterAudioPfad
-    });
+      audio_pfad: letzterAudioPfad,
+      evidenz: evidenz
+    };
+    let { error } = await sb.from('antworten').insert(zeile);
+    if(error && /evidenz/i.test(error.message || '')){
+      // Sicherheitsnetz: Spalte "evidenz" existiert in der Datenbank (noch) nicht -- die Antwort
+      // des Kindes soll deshalb nicht verloren gehen.
+      const { evidenz: _ohne, ...ohneEvidenz } = zeile;
+      ({ error } = await sb.from('antworten').insert(ohneEvidenz));
+    }
     if(error) alert('Antwort konnte nicht gespeichert werden: ' + error.message + '\n(Sitzungscode: ' + sitzungscode + ')');
   } else {
     // Kein Sitzungscode vorhanden (Demo-Vorführung ohne echte Sitzung): nur lokal
     state.pool = state.pool.filter(p=>p.name!==name);
-    state.pool.push({name, cat, quote:text, audioPfad: null, wahl});
+    state.pool.push({name, cat, quote:text, audioPfad: null, wahl, evidenz});
     if(state.selectedSymbol) state.heatmapStatus[state.selectedSymbol.id] = cat;
   }
   letzterAudioPfad = null;
@@ -1484,24 +1719,32 @@ function renderEmpfSlotKarte(blockIndex, slotIdx, kategorieIds, namen, pools, on
   const POOL_LABEL_KURZ = { fehler: 'Fehler', tragfaehig: 'tragfähig' };
   const rollenLabel = istVergleich ? (POOL_LABEL_KURZ[pools[slotIdx]] || '') + ': ' : '';
   const alternativeKategorien = Object.keys(CATS).filter(k => CATS[k].typ === cat.typ && k !== katId && state.pool.some(p=>p.cat===k));
+  const headerInner = `<div class="row" style="justify-content:space-between;">
+        <b style="font-size:var(--fs-small);">${rollenLabel}${child.name} · ${cat.label}</b>
+        <span class="tag ${onTafel?'tag-success':'tag-neutral'}">${onTafel?'auf Tafel':'nicht auf Tafel'}</span>
+      </div>`;
+  // [NEU] 5c: Vollflächen-Kategoriefarbe nur, solange diese Karte tatsächlich auf der Tafel
+  // steht -- sonst nur ein schmaler 4px-Streifen. Reduziert die visuelle "Lautstärke" aller
+  // Karten, die gerade nicht dran sind, ohne die Kategoriefarbe ganz zu verlieren.
+  const header = onTafel
+    ? `<div class="${cat.color}" style="border-radius:var(--radius) var(--radius) 0 0; padding:6px 8px;">${headerInner}</div>`
+    : `<div style="display:flex; border-radius:var(--radius) var(--radius) 0 0; overflow:hidden;">
+        <div class="${cat.color}" style="width:7px; flex-shrink:0;"></div>
+        <div style="flex:1; padding:6px 8px; background:var(--surface-1);">${headerInner}</div>
+      </div>`;
   return `<div>
-    <div class="${cat.color}" style="border-radius:var(--radius) var(--radius) 0 0; padding:6px 8px;">
-      <div class="row" style="justify-content:space-between;">
-        <b style="font-size:12px;">${rollenLabel}${child.name} · ${cat.label}</b>
-        <span class="tag" style="background:${onTafel?'var(--bg-success)':'var(--surface-1)'}; color:${onTafel?'var(--text-success)':'var(--text-muted)'};">${onTafel?'auf Tafel':'nicht auf Tafel'}</span>
-      </div>
-    </div>
-    <div class="quote-box" style="border-top:none; border-radius:0 0 var(--radius) var(--radius); margin-top:0;">"${child.quote}"</div>
+    ${header}
+    <div class="quote-plain">"${child.quote}"</div>
     ${cat.nachfrage ? `<div class="live-frage-box">
       <div class="live-frage-label"><i class="ti ti-message-circle"></i> direkt stellbar</div>
       <div class="live-frage-text">${cat.nachfrage}</div>
     </div>` : ''}
     <div class="row" style="gap:6px; margin-top:6px; flex-wrap:wrap;">
-      <select class="navbtn" style="font-size:10px;" ${geschwister.length?'':'disabled'} onchange="empfKindTauschen(${blockIndex},${slotIdx},this.value); this.selectedIndex=0;">
+      <select class="navbtn" style="font-size:var(--fs-micro);" ${geschwister.length?'':'disabled'} onchange="empfKindTauschen(${blockIndex},${slotIdx},this.value); this.selectedIndex=0;">
         <option value="">${geschwister.length ? 'anderes Kind, gleiche Kategorie…' : 'keine weitere Antwort dieser Kategorie'}</option>
         ${geschwister.map(g=>`<option value="${g.name}">${g.name}</option>`).join('')}
       </select>
-      ${alternativeKategorien.length ? `<select class="navbtn" style="font-size:10px;" onchange="empfKategorieWechseln(${blockIndex},${slotIdx},this.value); this.selectedIndex=0;">
+      ${alternativeKategorien.length ? `<select class="navbtn" style="font-size:var(--fs-micro);" onchange="empfKategorieWechseln(${blockIndex},${slotIdx},this.value); this.selectedIndex=0;">
         <option value="">Kategorie wechseln…</option>
         ${alternativeKategorien.map(k=>`<option value="${k}">${CATS[k].label}</option>`).join('')}
       </select>` : ''}
@@ -1518,25 +1761,37 @@ function renderEmpfSlotKarte(blockIndex, slotIdx, kategorieIds, namen, pools, on
 function renderEmpfohlen(){
   state.slots.empfohlen = state.empfBloecke.filter(b=>!b.uebersprungen).flatMap(b=>b.namen);
   const area = document.getElementById('empfohlen-area');
+  const stepNav = document.getElementById('dashboard-step-nav');
+  // [NEU] "Warum diese Reihenfolge?" lebt jetzt hier statt als eigene Zeile weiter oben im
+  // Dashboard -- sie gehört inhaltlich zu genau diesem Tab, nicht zum Dashboard allgemein.
+  // Inhalt: optionaler Einleitungssatz (aufgabe.empfehlung_erklaerung) + je Schritt die
+  // fachdidaktische begruendung des Bausteins (s. berechneEmpfBloecke()).
+  const erklaerungToggle = `<div style="text-align:right; margin-bottom:6px;">
+      <span class="ts" style="font-size:var(--fs-micro); text-decoration:underline; cursor:pointer;" onclick="toggleErklaerung()">Warum diese Reihenfolge?</span>
+    </div>
+    <div id="empfehlung-erklaerung" class="ts" style="display:none; font-size:var(--fs-micro); background:var(--bg-accent); color:var(--text-accent); padding:8px; border-radius:var(--radius); margin-bottom:8px;"></div>`;
+
   if(!state.empfBloecke.length){
-    area.innerHTML = '<div class="ts" style="text-align:center; padding:20px;">Für diese Aufgabe ist keine Abfolge hinterlegt (Feld "bausteine" fehlt).</div>';
+    area.innerHTML = erklaerungToggle + '<div class="ts" style="text-align:center; padding:20px;">Für diese Aufgabe ist keine Abfolge hinterlegt (Feld "bausteine" fehlt).</div>';
     document.getElementById('empfehlung-erklaerung').textContent = '—';
+    stepNav.innerHTML = '';
     return;
   }
   const sichtbar = state.empfBloecke.filter(b=>!b.uebersprungen);
   if(!sichtbar.length){
-    area.innerHTML = '<div class="ts" style="text-align:center; padding:20px;">Noch keine passenden Antworten eingegangen — sobald welche eintreffen, erscheinen hier Vorschläge.</div>';
+    area.innerHTML = erklaerungToggle + '<div class="ts" style="text-align:center; padding:20px;">Noch keine passenden Antworten eingegangen — sobald welche eintreffen, erscheinen hier Vorschläge.</div>';
+    stepNav.innerHTML = '';
   } else {
     let laufendeNummer = 0;
     let sichtbarLaufindex = -1; // Index innerhalb der SICHTBAREN Blöcke -- vergleichbar mit state.empfAktivBlock
-    area.innerHTML = state.empfBloecke.map((b,i)=>{
+    area.innerHTML = erklaerungToggle + state.empfBloecke.map((b,i)=>{
       if(b.uebersprungen === 'auto'){
-        return `<div class="ts" style="font-size:11px; padding:8px 10px; margin-bottom:8px; border:1px dashed var(--border); border-radius:var(--radius);">Schritt entfällt: ${b.begruendung}</div>`;
+        return `<div class="ts" style="font-size:var(--fs-micro); padding:8px 10px; margin-bottom:8px; border:1px dashed var(--border); border-radius:var(--radius);">Schritt entfällt: ${b.begruendung}</div>`;
       }
       if(b.uebersprungen === 'manuell'){
-        return `<div class="row" style="justify-content:space-between; align-items:center; font-size:11px; padding:8px 10px; margin-bottom:8px; background:var(--surface-1); border-radius:var(--radius);">
+        return `<div class="row" style="justify-content:space-between; align-items:center; font-size:var(--fs-micro); padding:8px 10px; margin-bottom:8px; background:var(--surface-1); border-radius:var(--radius);">
           <span class="ts">Schritt übersprungen (${b.kategorieIds.map(k=>CATS[k].label).join(' ↔ ')})</span>
-          <button class="navbtn" style="font-size:10px;" onclick="empfSchrittReaktivieren(${i})">wieder aufnehmen</button>
+          <button class="navbtn" style="font-size:var(--fs-micro);" onclick="empfSchrittReaktivieren(${i})">wieder aufnehmen</button>
         </div>`;
       }
       laufendeNummer++;
@@ -1546,33 +1801,50 @@ function renderEmpfohlen(){
       // Tafel -- vorherige Schritte werden ERSETZT, nicht angehäuft (s. renderTafel()).
       const istAktiverSchritt = sichtbarLaufindex === state.empfAktivBlock;
       const kartenHtml = b.namen.map((n,slotIdx)=>renderEmpfSlotKarte(i, slotIdx, b.kategorieIds, b.namen, b.pools, istAktiverSchritt)).join('');
-      return `<div class="card" style="margin-bottom:10px; ${istAktiverSchritt?'outline:2px solid var(--border-accent);':''}">
+      // [NEU] 5c, nachgebessert: inaktive Schritte etwas zurückgenommen, aber weniger stark
+      // als zuvor (0.8 statt 0.58) -- bei 0.58 war die Kategoriefarbe im schmalen Streifen
+      // (s. renderEmpfSlotKarte) kaum noch zu erkennen.
+      const kartenStil = istAktiverSchritt
+        ? 'outline:2px solid var(--border-accent); box-shadow: var(--shadow-md);'
+        : 'opacity:0.8;';
+      return `<div class="card" style="margin-bottom:10px; ${kartenStil}">
         <div class="row" style="justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
-          <div>
-            <div class="ts" style="font-size:11px; font-weight:600; color:var(--text-accent);">Schritt ${laufendeNummer} — ${b.typ==='isoliert'?'einzeln':'Vergleich'}</div>
-            <div class="ts" style="font-size:13px; margin-top:2px;">${b.einstiegssatz}</div>
+          <div style="flex:1; min-width:0; border-left:3px solid var(--border-accent); padding-left:10px;">
+            <div class="ts" style="font-size:var(--fs-micro); color:var(--text-muted); margin-bottom:3px;">Schritt ${laufendeNummer} — ${b.typ==='isoliert'?'einzeln':'Vergleich'}</div>
+            <div style="font-size:var(--fs-lead); color:var(--text-primary); line-height:1.3; font-weight:500;">${b.einstiegssatz}</div>
           </div>
-          <button class="navbtn" style="font-size:10px; flex-shrink:0;" onclick="empfSchrittUeberspringen(${i})">überspringen</button>
+          <button class="navbtn" style="font-size:var(--fs-micro); flex-shrink:0;" onclick="empfSchrittUeberspringen(${i})">überspringen</button>
         </div>
-        ${b.kategorieAbweichend ? `<div class="ts" style="font-size:10px; color:var(--text-warning); margin-bottom:6px;"><i class="ti ti-alert-triangle"></i> weicht von der empfohlenen Abfolge ab</div>` : ''}
+        ${b.kategorieAbweichend ? `<div class="ts" style="font-size:var(--fs-micro); color:var(--text-warning); margin-bottom:6px;"><i class="ti ti-alert-triangle"></i> weicht von der empfohlenen Abfolge ab</div>` : ''}
         <div style="display:${b.namen.length>1?'grid':'block'}; grid-template-columns:${b.namen.length>1?'repeat(2,minmax(0,1fr))':'none'}; gap:8px;">
           ${kartenHtml}
         </div>
       </div>`;
     }).join('');
     const aktivLabel = state.empfAktivBlock < 0 ? 'noch kein Schritt auf der Tafel' : `Schritt ${state.empfAktivBlock+1} von ${sichtbar.length} auf der Tafel`;
-    area.innerHTML += `<div class="card" style="margin-bottom:10px;">
-      <div class="ts" style="font-size:11px; margin-bottom:6px;">${aktivLabel}</div>
+    // [NEU] 8: "nächsten/vorherigen Schritt zeigen" ausgrauen, sobald es keinen weiteren
+    // Schritt in diese Richtung gibt -- vorher blieb der Button aktiv aussehend, obwohl er
+    // ohne neue Antworten wirkungslos war.
+    const keinVorheriger = state.empfAktivBlock <= -1;
+    const keinNaechster = state.empfAktivBlock >= sichtbar.length - 1;
+    stepNav.innerHTML = `<div class="ts" style="font-size:var(--fs-micro); margin-bottom:6px;">${aktivLabel}</div>
       <div class="row" style="gap:8px;">
-        <button class="btn" onclick="seqStep(-1)"><i class="ti ti-eye-off"></i> vorherigen Schritt zeigen</button>
-        <button class="btn btn-primary" onclick="seqStep(1)"><i class="ti ti-eye"></i> nächsten Schritt zeigen</button>
-      </div>
-    </div>`;
+        <button class="btn" ${keinVorheriger?'disabled':''} onclick="seqStep(-1)"><i class="ti ti-eye-off"></i> vorherigen Schritt zeigen</button>
+        <button class="btn btn-primary" ${keinNaechster?'disabled':''} onclick="seqStep(1)"><i class="ti ti-eye"></i> nächsten Schritt zeigen</button>
+      </div>`;
   }
   const begrHtml = sichtbar.length
-    ? sichtbar.map((b,idx)=>`<div style="margin-bottom:4px;"><b>Schritt ${idx+1}:</b> ${b.begruendung}</div>`).join('')
+    ? sichtbar.map((b,idx)=>{
+        // [NEU] Unter der Schritt-Begründung: was die konkret eingesetzten Kategorien am
+        // Verstehenskern zeigen (nur wenn hinterlegt).
+        const bezuege = (b.kategorieIds||[]).map(k => CATS[k] && CATS[k].bezug ? `<div style="margin:2px 0 0 10px;">· <i>${CATS[k].label}:</i> ${CATS[k].bezug}</div>` : '').join('');
+        return `<div style="margin-bottom:8px;"><b>Schritt ${idx+1}:</b> ${b.begruendung}${bezuege}</div>`;
+      }).join('') + `<div style="margin-top:6px; font-size:var(--fs-micro); color:var(--text-muted);">Welches Kind je Kategorie vorgeschlagen wird: die Antwort, in der der Denkweg am deutlichsten erkennbar ist (KI-Einschätzung), bei Gleichstand die ausführlichere. Über „anderes Kind“ jederzeit tauschbar.</div>`
     : 'Noch keine Kategorie ist unter den eingegangenen Antworten vertreten.';
-  document.getElementById('empfehlung-erklaerung').innerHTML = begrHtml;
+  const erklaerungEl = document.getElementById('empfehlung-erklaerung');
+  // [NEU] Optionaler Einleitungssatz der Aufgabe (empfehlung_erklaerung) steht ÜBER den Schritt-Begründungen,
+  // ersetzt sie nicht mehr.
+  if(erklaerungEl) erklaerungEl.innerHTML = (AUFGABE_EMPFEHLUNG_ERKLAERUNG ? `<div style="margin-bottom:6px;">${AUFGABE_EMPFEHLUNG_ERKLAERUNG}</div>` : '') + begrHtml;
 }
 // "Frei": wie bisher manuell aus dem Pool bestückte Slots, jetzt mit einer Layout-Wahl
 // (nebeneinander/untereinander) statt eigener Tabs -- "untereinander" übernimmt das
@@ -1602,15 +1874,22 @@ function renderFrei(){
     if(child){
       const cat = CATS[child.cat];
       const onTafel = i < state.visibleCount.frei;
+      div.style.opacity = onTafel ? '1' : '0.8';
       div.onclick = ()=> openDetail(child.name);
-      div.innerHTML = `<div class="${cat.color}" style="border-radius:var(--radius) var(--radius) 0 0; padding:6px 8px;">
-        <div class="row" style="justify-content:space-between;"><b style="font-size:12px;">${i+1}. ${child.name} · ${cat.label}</b>
+      const headerInner = `<div class="row" style="justify-content:space-between;"><b style="font-size:var(--fs-small);">${i+1}. ${child.name} · ${cat.label}</b>
         <span style="display:flex; gap:6px; align-items:center;">
-          <span class="tag" style="background:${onTafel?'var(--bg-success)':'var(--surface-1)'}; color:${onTafel?'var(--text-success)':'var(--text-muted)'};">${onTafel?'auf Tafel':'noch verdeckt'}</span>
-          ${i>0 ? `<button class="navbtn" style="padding:4px 6px;" onclick="event.stopPropagation(); moveSlot(${i},-1)"><i class="ti ti-arrow-up" style="font-size:12px;"></i></button>` : ''}
-          ${i<slotIds.length-1 ? `<button class="navbtn" style="padding:4px 6px;" onclick="event.stopPropagation(); moveSlot(${i},1)"><i class="ti ti-arrow-down" style="font-size:12px;"></i></button>` : ''}
-        </span></div></div>
-        <div class="quote-box" style="border-top:none; border-radius:0 0 var(--radius) var(--radius); margin-top:0;">"${child.quote}"</div>
+          <span class="tag ${onTafel?'tag-success':'tag-neutral'}">${onTafel?'auf Tafel':'noch verdeckt'}</span>
+          ${i>0 ? `<button class="navbtn" style="padding:4px 6px;" onclick="event.stopPropagation(); moveSlot(${i},-1)"><i class="ti ti-arrow-up" style="font-size:var(--fs-small);"></i></button>` : ''}
+          ${i<slotIds.length-1 ? `<button class="navbtn" style="padding:4px 6px;" onclick="event.stopPropagation(); moveSlot(${i},1)"><i class="ti ti-arrow-down" style="font-size:var(--fs-small);"></i></button>` : ''}
+        </span></div>`;
+      const header = onTafel
+        ? `<div class="${cat.color}" style="border-radius:var(--radius) var(--radius) 0 0; padding:6px 8px;">${headerInner}</div>`
+        : `<div style="display:flex; border-radius:var(--radius) var(--radius) 0 0; overflow:hidden;">
+            <div class="${cat.color}" style="width:7px; flex-shrink:0;"></div>
+            <div style="flex:1; padding:6px 8px; background:var(--surface-1);">${headerInner}</div>
+          </div>`;
+      div.innerHTML = `${header}
+        <div class="quote-plain">"${child.quote}"</div>
         ${cat.nachfrage ? `<div class="live-frage-box">
           <div class="live-frage-label"><i class="ti ti-message-circle"></i> direkt stellbar</div>
           <div class="live-frage-text">${cat.nachfrage}</div>
@@ -1621,13 +1900,14 @@ function renderFrei(){
     }
     area.appendChild(div);
   });
-  const seqControls = document.getElementById('seq-controls');
-  seqControls.style.display = 'block';
-  seqControls.innerHTML = `
-    <div class="ts" style="font-size:11px; margin-bottom:6px;">${state.visibleCount.frei} von ${slotIds.length} auf der Tafel sichtbar</div>
+  const stepNav = document.getElementById('dashboard-step-nav');
+  const keinVorheriger = state.visibleCount.frei <= 0;
+  const keinNaechster = state.visibleCount.frei >= slotIds.length;
+  stepNav.innerHTML = `
+    <div class="ts" style="font-size:var(--fs-micro); margin-bottom:6px;">${state.visibleCount.frei} von ${slotIds.length} auf der Tafel sichtbar</div>
     <div class="row" style="gap:8px;">
-      <button class="btn" onclick="seqStep(-1)"><i class="ti ti-eye-off"></i> vorherige verbergen</button>
-      <button class="btn btn-primary" onclick="seqStep(1)"><i class="ti ti-eye"></i> nächste zuschalten</button>
+      <button class="btn" ${keinVorheriger?'disabled':''} onclick="seqStep(-1)"><i class="ti ti-eye-off"></i> vorherige verbergen</button>
+      <button class="btn btn-primary" ${keinNaechster?'disabled':''} onclick="seqStep(1)"><i class="ti ti-eye"></i> nächste zuschalten</button>
     </div>`;
 }
 function renderDashboard(){
@@ -1700,8 +1980,8 @@ function toggleErklaerung(){
 }
 function showInfo(title, text){
   document.getElementById('info-modal-body').innerHTML = `
-    <div style="font-size:14px; font-weight:500; margin-bottom:8px;">${title}</div>
-    <div class="ts" style="font-size:13px; line-height:1.5;">${text}</div>
+    <div style="font-size:var(--fs-body); font-weight:500; margin-bottom:8px;">${title}</div>
+    <div class="ts" style="font-size:var(--fs-small); line-height:1.5;">${text}</div>
     <button class="btn btn-primary" style="margin-top:14px;" onclick="document.getElementById('info-modal').classList.remove('visible')">Schließen</button>`;
   document.getElementById('info-modal').classList.add('visible');
 }
@@ -1785,7 +2065,7 @@ function renderTafelQR(){
     const beitrittsLink = basisUrl + "?geraet=kind&code=" + sitzungscode;
     new QRCode(box, { text: beitrittsLink, width: 140, height: 140 });
   } catch(e){
-    box.innerHTML = '<div class="ts" style="font-size:11px;">(QR-Bibliothek nicht geladen — Demo ohne Internetverbindung)</div>';
+    box.innerHTML = '<div class="ts" style="font-size:var(--fs-micro);">(QR-Bibliothek nicht geladen — Demo ohne Internetverbindung)</div>';
   }
 }
 function addSlot(){
@@ -1806,13 +2086,13 @@ function renderLegende(containerId, includeStatus, filterable){
   if(!el) return;
   let html = "";
   if(includeStatus){
-    html += `<span style="font-size:10px; color:var(--text-muted);"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;border:1px dashed var(--border-strong); margin-right:4px;"></span>offen</span>
-      <span style="font-size:10px; color:var(--text-muted);"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--fill-warning); margin-right:4px;"></span>läuft</span>
-      <span style="font-size:10px; color:var(--text-muted);"><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#FBE3C7; margin-right:4px;"></span>keine Einwilligung (schriftlich)</span>`;
+    html += `<span style="font-size:var(--fs-micro); color:var(--text-muted);"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;border:1px dashed var(--border-strong); margin-right:4px;"></span>offen</span>
+      <span style="font-size:var(--fs-micro); color:var(--text-muted);"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--fill-warning); margin-right:4px;"></span>läuft</span>
+      <span style="font-size:var(--fs-micro); color:var(--text-muted);"><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#FBE3C7; margin-right:4px;"></span>keine Einwilligung (schriftlich)</span>`;
   }
   if(filterable){
     const activeAlle = !state.poolFilter;
-    html += `<span onclick="setPoolFilter(null)" style="font-size:10px; cursor:pointer; padding:2px 7px; border-radius:10px; background:${activeAlle?'var(--bg-accent)':'transparent'}; color:${activeAlle?'var(--text-accent)':'var(--text-muted)'};">alle</span>`;
+    html += `<span onclick="setPoolFilter(null)" style="font-size:var(--fs-small); cursor:pointer; padding:3px 9px; border-radius:10px; background:${activeAlle?'var(--bg-accent)':'transparent'}; color:${activeAlle?'var(--text-accent)':'var(--text-muted)'};">alle</span>`;
   }
   Object.keys(CATS).forEach(k=>{
     const cat = CATS[k];
@@ -1821,7 +2101,7 @@ function renderLegende(containerId, includeStatus, filterable){
     const fg = active ? 'var(--text-accent)' : 'var(--text-muted)';
     const cursor = filterable ? 'cursor:pointer;' : '';
     const onclick = filterable ? `onclick="setPoolFilter('${k}')"` : '';
-    html += `<span ${onclick} style="font-size:10px; ${cursor} padding:2px 7px; border-radius:10px; background:${bg}; color:${fg};"><span class="${cat.color}" style="display:inline-block;width:10px;height:10px;border-radius:3px; margin-right:4px;"></span>${cat.label}${cat.typ==='Fehler'?' (Fehler)':''}</span>`;
+    html += `<span ${onclick} style="font-size:var(--fs-small); ${cursor} padding:3px 9px; border-radius:10px; background:${bg}; color:${fg};"><span class="${cat.color}" style="display:inline-block;width:14px;height:14px;border-radius:4px; margin-right:5px; vertical-align:-2px;"></span>${cat.label}${cat.typ==='Fehler'?' (Fehler)':''}</span>`;
   });
   el.innerHTML = html;
 }
@@ -1843,8 +2123,8 @@ function renderPool(){
     div.onclick = ()=> openDetail(p.name);
     const fn = didaktischeFunktion(p.cat);
     const fnIcon = fn ? DIDAKTISCHE_FUNKTION_META[fn].icon+' ' : '';
-    div.innerHTML = `<div class="row" style="justify-content:space-between;"><b style="font-size:12px;">${p.name}${inSlot?' <i class="ti ti-check" style="font-size:10px;"></i>':''}</b><span style="font-size:9px;">${fnIcon}${cat.label}</span></div>
-      <div class="ts" style="font-size:10px; margin-top:2px;">"${p.quote}"</div>`;
+    div.innerHTML = `<div class="row" style="justify-content:space-between;"><b style="font-size:var(--fs-small);">${p.name}${inSlot?' <i class="ti ti-check" style="font-size:var(--fs-micro);"></i>':''}</b><span style="font-size:var(--fs-micro);">${fnIcon}${cat.label}</span></div>
+      <div class="ts" style="font-size:var(--fs-micro); margin-top:2px;">"${p.quote}"</div>`;
     area.appendChild(div);
   });
 }
@@ -1866,9 +2146,9 @@ function renderDetail(){
   const inSlot = state.slots[state.activeTab].includes(child.name);
   document.getElementById('detail-body').innerHTML = `
     <div class="row" style="justify-content:space-between; margin-bottom:8px;">
-      <b style="font-size:14px;">${child.name}</b>
+      <b style="font-size:var(--fs-body);">${child.name}</b>
       <span class="row" style="gap:4px;">
-        ${child.wahl ? `<span class="tag" style="background:var(--surface-1); color:var(--text-secondary);">${child.wahl==='ja'?'Ja':'Nein'}</span>` : ''}
+        ${child.wahl ? `<span class="tag tag-neutral">${child.wahl==='ja'?'Ja':'Nein'}</span>` : ''}
         <span class="tag ${cat.color}">${cat.typ==='Fehler'?'⚠ ':''}${cat.label}</span>
       </span>
     </div>
@@ -1877,16 +2157,17 @@ function renderDetail(){
       <div class="live-frage-label"><i class="ti ti-message-circle"></i> direkt stellbar</div>
       <div class="live-frage-text">${cat.nachfrage}</div>
     </div>` : ''}
+    ${cat.bezug ? `<div class="ts" style="font-size:var(--fs-small); margin-top:10px; line-height:1.4;"><b>Bezug zum Verstehenskern:</b> ${cat.bezug}</div>` : ''}
     <div style="margin-top:12px;">
-      <label class="ts" style="font-size:11px;">Kategorie ändern:</label>
-      <select style="width:100%; font-size:12px; margin-top:4px;" onchange="recode('${child.name}', this.value)">
+      <label class="ts" style="font-size:var(--fs-micro);">Kategorie ändern:</label>
+      <select style="width:100%; font-size:var(--fs-small); margin-top:4px;" onchange="recode('${child.name}', this.value)">
         <option value="">(unverändert lassen)</option>
         ${Object.keys(CATS).filter(k=>!child.wahl || !CATS[k].gueltig_fuer || CATS[k].gueltig_fuer===child.wahl).map(k=>`<option value="${k}">${CATS[k].label}</option>`).join('')}
       </select>
     </div>
     ${state.activeTab === 'frei' ? `<button class="btn ${inSlot?'':'btn-primary'}" style="margin-top:14px;" onclick="toggleSlotFromDetail()">
       ${inSlot ? '<i class="ti ti-x"></i> Von der Tafel entfernen' : '<i class="ti ti-plus"></i> Für die Tafel auswählen'}
-    </button>` : `<div class="ts" style="font-size:11px; margin-top:14px;">Tafel-Auswahl erfolgt im Modus "Empfohlene Reihenfolge" über die Schritte selbst (Kind/Kategorie tauschen, überspringen).</div>`}
+    </button>` : `<div class="ts" style="font-size:var(--fs-micro); margin-top:14px;">Tafel-Auswahl erfolgt im Modus "Empfohlene Reihenfolge" über die Schritte selbst (Kind/Kategorie tauschen, überspringen).</div>`}
     <button class="btn" style="margin-top:8px;" onclick="closeDetail()">Schließen</button>
   `;
 }
@@ -1917,7 +2198,7 @@ function renderTafel(){
   }
   if(!state.answersVisibleOnTafel){
     area.className = '';
-    area.innerHTML = '<div class="ts" style="text-align:center; padding:24px;"><i class="ti ti-eye-off" style="font-size:20px;"></i><div style="margin-top:6px;">Antworten sind noch ausgeblendet</div></div>';
+    area.innerHTML = '<div class="ts" style="text-align:center; padding:24px;"><i class="ti ti-eye-off" style="font-size:var(--fs-lead);"></i><div style="margin-top:6px;">Antworten sind noch ausgeblendet</div></div>';
     return;
   }
   // [NEU] "Empfohlene Reihenfolge": ERSETZEN statt anhäufen -- nur der aktuell zugeschaltete
@@ -1942,7 +2223,7 @@ function renderTafel(){
       // genau das verraten, was Kategorie-Labels hier schon bisher nicht tun sollen.
       // Unterscheidung der nebeneinanderliegenden Karten erfolgt allein über Position + Text.
       div.className = 'c-tafel-neutral';
-      div.style.cssText = "border-radius:12px; padding:14px; font-size:14px;";
+      div.style.cssText = "border-radius:12px; padding:14px; font-size:var(--fs-body);";
       div.innerHTML = child.quote;
       area.appendChild(div);
     });
@@ -1960,9 +2241,9 @@ function renderTafel(){
     // [NEU] s. Kommentar im "empfohlen"-Zweig weiter oben -- auch im Frei-Tab keine
     // Kategorie-Farbe auf der Tafel, nur Position (und bei "untereinander" die Nummer).
     div.className = 'c-tafel-neutral';
-    div.style.cssText = "border-radius:12px; padding:14px; font-size:14px;" + (gestapelt ? " margin-bottom:12px; display:flex; gap:10px; align-items:flex-start;" : "");
+    div.style.cssText = "border-radius:12px; padding:14px; font-size:var(--fs-body);" + (gestapelt ? " margin-bottom:12px; display:flex; gap:10px; align-items:flex-start;" : "");
     div.innerHTML = gestapelt
-      ? `<div style="font-size:20px; font-weight:600; opacity:0.5; min-width:24px;">${i+1}</div><div>${child.quote}</div>`
+      ? `<div style="font-size:var(--fs-lead); font-weight:600; opacity:0.5; min-width:24px;">${i+1}</div><div>${child.quote}</div>`
       : child.quote;
     area.appendChild(div);
   });
@@ -1985,7 +2266,7 @@ function renderTafelSteuerung(){
   }
   el.innerHTML = `
     <button class="btn" style="flex:1;" onclick="seqStep(-1)"><i class="ti ti-chevron-left"></i> vorheriger Schritt</button>
-    <span class="ts" style="font-size:12px; white-space:nowrap;">${text}</span>
+    <span class="ts" style="font-size:var(--fs-small); white-space:nowrap;">${text}</span>
     <button class="btn btn-primary" style="flex:1;" onclick="seqStep(1)">nächster Schritt <i class="ti ti-chevron-right"></i></button>`;
 }
 function toggleTafelAufgabe(checked){
@@ -2038,10 +2319,10 @@ function renderPrioritaetsLeiste(){
   ];
   el.innerHTML = chips.map(c=>{
     const aktiv = prioritaetsFilter === c.key;
-    return `<div onclick="setPrioritaetsFilter('${c.key}')" style="cursor:pointer; display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:var(--radius); border:0.5px solid ${aktiv?'var(--border-accent)':'var(--border)'}; background:${aktiv?'var(--bg-accent)':'var(--surface-2)'};">
-      <span style="min-width:18px; text-align:center; font-weight:700; font-size:14px;">${c.n}</span>
+    return `<div onclick="setPrioritaetsFilter('${c.key}')" style="cursor:pointer; display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:var(--radius); border:1px solid ${aktiv?'var(--border-accent)':'var(--border)'}; background:${aktiv?'var(--bg-accent)':'var(--surface-2)'};">
+      <span style="min-width:18px; text-align:center; font-weight:700; font-size:var(--fs-body);">${c.n}</span>
       <span style="width:8px; height:8px; border-radius:50%; background:${c.dot}; flex-shrink:0;"></span>
-      <span style="font-size:11px; color:var(--text-secondary);">${c.text}</span>
+      <span style="font-size:var(--fs-micro); color:var(--text-secondary);">${c.text}</span>
     </div>`;
   }).join('');
 }
@@ -2104,7 +2385,7 @@ function renderHeatmap(){
       const hasConsent = consentState[s.id];
       const eintrag = state.pool.find(p=>p.name===s.name);
       const card = document.createElement('div');
-      card.style.cssText = "width:150px; border-radius:var(--radius); padding:8px; font-size:11px; line-height:1.35;";
+      card.style.cssText = "width:150px; border-radius:var(--radius); padding:8px; font-size:var(--fs-micro); line-height:1.35;";
       if(!hasConsent){
         card.style.background = '#FBE3C7'; card.style.color = 'var(--text-warning)';
         card.innerHTML = `<b>${s.name}</b><div style="margin-top:2px;">schriftlich, ohne digitales Tool</div>`;
@@ -2156,7 +2437,7 @@ function renderHeatmap(){
       el.style.background = '#FBE3C7';
       el.style.borderRadius = '8px';
       el.style.color = 'var(--text-warning)';
-      el.innerHTML = `<i class="ti ti-file-text" style="font-size:14px;"></i><div>${s.name}</div>`;
+      el.innerHTML = `<i class="ti ti-file-text" style="font-size:var(--fs-body);"></i><div>${s.name}</div>`;
     } else if(isFertig){
       el.className = CATS[status].color;
       el.style.borderRadius = '8px';
@@ -2168,7 +2449,7 @@ function renderHeatmap(){
       el.style.borderRadius = '8px';
       el.style.color = '#fff';
       el.style.position = 'relative';
-      el.innerHTML = `<div style="position:absolute; top:-14px; font-size:14px; letter-spacing:1px;">•••</div><div>${s.name}</div>`;
+      el.innerHTML = `<div style="position:absolute; top:-14px; font-size:var(--fs-body); letter-spacing:1px;">•••</div><div>${s.name}</div>`;
     } else {
       el.style.background = 'var(--surface-1)';
       el.style.border = '1px dashed var(--border-strong)';
@@ -2204,10 +2485,10 @@ function renderAntwortenliste(){
   el.innerHTML = eintraege.map(e=>{
     const hasConsent = consentState[e.symbol.id];
     if(!hasConsent){
-      return `<div class="pool-item"><span style="width:10px; height:10px; border-radius:3px; background:#FBE3C7; flex-shrink:0;"></span><b style="font-size:12px; width:64px; flex-shrink:0;">${e.symbol.name}</b><span class="ts" style="font-size:11px;">schriftlich bearbeitet (ohne digitales Tool)</span></div>`;
+      return `<div class="pool-item"><span style="width:10px; height:10px; border-radius:3px; background:#FBE3C7; flex-shrink:0;"></span><b style="font-size:var(--fs-small); width:64px; flex-shrink:0;">${e.symbol.name}</b><span class="ts" style="font-size:var(--fs-micro);">schriftlich bearbeitet (ohne digitales Tool)</span></div>`;
     }
     if(!e.antwort){
-      return `<div class="pool-item"><span style="width:10px; height:10px; border-radius:3px; border:1px dashed var(--border-strong); flex-shrink:0;"></span><b style="font-size:12px; width:64px; flex-shrink:0;">${e.symbol.name}</b><span class="ts" style="font-size:11px;">noch keine Antwort</span></div>`;
+      return `<div class="pool-item"><span style="width:10px; height:10px; border-radius:3px; border:1px dashed var(--border-strong); flex-shrink:0;"></span><b style="font-size:var(--fs-small); width:64px; flex-shrink:0;">${e.symbol.name}</b><span class="ts" style="font-size:var(--fs-micro);">noch keine Antwort</span></div>`;
     }
     const cat = CATS[e.antwort.cat];
     const fn = didaktischeFunktion(e.antwort.cat);
@@ -2216,10 +2497,10 @@ function renderAntwortenliste(){
       <span class="${cat.color}" style="width:10px; height:10px; border-radius:3px; margin-top:4px; flex-shrink:0;"></span>
       <div style="flex:1;">
         <div class="row" style="justify-content:space-between; gap:6px;">
-          <b style="font-size:12px;">${e.symbol.name} · ${cat.label}</b>
-          ${fnMeta ? `<span class="ts" style="font-size:10px; white-space:nowrap;" title="${fnMeta.lang}">${fnMeta.icon} ${fnMeta.kurz}</span>` : ''}
+          <b style="font-size:var(--fs-small);">${e.symbol.name} · ${cat.label}</b>
+          ${fnMeta ? `<span class="ts" style="font-size:var(--fs-micro); white-space:nowrap;" title="${fnMeta.lang}">${fnMeta.icon} ${fnMeta.kurz}</span>` : ''}
         </div>
-        <div style="font-size:12px; margin-top:2px;">${e.antwort.quote}</div>
+        <div style="font-size:var(--fs-small); margin-top:2px;">${e.antwort.quote}</div>
       </div>
     </div>`;
   }).join('');
@@ -2279,10 +2560,10 @@ function toggleAnonym(checked){
   renderKinderliste();
 }
 function showAusfuellBlatt(){
-  const rows = SYMBOLS.map(s=>`<div class="row" style="gap:10px; padding:6px 0; border-bottom:0.5px solid var(--border);"><span style="font-size:20px;">${s.icon}</span><span style="flex:1; border-bottom:1px solid var(--border-strong); height:18px;"></span></div>`).join('');
+  const rows = SYMBOLS.map(s=>`<div class="row" style="gap:10px; padding:6px 0; border-bottom:1px solid var(--border);"><span style="font-size:var(--fs-lead);">${s.icon}</span><span style="flex:1; border-bottom:1px solid var(--border-strong); height:18px;"></span></div>`).join('');
   document.getElementById('info-modal-body').innerHTML = `
-    <div style="font-size:14px; font-weight:500; margin-bottom:4px;">Ausfüll-Blatt</div>
-    <div class="ts" style="font-size:11px; margin-bottom:10px;">Zum Ausdrucken — von Hand ausfüllen, nicht digital speichern.</div>
+    <div style="font-size:var(--fs-body); font-weight:500; margin-bottom:4px;">Ausfüll-Blatt</div>
+    <div class="ts" style="font-size:var(--fs-micro); margin-bottom:10px;">Zum Ausdrucken — von Hand ausfüllen, nicht digital speichern.</div>
     ${rows}
     <button class="btn btn-primary" style="margin-top:14px;" onclick="document.getElementById('info-modal').classList.remove('visible')">Schließen</button>`;
   document.getElementById('info-modal').classList.add('visible');
@@ -2300,20 +2581,20 @@ function renderKinderliste(){
     div.className = 'pool-item';
     div.style.flexWrap = 'wrap';
     const nameSpan = anonymMode
-      ? `<span class="ts" style="flex:1; font-size:12px;">(anonym)</span>`
-      : `<span style="flex:1; font-size:13px;">${s.name}</span>`;
+      ? `<span class="ts" style="flex:1; font-size:var(--fs-small);">(anonym)</span>`
+      : `<span style="flex:1; font-size:var(--fs-small);">${s.name}</span>`;
     const verfuegbareSprachen = ['de', ...AUFGABE_UEBERSETZUNGEN.map(u=>u.sprache)];
-    const langSelect = `<select onchange="setChildLanguage('${s.id}', this.value)" style="font-size:11px; padding:2px 4px; border-radius:6px; border:0.5px solid var(--border);">
+    const langSelect = `<select onchange="setChildLanguage('${s.id}', this.value)" style="font-size:var(--fs-micro); padding:2px 4px; border-radius:6px; border:1px solid var(--border);">
         ${verfuegbareSprachen.map(k=>`<option value="${k}" ${childLanguage[s.id]===k?'selected':''}>${(SPRACH_META[k]||{flag:'🌐'}).flag} ${(SPRACH_META[k]||{label:k}).label}</option>`).join('')}
       </select>`;
-    const loeschButton = `<button class="navbtn" onclick="loescheKindVollstaendig('${s.id}')" style="font-size:10px; color:var(--fill-danger); border-color:var(--fill-danger);"><i class="ti ti-trash"></i> Löschen</button>`;
+    const loeschButton = `<button class="navbtn btn-danger-outline" onclick="loescheKindVollstaendig('${s.id}')" style="font-size:var(--fs-micro);"><i class="ti ti-trash"></i> Löschen</button>`;
     if(hasConsent){
       div.innerHTML = `<div class="icon-circle c-teal">${s.icon}</div>${nameSpan}${langSelect}
-        <button class="navbtn" onclick="toggleConsent('${s.id}')" style="font-size:10px;">Einwilligung widerrufen</button>${loeschButton}`;
+        <button class="navbtn" onclick="toggleConsent('${s.id}')" style="font-size:var(--fs-micro);">Einwilligung widerrufen</button>${loeschButton}`;
     } else {
       div.innerHTML = `<div class="icon-circle c-gray">${s.icon}</div>${nameSpan}
-        <span class="tag" style="background:var(--bg-warning); color:var(--text-warning); margin-right:6px;">keine Einwilligung</span>
-        <button class="navbtn" onclick="toggleConsent('${s.id}')" style="font-size:10px;">rückgängig</button>
+        <span class="tag tag-warning" style="margin-right:6px;">keine Einwilligung</span>
+        <button class="navbtn" onclick="toggleConsent('${s.id}')" style="font-size:var(--fs-micro);">rückgängig</button>
         <button class="navbtn" onclick="showInfo('Blatt erzeugen', 'Demo: erzeugt PDF — Aufgabentext + Bildmaterial + Antwortfeld zum handschriftlichen Bearbeiten.')"><i class="ti ti-printer"></i> Blatt erzeugen</button>${loeschButton}`;
     }
     el.appendChild(div);
@@ -2400,8 +2681,8 @@ function renderSitzplan(){
       el.style.cssText = `position:absolute; left:${pos.x}%; top:${pos.y}%; transform:translate(-50%,-50%); display:flex; flex-direction:column; align-items:center; cursor:pointer;`;
       el.onclick = (e)=>{ e.stopPropagation(); sitzplanState.armed = s.id; renderSitzplan(); };
       const border = sitzplanState.armed===s.id ? '2px solid var(--border-accent)' : '1px solid var(--border-strong)';
-      el.innerHTML = `<div style="width:40px; height:40px; border-radius:50%; background:var(--surface-1); border:${border}; display:flex; align-items:center; justify-content:center; font-size:18px;">${s.icon}</div>
-        <div style="font-size:9px; color:var(--text-secondary); margin-top:2px; white-space:nowrap;">${s.name}</div>`;
+      el.innerHTML = `<div style="width:40px; height:40px; border-radius:50%; background:var(--surface-1); border:${border}; display:flex; align-items:center; justify-content:center; font-size:var(--fs-title);">${s.icon}</div>
+        <div style="font-size:var(--fs-micro); color:var(--text-secondary); margin-top:2px; white-space:nowrap;">${s.name}</div>`;
       canvas.appendChild(el);
     }
   });
@@ -2413,7 +2694,7 @@ function renderSitzplan(){
     b.className='navbtn';
     b.style.cssText = "display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 8px; min-width:48px;";
     if(sitzplanState.armed===s.id) b.classList.add('active');
-    b.innerHTML = `<span style="font-size:20px;">${s.icon}</span><span style="font-size:9px;">${s.name}</span>`;
+    b.innerHTML = `<span style="font-size:var(--fs-lead);">${s.icon}</span><span style="font-size:var(--fs-micro);">${s.name}</span>`;
     b.onclick = ()=>{ sitzplanState.armed = (sitzplanState.armed===s.id) ? null : s.id; renderSitzplan(); };
     pool.appendChild(b);
   });

@@ -638,7 +638,7 @@ function uebernehmeAntwort(row){
   const symbolEntry = SYMBOLS.find(s => s.kindId === row.kind_id);
   const name = symbolEntry ? symbolEntry.name : "Unbekannt";
   state.pool = state.pool.filter(p=>p.name!==name);
-  state.pool.push({name, cat: row.kategorie, quote: row.transkript, audioPfad: row.audio_pfad || null, wahl: row.antwort_wahl || null, evidenz: [1,2,3].includes(row.evidenz) ? row.evidenz : null});
+  state.pool.push({name, cat: row.kategorie, quote: row.transkript, audioPfad: row.audio_pfad || null, wahl: row.antwort_wahl || null});
   if(row.symbol_id) state.heatmapStatus[row.symbol_id] = row.kategorie;
 }
 function aktualisierenAnsicht(){
@@ -656,15 +656,13 @@ function aktualisierenAnsicht(){
 // oder anderen Feldern abgeleitet. Ob eine tragfähige Kategorie ein bereits ausgereiftes
 // ("praezise") oder ein noch unterwegs befindliches Verständnis ("unpraezise")
 // repräsentiert, ist ein inhaltliches Urteil über die Kategorie selbst.
-// [NEU] "bezug" (Bezug zum Verstehenskern) in den Demo-Kategorien nur als PLATZHALTER -- die echten
-// Formulierungen schreibt das Fachdidaktik-Team pro Aufgabe im Aufgaben-Autor:innen-Tool.
 let CATS = {
-  korrekt_begruendet: {label:"richtig, begründet", color:"c-teal", typ:"tragfähige Strategie", praezision:"praezise", gueltig_fuer:null, def:"Zahl 6625 korrekt UND eine Stellenwert- oder Bündelungsregel wird erkennbar als Begründung genannt.", nachfrage:"Warum musstest du die 42 Zehner überhaupt umwandeln?", bezug:"Macht sichtbar, dass 10 Zehner zu 1 Hunderter gebündelt werden und die Ziffern deshalb in der Stellenwerttafel stimmen."},
-  korrekt_unbegruendet: {label:"richtig, unbegründet", color:"c-mint", typ:"tragfähige Strategie", praezision:"unpraezise", gueltig_fuer:null, def:"Zahl 6625 korrekt, aber keine erkennbare inhaltliche Begründung -- das Verständnis ist noch nicht ausdifferenziert genug, um es zu artikulieren.", nachfrage:"Wie bist du auf die 6625 gekommen? Was ist mit den 42 Zehnern passiert?", bezug:"Das Ergebnis stimmt, der Bündelungsgedanke bleibt aber unausgesprochen – Anlass, ihn gemeinsam zu explizieren."},
-  fehler_unbundled: {label:"Fehler: nicht entbündelt (62425)", color:"c-coral", typ:"Fehler", gueltig_fuer:null, def:"42 Zehner werden unverändert/roh in die Zehnerspalte übernommen, keine Regruppierung stattgefunden.", nachfrage:"Darf in einem Kästchen der Stellenwerttafel mehr als eine Ziffer stehen?", bezug:"Zeigt, dass Zehner gezählt, aber nicht zu Hundertern gebündelt werden – die Regel 10 Zehner = 1 Hunderter fehlt."},
-  fehler_stellenwert_ignoriert: {label:"Fehler: Stellenwert ignoriert (6247)", color:"c-purple", typ:"Fehler", gueltig_fuer:null, def:"Die '2' von 42 wird fälschlich als Einer-Ziffer gedeutet und zu den 5 Einern addiert.", nachfrage:"Was bedeutet die '2' in '42 Zehner' — ist das eine Einer-Ziffer?", bezug:"Zeigt, dass die Ziffer 2 nicht als Anzahl der Zehner gedeutet wird – der Stellenwert der Ziffer wird verfehlt."},
-  fehler_mit_buendelungsversuch: {label:"Fehler, mit Bündelungsansatz", color:"c-amber", typ:"Fehler", gueltig_fuer:null, def:"Andere falsche Endzahl, aber im Text wird erkennbar eine Bündelungs- oder Stellenwertregel artikuliert.", nachfrage:"Deine Erklärung zur Umwandlung klingt richtig — wo genau ist beim Rechnen etwas schiefgelaufen?", bezug:"Die Bündelungsidee ist da, wird beim Rechnen aber nicht konsequent umgesetzt – Anschlussstelle für gezieltes Nachfragen."},
-  fehler_ohne_erklaerung: {label:"Fehler ohne Begründung", color:"c-rose", typ:"Fehler", gueltig_fuer:null, def:"Andere falsche Endzahl, ohne dass eine inhaltliche Begründung erkennbar ist.", nachfrage:"Wie bist du vorgegangen? Erzähl mal Schritt für Schritt.", bezug:"Der Denkweg ist nicht erkennbar – er muss erst sichtbar werden, bevor der Verstehenskern berührt werden kann."},
+  korrekt_begruendet: {label:"richtig, begründet", color:"c-teal", typ:"tragfähige Strategie", praezision:"praezise", gueltig_fuer:null, def:"Zahl 6625 korrekt UND eine Stellenwert- oder Bündelungsregel wird erkennbar als Begründung genannt.", nachfrage:"Warum musstest du die 42 Zehner überhaupt umwandeln?"},
+  korrekt_unbegruendet: {label:"richtig, unbegründet", color:"c-mint", typ:"tragfähige Strategie", praezision:"unpraezise", gueltig_fuer:null, def:"Zahl 6625 korrekt, aber keine erkennbare inhaltliche Begründung -- das Verständnis ist noch nicht ausdifferenziert genug, um es zu artikulieren.", nachfrage:"Wie bist du auf die 6625 gekommen? Was ist mit den 42 Zehnern passiert?"},
+  fehler_unbundled: {label:"Fehler: nicht entbündelt (62425)", color:"c-coral", typ:"Fehler", gueltig_fuer:null, def:"42 Zehner werden unverändert/roh in die Zehnerspalte übernommen, keine Regruppierung stattgefunden.", nachfrage:"Darf in einem Kästchen der Stellenwerttafel mehr als eine Ziffer stehen?"},
+  fehler_stellenwert_ignoriert: {label:"Fehler: Stellenwert ignoriert (6247)", color:"c-purple", typ:"Fehler", gueltig_fuer:null, def:"Die '2' von 42 wird fälschlich als Einer-Ziffer gedeutet und zu den 5 Einern addiert.", nachfrage:"Was bedeutet die '2' in '42 Zehner' — ist das eine Einer-Ziffer?"},
+  fehler_mit_buendelungsversuch: {label:"Fehler, mit Bündelungsansatz", color:"c-amber", typ:"Fehler", gueltig_fuer:null, def:"Andere falsche Endzahl, aber im Text wird erkennbar eine Bündelungs- oder Stellenwertregel artikuliert.", nachfrage:"Deine Erklärung zur Umwandlung klingt richtig — wo genau ist beim Rechnen etwas schiefgelaufen?"},
+  fehler_ohne_erklaerung: {label:"Fehler ohne Begründung", color:"c-rose", typ:"Fehler", gueltig_fuer:null, def:"Andere falsche Endzahl, ohne dass eine inhaltliche Begründung erkennbar ist.", nachfrage:"Wie bist du vorgegangen? Erzähl mal Schritt für Schritt."},
   keine_bearbeitung: {label:"keine Bearbeitung", color:"c-gray", typ:null, gueltig_fuer:null, def:"Kein Eintrag / keine Antwort vorhanden.", nachfrage:""},
   unklar: {label:"unklar", color:"c-gray", typ:null, gueltig_fuer:null, def:"Keiner Kategorie sicher zuordenbar", nachfrage:""}
 };
@@ -737,6 +735,11 @@ let istAdmin = false;            // s. uebernehmeLogin() -- steuert nur die Sich
 // heute schon bewusst nicht tun (s. Anforderungsdokument 2.4b).
 const FARBEN_FEHLER = ['c-teal', 'c-blue', 'c-purple', 'c-cyan', 'c-indigo', 'c-petrol'];
 const FARBEN_TRAGFAEHIG = ['c-coral', 'c-amber', 'c-rose', 'c-peach', 'c-gold', 'c-terra'];
+// [NEU] Manuelle Farbwahl pro Kategorie (Feld "farbe" in der YAML, z.B. "farbe: indigo") --
+// alle 12 Töne sind bewusst so kuratiert, dass keiner wie ein Ampel-Rot/-Grün wirkt, daher
+// dürfen sie FREI jedem Kategorietyp zugeordnet werden (nicht nur der eigenen Familie).
+// Ohne "farbe" greift weiterhin die automatische Zuweisung nach Familie weiter unten.
+const ALLE_FARBEN = FARBEN_FEHLER.concat(FARBEN_TRAGFAEHIG);
 const FARBE_HOUSEKEEPING = 'c-gray';
 
 function ladeAufgabe(config) {
@@ -783,18 +786,29 @@ function ladeAufgabe(config) {
       fehler.push(`Kategorie "${k.kategorie_id}": gueltig_fuer muss "ja" oder "nein" sein, nicht "${k.gueltig_fuer}".`);
     }
 
-    // [NEU] Farbfamilie richtet sich nach kategorietyp statt nach reiner Reihenfolge. Ein
-    // (noch) ungültiger kategorietyp bekommt vorläufig Housekeeping-Grau -- die eigentliche
-    // Fehlermeldung dazu kommt weiter unten unverändert.
+    // [NEU] Manuelle Farbe (Feld "farbe") hat Vorrang vor der automatischen Familienzuweisung.
+    // Housekeeping bleibt immer grau, unabhängig von "farbe" (falls versehentlich gesetzt).
     let color;
-    const palette = !istHousekeeping ? FARBEN_NACH_TYP[k.kategorietyp] : null;
-    if (istHousekeeping || !palette) {
+    if (istHousekeeping) {
       color = FARBE_HOUSEKEEPING;
-    } else if (farbIndex[k.kategorietyp] >= palette.length) {
-      fehler.push(`Mehr als ${palette.length} Kategorien vom Typ "${k.kategorietyp}" in dieser Aufgabe -- die Farbfamilie in der CSS muss zuerst erweitert werden.`);
-      color = FARBE_HOUSEKEEPING;
+    } else if (k.farbe) {
+      const klasse = 'c-' + k.farbe;
+      if (!ALLE_FARBEN.includes(klasse)) {
+        fehler.push(`Kategorie "${k.kategorie_id}": farbe "${k.farbe}" ist nicht bekannt -- erlaubt sind: ${ALLE_FARBEN.map(f=>f.slice(2)).join(', ')}.`);
+        color = FARBE_HOUSEKEEPING;
+      } else {
+        color = klasse;
+      }
     } else {
-      color = palette[farbIndex[k.kategorietyp]++];
+      const palette = FARBEN_NACH_TYP[k.kategorietyp];
+      if (!palette) {
+        color = FARBE_HOUSEKEEPING; // ungültiger kategorietyp -- Fehlermeldung kommt weiter unten
+      } else if (farbIndex[k.kategorietyp] >= palette.length) {
+        fehler.push(`Mehr als ${palette.length} Kategorien vom Typ "${k.kategorietyp}" in dieser Aufgabe ohne eigene "farbe" -- entweder die Farbfamilie in der CSS erweitern oder weiteren Kategorien eine manuelle "farbe" geben.`);
+        color = FARBE_HOUSEKEEPING;
+      } else {
+        color = palette[farbIndex[k.kategorietyp]++];
+      }
     }
 
     if (k.kategorietyp === 'tragfähige Strategie' && k.praezision && !['praezise','unpraezise'].includes(k.praezision)) {
@@ -811,13 +825,12 @@ function ladeAufgabe(config) {
     CATS[k.kategorie_id] = {
       label: k.bezeichnung, color, typ: k.kategorietyp ?? null, praezision: k.praezision ?? null,
       gueltig_fuer: k.gueltig_fuer ?? null, def: k.kurzdefinition, nachfrage: k.nachfrage_impuls ?? null,
-      // [NEU] Bezug zum Verstehenskern: nur für die Lehrkraft (Kartendetail + "Warum diese Reihenfolge?"),
-      // geht NICHT an die KI-Kategorisierung und erscheint nie auf der Tafel.
-      bezug: (k.verstehenskern_bezug || '').trim() || null,
       // [NEU] Referenzbeispiele werden jetzt tatsächlich mitgespeichert -- vorher wurden sie
       // beim Einlesen geparst, aber nirgends abgelegt und erreichten dadurch nie die
       // KI-Kategorisierung, obwohl der Standard-Klassifikations-Prompt genau das behauptet.
-      beispiele: Array.isArray(k.referenzbeispiele) ? k.referenzbeispiele.filter(r => (r||'').trim()) : []
+      beispiele: Array.isArray(k.referenzbeispiele) ? k.referenzbeispiele.filter(r => (r||'').trim()) : [],
+      // [NEU] Grundlage für die automatisch komponierte Baustein-Begründung, s. berechneEmpfBloecke().
+      verstehenskern_bezug: (k.verstehenskern_bezug || '').trim() || null
     };
   });
 
@@ -841,17 +854,17 @@ function ladeAufgabe(config) {
   // unterschiedliche Fehler gegeneinander, oder ["tragfaehig","tragfaehig"] für zwei
   // unterschiedliche tragfähige Wege -- entspricht den drei Vergleichsarten, die früher
   // vergleichsArt() aus einer MOST-Kombination ablas). WELCHE Kategorie einen Baustein
-  // konkret füllt, steht nicht im Baustein selbst, sondern ergibt sich zur Laufzeit aus
-  // fehler_prioritaet/tragfaehig_prioritaet: die höchstpriorisierten tatsächlich
-  // vorgekommenen Kategorien des jeweiligen Pools werden der Reihe nach verteilt, ohne
-  // eine Kategorie doppelt zu vergeben. Kommt eine Kategorie nicht vor (oder braucht ein
-  // gleicher-Pool-Vergleich zwei, aber nur eine ist da), entfällt der Baustein automatisch,
-  // s. berechneEmpfBloecke(). Eine "Anschlussfrage" gibt es bewusst nicht mehr als eigenes
-  // Feld -- Einstiegssatz (Impuls) und die Live-Frage je Kategorie decken das ab.
-  // [NEU] Optionales Feld "begruendung" je Baustein: fachdidaktische Begründung (Bezug: Verstehenskern),
-  // die unter "Warum diese Reihenfolge?" erscheint. Ersetzt die frühere Rang-Angabe aus der
-  // Prioritätsliste, die nur den Algorithmus beschrieb, nicht den didaktischen Grund.
-  const ERLAUBTE_POOLS = ['fehler', 'tragfaehig'];
+  // [NEU] Bausteine referenzieren jetzt DIREKT eine (isoliert) bzw. zwei (vergleich) echte
+  // kategorie_id -- keine abstrakten "pools" mehr. Das löst ein Autoring-Problem: vorher
+  // ergab sich die konkret gezeigte Kategorie erst zur Laufzeit aus fehler_prioritaet/
+  // tragfaehig_prioritaet, wodurch eine pro-Baustein-Begründung nie wusste, für welche
+  // Kategorie sie eigentlich galt. Die Begründung ("Warum dieser Schritt?") kommt jetzt
+  // automatisch aus verstehenskern_bezug der referenzierten Kategorie(n) -- kein separates
+  // begruendung-Feld mehr. fehler_prioritaet/tragfaehig_prioritaet bleiben trotzdem
+  // bestehen, werden aber nur noch für die Sortierung im freien Kategorie-Pool und die
+  // Simulationsvorschau im Autoring-Tool genutzt, nicht mehr fürs Auffüllen der Bausteine.
+  // Kommt für eine referenzierte Kategorie keine tatsächliche Antwort rein, entfällt der
+  // Baustein automatisch, s. berechneEmpfBloecke().
   const FEHLER_PRIORITAET = a.fehler_prioritaet || [];
   pruefeKombination(FEHLER_PRIORITAET, 'fehler_prioritaet');
   FEHLER_PRIORITAET.forEach(id => {
@@ -866,18 +879,30 @@ function ladeAufgabe(config) {
   const BAUSTEINE = (a.bausteine || []).map((b, i) => {
     if (!ERLAUBTE_BAUSTEIN_TYPEN.includes(b.typ)) fehler.push(`bausteine[${i}]: typ muss "isoliert" oder "vergleich" sein, nicht "${b.typ}".`);
     if (b.typ === 'isoliert') {
-      const pool = b.pool || 'fehler';
-      if (!ERLAUBTE_POOLS.includes(pool)) fehler.push(`bausteine[${i}]: pool muss "fehler" oder "tragfaehig" sein, nicht "${b.pool}".`);
-      return { typ: b.typ, pools: [pool], einstiegssatz: (b.einstiegssatz || '').trim(), begruendung: (b.begruendung || '').trim() };
+      const katId = b.kategorie_id;
+      if (!katId || typeof katId !== 'string') {
+        fehler.push(`bausteine[${i}]: kategorie_id fehlt oder ist kein Text.`);
+      } else if (!CATS[katId]) {
+        fehler.push(`bausteine[${i}]: kategorie_id "${katId}" ist keine bekannte Kategorie.`);
+      } else if (!CATS[katId].typ) {
+        fehler.push(`bausteine[${i}]: kategorie_id "${katId}" ist eine Housekeeping-Kategorie (kein kategorietyp) -- als Baustein nicht sinnvoll.`);
+      }
+      return { typ: b.typ, kategorie_id: katId, einstiegssatz: (b.einstiegssatz || '').trim() };
     }
     if (b.typ === 'vergleich') {
-      const pools = b.pools || ['fehler', 'tragfaehig'];
-      if (!Array.isArray(pools) || pools.length !== 2 || pools.some(p => !ERLAUBTE_POOLS.includes(p))) {
-        fehler.push(`bausteine[${i}]: pools muss ein Array aus genau zwei Werten "fehler"/"tragfaehig" sein.`);
+      const ids = b.kategorie_ids;
+      if (!Array.isArray(ids) || ids.length !== 2) {
+        fehler.push(`bausteine[${i}]: kategorie_ids muss ein Array aus genau zwei kategorie_id sein.`);
+      } else {
+        ids.forEach(katId => {
+          if (!CATS[katId]) fehler.push(`bausteine[${i}]: kategorie_id "${katId}" ist keine bekannte Kategorie.`);
+          else if (!CATS[katId].typ) fehler.push(`bausteine[${i}]: kategorie_id "${katId}" ist eine Housekeeping-Kategorie (kein kategorietyp) -- als Baustein nicht sinnvoll.`);
+        });
+        if (ids[0] === ids[1]) fehler.push(`bausteine[${i}]: kategorie_ids vergleicht dieselbe Kategorie mit sich selbst.`);
       }
-      return { typ: b.typ, pools, einstiegssatz: (b.einstiegssatz || '').trim(), begruendung: (b.begruendung || '').trim() };
+      return { typ: b.typ, kategorie_ids: Array.isArray(ids) ? ids : [], einstiegssatz: (b.einstiegssatz || '').trim() };
     }
-    return { typ: b.typ, pools: [], einstiegssatz: (b.einstiegssatz || '').trim(), begruendung: (b.begruendung || '').trim() };
+    return { typ: b.typ, einstiegssatz: (b.einstiegssatz || '').trim() };
   });
 
   const AUFGABE_UEBERSETZUNGEN = (a.uebersetzungen || []).map(u => ({ sprache: u.sprache, text: u.text }));
@@ -1163,16 +1188,15 @@ async function ladeAufgabeFuerSitzung(code){
   aktiviereAufgabe(data);
 }
 
-// [NEU] "evidenz" der Demo-Kinder nur als PLATZHALTER (echte Sitzungen bekommen den Wert von kategorisieren.ts).
 let state = {
   pool: [
-    {name:"Mika", cat:"korrekt_begruendet", quote:"10 Zehner sind ein Hunderter, also sind 42 Zehner 4 Hunderter und 2 Zehner übrig. Mit den 6 Tausendern, 2 Hundertern und 5 Einern macht das 6625.", evidenz:3},
-    {name:"Tom", cat:"korrekt_begruendet", quote:"Ich hab 42 mal 10 gerechnet, das sind 420. Plus 6000, 200 und 5 macht 6625.", evidenz:2},
-    {name:"Ida", cat:"korrekt_unbegruendet", quote:"6625, weil ich das so eingetragen habe.", evidenz:1},
-    {name:"Lian", cat:"fehler_mit_buendelungsversuch", quote:"6000+200+40+7=6247, weil die Zehner zu Hundertern werden.", evidenz:3},
-    {name:"Ada", cat:"fehler_unbundled", quote:"6 Tausender, 2 Hunderter, 42 Zehner, 5 Einer -- also 62425.", evidenz:2},
-    {name:"Ben", cat:"fehler_stellenwert_ignoriert", quote:"Ich hab die 2 von der 42 zur 5 von den Einern gerechnet.", evidenz:2},
-    {name:"Nora", cat:"fehler_ohne_erklaerung", quote:"42 + 5 = 47.", evidenz:1}
+    {name:"Mika", cat:"korrekt_begruendet", quote:"10 Zehner sind ein Hunderter, also sind 42 Zehner 4 Hunderter und 2 Zehner übrig. Mit den 6 Tausendern, 2 Hundertern und 5 Einern macht das 6625."},
+    {name:"Tom", cat:"korrekt_begruendet", quote:"Ich hab 42 mal 10 gerechnet, das sind 420. Plus 6000, 200 und 5 macht 6625."},
+    {name:"Ida", cat:"korrekt_unbegruendet", quote:"6625, weil ich das so eingetragen habe."},
+    {name:"Lian", cat:"fehler_mit_buendelungsversuch", quote:"6000+200+40+7=6247, weil die Zehner zu Hundertern werden."},
+    {name:"Ada", cat:"fehler_unbundled", quote:"6 Tausender, 2 Hunderter, 42 Zehner, 5 Einer -- also 62425."},
+    {name:"Ben", cat:"fehler_stellenwert_ignoriert", quote:"Ich hab die 2 von der 42 zur 5 von den Einern gerechnet."},
+    {name:"Nora", cat:"fehler_ohne_erklaerung", quote:"42 + 5 = 47."}
   ],
   slots: {
     empfohlen: [],
@@ -1202,53 +1226,18 @@ let state = {
 // Ein Vergleich könnte stattdessen genauso pools:["fehler","fehler"] (zwei unterschiedliche
 // Fehler gegeneinander) oder ["tragfaehig","tragfaehig"] (zwei unterschiedliche tragfähige
 // Wege) sein -- s. buendeln_6t2h42z5e.yaml für ein Beispiel mit Fehler-gegen-Fehler.
-// [NEU] "begruendung" hier nur als PLATZHALTER für die Demo -- die echten Formulierungen schreibt
-// das Fachdidaktik-Team pro Aufgabe im Aufgaben-Autor:innen-Tool.
 let BAUSTEINE = [
-  { typ: "isoliert", pools: ["fehler"], einstiegssatz: "Schauen wir uns erst an, wie ein Kind mit den 42 Zehnern umgegangen ist.",
-    begruendung: "Ein einzelner Weg macht sichtbar, was beim Bündeln und Entbündeln passiert, bevor verglichen wird." },
-  { typ: "isoliert", pools: ["fehler"], einstiegssatz: "Hier ist noch ein anderer Weg mit den 42 Zehnern.",
-    begruendung: "Ein zweiter Weg zeigt, dass der Umgang mit den 42 Zehnern unterschiedlich ausfallen kann – die Klasse fragt, was das Bündeln jeweils leistet." },
-  { typ: "vergleich", pools: ["fehler", "tragfaehig"], einstiegssatz: "Jetzt vergleichen wir das mit einer Erklärung, die zur richtigen Zahl führt.",
-    begruendung: "Der Vergleich führt zum Verstehenskern zurück: Warum muss gebündelt werden, damit der Stellenwert stimmt?" }
+  { typ: "isoliert", pools: ["fehler"], einstiegssatz: "Schauen wir uns erst an, wie ein Kind mit den 42 Zehnern umgegangen ist." },
+  { typ: "isoliert", pools: ["fehler"], einstiegssatz: "Hier ist noch ein anderer Weg mit den 42 Zehnern." },
+  { typ: "vergleich", pools: ["fehler", "tragfaehig"], einstiegssatz: "Jetzt vergleichen wir das mit einer Erklärung, die zur richtigen Zahl führt." }
 ];
 // [NEU] Reihenfolge = Priorität. Die höchstpriorisierten tatsächlich vorgekommenen Fehler
 // füllen zuerst die Isoliert-Bausteine, der nächste verbleibende füllt den Vergleich.
 let FEHLER_PRIORITAET = ["fehler_stellenwert_ignoriert", "fehler_unbundled", "fehler_mit_buendelungsversuch", "fehler_ohne_erklaerung"];
 let TRAGFAEHIG_PRIORITAET = ["korrekt_begruendet", "korrekt_unbegruendet"];
 
-// [NEU] Kindauswahl je Kategorie: statt "das erste Kind" wird die gehaltvollste Antwort
-// vorgeschlagen. Reihenfolge der Kriterien:
-//   1. Evidenz (1-3, KI-Einschätzung in kategorisieren.ts: wie deutlich wird der Denkweg
-//      erkennbar) -- fehlt der Wert (ältere Antworten, KI-Ausfall), zählt er als 0
-//   2. bereinigte Länge des Transkripts (ohne Füllwörter und unmittelbare Wiederholungen,
-//      bei LAENGE_DECKEL Wörtern gedeckelt, damit Vielreden nicht automatisch gewinnt)
-//   3. bei Gleichstand: das früher eingegangene Kind (Reihenfolge im Pool)
-// Nur ein VORSCHLAG -- die Lehrkraft kann jederzeit über "anderes Kind" tauschen.
-const FUELLWOERTER = new Set(['äh','ähm','öh','hm','hmm','also','halt','quasi','ok','okay']);
-const LAENGE_DECKEL = 40;
-function inhaltswoerterAnzahl(text){
-  const woerter = (text || '').toLowerCase().replace(/[.,;:!?()\"„“]/g, ' ').split(/\s+/).filter(Boolean);
-  let anzahl = 0, vorheriges = null;
-  for(const w of woerter){
-    if(FUELLWOERTER.has(w) || w === vorheriges) continue;
-    anzahl++; vorheriges = w;
-  }
-  return anzahl;
-}
-function bestesKind(katId){
-  let bestes = null, besteWerte = null;
-  state.pool.forEach(p => {
-    if(p.cat !== katId) return;
-    const werte = [p.evidenz || 0, Math.min(inhaltswoerterAnzahl(p.quote), LAENGE_DECKEL)];
-    const besser = !bestes || werte[0] > besteWerte[0] || (werte[0] === besteWerte[0] && werte[1] > besteWerte[1]);
-    if(besser){ bestes = p; besteWerte = werte; }
-  });
-  return bestes;
-}
-
 // [NEU] Löst BAUSTEINE gegen die tatsächlich eingegangenen Antworten auf: pro Baustein die
-// konkrete(n) Kategorie(n) + das (gehaltvollste, s. bestesKind()) Kind dazu, oder uebersprungen:'auto',
+// konkrete(n) Kategorie(n) + das (zuerst eingegangene) Kind dazu, oder uebersprungen:'auto',
 // wenn keine passende Kategorie vorkam. Generisch über beide Pools (fehler/tragfaehig) --
 // ein Vergleichs-Baustein kann je nach "pools" zwei Fehler, zwei tragfähige Wege, oder einen
 // von jedem gegenüberstellen; jeder Pool wird unabhängig fortlaufend "verbraucht", damit
@@ -1256,47 +1245,43 @@ function bestesKind(katId){
 // true ist -- sobald die Lehrkraft manuell eingreift, bleibt state.empfBloecke unverändert.
 function berechneEmpfBloecke(){
   const POOL_LABEL = { fehler: 'Fehler', tragfaehig: 'tragfähige Antwort' };
-  // Neutraler Standardsatz, falls für einen Baustein keine begruendung hinterlegt ist (bewusst
-  // OHNE Rang-/Prioritätsangabe: die Zahl sagt der Lehrkraft nichts über den didaktischen Grund).
-  const FALLBACK_BEGRUENDUNG = 'Aus den eingegangenen Antworten gewählt, in der für diese Aufgabe festgelegten Reihenfolge.';
-  const vorhanden = {
-    fehler: FEHLER_PRIORITAET.filter(id => state.pool.some(p=>p.cat===id)),
-    tragfaehig: TRAGFAEHIG_PRIORITAET.filter(id => state.pool.some(p=>p.cat===id))
-  };
-  const naechsterIndex = { fehler: 0, tragfaehig: 0 };
-  function ziehen(pool){
-    const katId = vorhanden[pool][naechsterIndex[pool]];
-    if(katId) naechsterIndex[pool]++;
-    return katId || null;
+  function poolVonTyp(katId){
+    const typ = CATS[katId] && CATS[katId].typ;
+    return typ === 'Fehler' ? 'fehler' : (typ === 'tragfähige Strategie' ? 'tragfaehig' : null);
   }
+  function label(katId){ return (CATS[katId] && CATS[katId].label) || katId; }
+  function bezug(katId){ return CATS[katId] && CATS[katId].verstehenskern_bezug; }
+
   return BAUSTEINE.map((b, i) => {
     if(b.typ === 'isoliert'){
-      const pool = b.pools[0];
-      const katId = ziehen(pool);
-      if(!katId){
-        return { typ:'isoliert', pools:b.pools, index:i, einstiegssatz:b.einstiegssatz, uebersprungen:'auto',
-          kategorieIds:[], namen:[], begruendung:`Kein weiterer, bisher nicht gezeigter Fall aus "${POOL_LABEL[pool]}" ist in dieser Klasse vorgekommen.` };
+      const katId = b.kategorie_id;
+      const kind = state.pool.find(p=>p.cat===katId);
+      const pool = poolVonTyp(katId);
+      if(!kind){
+        return { typ:'isoliert', pools:[pool], index:i, einstiegssatz:b.einstiegssatz, uebersprungen:'auto',
+          kategorieIds:[katId], namen:[],
+          begruendung:`Keine Antwort für die Kategorie "${label(katId)}" ist in dieser Klasse eingegangen.` };
       }
-      const kind = bestesKind(katId);
-      return { typ:'isoliert', pools:b.pools, index:i, einstiegssatz:b.einstiegssatz, uebersprungen:false,
+      return { typ:'isoliert', pools:[pool], index:i, einstiegssatz:b.einstiegssatz, uebersprungen:false,
         kategorieIds:[katId], namen:[kind.name],
-        begruendung: b.begruendung || FALLBACK_BEGRUENDUNG };
+        begruendung: bezug(katId) || `Für die Kategorie "${label(katId)}" ist kein verstehenskern_bezug hinterlegt.` };
     }
-    const [poolA, poolB] = b.pools;
-    const katA = ziehen(poolA);
-    const katB = ziehen(poolB);
-    if(!katA || !katB){
-      if(katA) naechsterIndex[poolA]--; // Ziehung rückgängig -- steht dem nächsten Baustein wieder zur Verfügung
-      if(katB) naechsterIndex[poolB]--;
-      return { typ:'vergleich', pools:b.pools, index:i, einstiegssatz:b.einstiegssatz, uebersprungen:'auto',
-        kategorieIds:[], namen:[],
-        begruendung: !katA ? `Kein weiterer Fall aus "${POOL_LABEL[poolA]}" für den Vergleich vorgekommen.` : `Kein weiterer Fall aus "${POOL_LABEL[poolB]}" für den Vergleich vorgekommen.` };
+    const [katA, katB] = b.kategorie_ids;
+    const kindA = state.pool.find(p=>p.cat===katA);
+    const kindB = state.pool.find(p=>p.cat===katB);
+    const poolA = poolVonTyp(katA), poolB = poolVonTyp(katB);
+    if(!kindA || !kindB){
+      return { typ:'vergleich', pools:[poolA,poolB], index:i, einstiegssatz:b.einstiegssatz, uebersprungen:'auto',
+        kategorieIds:[katA,katB], namen:[],
+        begruendung: !kindA ? `Keine Antwort für die Kategorie "${label(katA)}" eingegangen.` : `Keine Antwort für die Kategorie "${label(katB)}" eingegangen.` };
     }
-    const kindA = bestesKind(katA);
-    const kindB = bestesKind(katB);
-    return { typ:'vergleich', pools:b.pools, index:i, einstiegssatz:b.einstiegssatz, uebersprungen:false,
+    const bezugA = bezug(katA), bezugB = bezug(katB);
+    const begruendungText = (bezugA || bezugB)
+      ? `<b>${label(katA)}:</b> ${bezugA || '(kein verstehenskern_bezug hinterlegt)'}<br><b>${label(katB)}:</b> ${bezugB || '(kein verstehenskern_bezug hinterlegt)'}`
+      : `Für keine der beiden Kategorien ist ein verstehenskern_bezug hinterlegt.`;
+    return { typ:'vergleich', pools:[poolA,poolB], index:i, einstiegssatz:b.einstiegssatz, uebersprungen:false,
       kategorieIds:[katA, katB], namen:[kindA.name, kindB.name],
-      begruendung: b.begruendung || FALLBACK_BEGRUENDUNG };
+      begruendung: begruendungText };
   });
 }
 
@@ -1595,14 +1580,12 @@ async function finishAnswer(){
     : KLASSIFIKATIONS_PROMPT;
 
   let cat = "unklar";
-  let evidenz = null; // [NEU] 1-3 (KI-Einschätzung, wie deutlich der Denkweg erkennbar wird) oder null
   try {
     const { data, error } = await sb.functions.invoke('kategorisieren', {
       body: { transkript: text, aufgabe_id: AUFGABE_ID, wahl, prompt: promptFuerAnfrage, kategorien: kategorienFuerPrompt }
     });
     if(!error && data && data.kategorie && CATS[data.kategorie]) cat = data.kategorie;
     else cat = heuristischeKategorie(text);
-    if(!error && data && [1,2,3].includes(data.evidenz)) evidenz = data.evidenz;
   } catch(e) {
     cat = heuristischeKategorie(text);
   }
@@ -1610,28 +1593,20 @@ async function finishAnswer(){
   if(sitzungscode){
     // Echte Sitzung: an Supabase senden, LK-Gerät sieht es live.
     // Bewusst KEIN Klarname hier -- nur die pseudonyme kind_id (Kap. 4.4/2.13 Nutzerfluss-Dokument).
-    const zeile = {
+    const { error } = await sb.from('antworten').insert({
       sitzungscode: sitzungscode,
       kind_id: state.selectedSymbol ? state.selectedSymbol.kindId : null,
       symbol_id: state.selectedSymbol ? state.selectedSymbol.id : null,
       transkript: text,
       kategorie: cat,
       antwort_wahl: wahl,
-      audio_pfad: letzterAudioPfad,
-      evidenz: evidenz
-    };
-    let { error } = await sb.from('antworten').insert(zeile);
-    if(error && /evidenz/i.test(error.message || '')){
-      // Sicherheitsnetz: Spalte "evidenz" existiert in der Datenbank (noch) nicht -- die Antwort
-      // des Kindes soll deshalb nicht verloren gehen.
-      const { evidenz: _ohne, ...ohneEvidenz } = zeile;
-      ({ error } = await sb.from('antworten').insert(ohneEvidenz));
-    }
+      audio_pfad: letzterAudioPfad
+    });
     if(error) alert('Antwort konnte nicht gespeichert werden: ' + error.message + '\n(Sitzungscode: ' + sitzungscode + ')');
   } else {
     // Kein Sitzungscode vorhanden (Demo-Vorführung ohne echte Sitzung): nur lokal
     state.pool = state.pool.filter(p=>p.name!==name);
-    state.pool.push({name, cat, quote:text, audioPfad: null, wahl, evidenz});
+    state.pool.push({name, cat, quote:text, audioPfad: null, wahl});
     if(state.selectedSymbol) state.heatmapStatus[state.selectedSymbol.id] = cat;
   }
   letzterAudioPfad = null;
@@ -1764,8 +1739,8 @@ function renderEmpfohlen(){
   const stepNav = document.getElementById('dashboard-step-nav');
   // [NEU] "Warum diese Reihenfolge?" lebt jetzt hier statt als eigene Zeile weiter oben im
   // Dashboard -- sie gehört inhaltlich zu genau diesem Tab, nicht zum Dashboard allgemein.
-  // Inhalt: optionaler Einleitungssatz (aufgabe.empfehlung_erklaerung) + je Schritt die
-  // fachdidaktische begruendung des Bausteins (s. berechneEmpfBloecke()).
+  // Aufgabenspezifischer Text (aufgabe.empfehlung_erklaerung), falls bei der Aufgabenanlage
+  // hinterlegt, sonst der generische Standardtext.
   const erklaerungToggle = `<div style="text-align:right; margin-bottom:6px;">
       <span class="ts" style="font-size:var(--fs-micro); text-decoration:underline; cursor:pointer;" onclick="toggleErklaerung()">Warum diese Reihenfolge?</span>
     </div>
@@ -1834,17 +1809,10 @@ function renderEmpfohlen(){
       </div>`;
   }
   const begrHtml = sichtbar.length
-    ? sichtbar.map((b,idx)=>{
-        // [NEU] Unter der Schritt-Begründung: was die konkret eingesetzten Kategorien am
-        // Verstehenskern zeigen (nur wenn hinterlegt).
-        const bezuege = (b.kategorieIds||[]).map(k => CATS[k] && CATS[k].bezug ? `<div style="margin:2px 0 0 10px;">· <i>${CATS[k].label}:</i> ${CATS[k].bezug}</div>` : '').join('');
-        return `<div style="margin-bottom:8px;"><b>Schritt ${idx+1}:</b> ${b.begruendung}${bezuege}</div>`;
-      }).join('') + `<div style="margin-top:6px; font-size:var(--fs-micro); color:var(--text-muted);">Welches Kind je Kategorie vorgeschlagen wird: die Antwort, in der der Denkweg am deutlichsten erkennbar ist (KI-Einschätzung), bei Gleichstand die ausführlichere. Über „anderes Kind“ jederzeit tauschbar.</div>`
+    ? sichtbar.map((b,idx)=>`<div style="margin-bottom:4px;"><b>Schritt ${idx+1}:</b> ${b.begruendung}</div>`).join('')
     : 'Noch keine Kategorie ist unter den eingegangenen Antworten vertreten.';
   const erklaerungEl = document.getElementById('empfehlung-erklaerung');
-  // [NEU] Optionaler Einleitungssatz der Aufgabe (empfehlung_erklaerung) steht ÜBER den Schritt-Begründungen,
-  // ersetzt sie nicht mehr.
-  if(erklaerungEl) erklaerungEl.innerHTML = (AUFGABE_EMPFEHLUNG_ERKLAERUNG ? `<div style="margin-bottom:6px;">${AUFGABE_EMPFEHLUNG_ERKLAERUNG}</div>` : '') + begrHtml;
+  if(erklaerungEl) erklaerungEl.innerHTML = AUFGABE_EMPFEHLUNG_ERKLAERUNG || begrHtml;
 }
 // "Frei": wie bisher manuell aus dem Pool bestückte Slots, jetzt mit einer Layout-Wahl
 // (nebeneinander/untereinander) statt eigener Tabs -- "untereinander" übernimmt das
@@ -2113,7 +2081,18 @@ function renderPool(){
   const area = document.getElementById('pool-area');
   if(!area) return;
   area.innerHTML = "";
-  const visiblePool = state.poolFilter ? state.pool.filter(p=>p.cat===state.poolFilter) : state.pool;
+  // [NEU] fehler_prioritaet/tragfaehig_prioritaet sortieren jetzt den freien Kategorie-Pool
+  // (ihre einzig verbliebene Aufgabe, seit Bausteine feste kategorie_id referenzieren statt
+  // Pools automatisch aufzufüllen).
+  function prioritaetsRang(catId){
+    const typ = CATS[catId] && CATS[catId].typ;
+    const liste = typ === 'Fehler' ? FEHLER_PRIORITAET : (typ === 'tragfähige Strategie' ? TRAGFAEHIG_PRIORITAET : null);
+    if(!liste) return Infinity;
+    const idx = liste.indexOf(catId);
+    return idx === -1 ? Infinity : idx;
+  }
+  const visiblePool = (state.poolFilter ? state.pool.filter(p=>p.cat===state.poolFilter) : state.pool)
+    .slice().sort((a,b) => prioritaetsRang(a.cat) - prioritaetsRang(b.cat));
   visiblePool.forEach(p=>{
     const cat = CATS[p.cat];
     const inSlot = state.slots[state.activeTab].includes(p.name);
@@ -2157,7 +2136,6 @@ function renderDetail(){
       <div class="live-frage-label"><i class="ti ti-message-circle"></i> direkt stellbar</div>
       <div class="live-frage-text">${cat.nachfrage}</div>
     </div>` : ''}
-    ${cat.bezug ? `<div class="ts" style="font-size:var(--fs-small); margin-top:10px; line-height:1.4;"><b>Bezug zum Verstehenskern:</b> ${cat.bezug}</div>` : ''}
     <div style="margin-top:12px;">
       <label class="ts" style="font-size:var(--fs-micro);">Kategorie ändern:</label>
       <select style="width:100%; font-size:var(--fs-small); margin-top:4px;" onchange="recode('${child.name}', this.value)">

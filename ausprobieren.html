@@ -171,6 +171,13 @@
   .st-leiste.st-zeit-um { background:var(--bg-accent); }
   .st-kodier-optionen label { display:flex; gap:8px; align-items:flex-start; padding:7px 0; font-size:var(--fs-small); line-height:1.4; cursor:pointer; }
   .st-kodier-optionen input { margin-top:2px; accent-color: var(--fill-accent); }
+  body.studie .dash-menu-summary { border-color: var(--border-accent); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  body.studie .dash-menu-summary:hover { background: var(--bg-accent); }
+  body.studie .dash-menu-summary .chevron { font-size: var(--fs-title); color: var(--text-primary); }
+  .st-aufklapp-hinweis { font-size: var(--fs-micro); font-weight: 400; color: var(--text-secondary); }
+  /* Schrittkarten: das Schülerzitat ist das größte Element, der Einstiegssatz tritt zurück */
+  body.studie #scr-dashboard .card div[style*="font-size:var(--fs-lead)"] { font-size: var(--fs-body) !important; line-height: 1.4 !important; color: var(--text-secondary) !important; }
+  body.studie #scr-dashboard .quote-plain { font-size: var(--fs-title); font-style: normal; color: var(--text-primary); line-height: 1.45; padding: 8px 0 8px 12px; }
   .st-pruef { font-size:var(--fs-micro); line-height:1.5; }
   .st-pruef table { border-collapse:collapse; width:100%; margin:6px 0 12px; }
   .st-pruef td, .st-pruef th { border:1px solid var(--border); padding:3px 5px; text-align:left; vertical-align:top; }
@@ -2860,6 +2867,12 @@ const STUDIE = {
       { kategorie_id:"keine_bearbeitung", bezeichnung:"keine Bearbeitung", kurzdefinition:"Kein Eintrag / keine Antwort vorhanden." },
       { kategorie_id:"unklar", bezeichnung:"unklar", kurzdefinition:"Keiner Kategorie sicher zuordenbar." }
     ]},
+    // Text hinter "Warum diese Reihenfolge?" im Dashboard (HTML erlaubt)
+    empfehlung_erklaerung: `Das Gespräch führt vom Fehler über das Problem zur Erklärung.<br><br>
+      <b>1. Zehner als Einer:</b> Wer 3 Zehner als 3 Einer deutet, hat noch nicht verstanden, dass der Wert einer Ziffer von ihrer Stelle abhängt. Das wird zuerst geklärt, weil alles Weitere darauf aufbaut.<br><br>
+      <b>2. Nicht gebündelt:</b> Hier werden die Zehner schon richtig bei den Zehnern ergänzt, aber es entstehen 12 Zehner. Die Frage „Geht das?“ macht sichtbar, dass gebündelt werden muss.<br><br>
+      <b>3. Bündelung und Übertrag im Vergleich:</b> Beide Antworten kommen auf 3125. Die eine beschreibt nur das Verfahren („die 1 kommt rüber“), die andere erklärt, warum: 10 Zehner sind genauso viel wie 1 Hunderter. Im Vergleich bekommt das bekannte Verfahren seine Bedeutung.<br><br>
+      Kommt eine Kategorie in der Klasse nicht vor, entfällt der Schritt automatisch.`,
     fehler_prioritaet: ["zehner_als_einer","nicht_gebuendelt","hunderter_vergessen","ablehnung_ohne_begruendung"],
     tragfaehig_prioritaet: ["buendelung_erklaert","uebertrag_ohne_begruendung","zahlwert_gerechnet","zustimmung_ohne_begruendung"],
     bausteine: [
@@ -3469,7 +3482,16 @@ function studieStarten(){
   document.body.classList.add('studie');
   if(STUDIE.aufgabe && !aktiviereAufgabe(STUDIE.aufgabe)){ console.error('Studienaufgabe konnte nicht geladen werden'); }
   wendeAufgabeAufUIAn();
-  document.querySelector('#scr-dashboard .banner').textContent = 'Planen Sie das Klassengespräch so, wie Sie es in Ihrem Unterricht tun würden.';
+  document.querySelector('#scr-dashboard .banner').innerHTML = 'Planen Sie das Klassengespräch so, wie Sie es in Ihrem Unterricht tun würden.<br><b>Hinweis:</b> In der Tafelansicht, die Sie den Lernenden zeigen, ist jeweils nur die Antwort der Lernenden zu sehen.';
+  // "Alle Antworten ansehen" deutlicher als aufklappbar kennzeichnen
+  const summary = document.querySelector('#scr-dashboard .dash-menu-summary');
+  if(summary){
+    const hint = document.createElement('span');
+    hint.className = 'st-aufklapp-hinweis';
+    hint.textContent = 'aufklappen';
+    summary.querySelector('.chevron')?.before(hint);
+    summary.parentElement.addEventListener('toggle', e => { hint.textContent = e.target.open ? 'zuklappen' : 'aufklappen'; });
+  }
   // Elemente, die in der Studie nicht gebraucht werden, im Dashboard ausblenden
   ["show('tafel')", "show('heatmap')", "endSession()"].forEach(sel =>
     document.querySelectorAll(`#scr-dashboard [onclick="${sel}"]`).forEach(el => {

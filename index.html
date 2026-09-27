@@ -1011,20 +1011,27 @@ function handleAufgabeUploadInDB(event){
       event.target.value = '';
       return;
     }
-    const { error } = await sb.from('aufgaben').insert({
+    // [NEU] Vorher ein reines insert() -- eine zweite Version derselben aufgabe_id (z.B. nach
+    // inhaltlicher Überarbeitung) lief dann zwangsläufig in den Eindeutigkeits-Fehler der DB.
+    // Jetzt: neue aufgabe_id → neuer Entwurf; bekannte aufgabe_id → bestehende Zeile wird
+    // ersetzt (Inhalt komplett überschrieben). Bewusst IMMER wieder als Entwurf (aktiv:false),
+    // auch beim Ersetzen einer bereits freigegebenen Aufgabe -- jede neue Version durchläuft
+    // so erneut die Freigabe, bevor sie live geht, statt eine laufende Klasse ungeprüft auf
+    // neuen Inhalt umzustellen.
+    const { error } = await sb.from('aufgaben').upsert({
       aufgabe_id: ergebnis.AUFGABE_ID,
       aufgabenformat: ergebnis.aufgabenformat,
       aufgabentext: ergebnis.aufgabentext,
       verstehenskern: ergebnis.verstehenskern,
       konfiguration: config,
       aktiv: false
-    });
+    }, { onConflict: 'aufgabe_id' });
     if(error){
       zeigeLadeFehler(['Konnte nicht in der Aufgabenbibliothek gespeichert werden: ' + error.message]);
       event.target.value = '';
       return;
     }
-    alert('Als Entwurf gespeichert: ' + ergebnis.AUFGABE_ID + '. Zur Freigabe unten in der Liste antippen.');
+    alert('Gespeichert als Entwurf: ' + ergebnis.AUFGABE_ID + ' (neu angelegt oder vorhandene Version ersetzt). Zur Freigabe unten in der Liste antippen.');
     event.target.value = '';
     ladeAufgabenAdminListe();
   };

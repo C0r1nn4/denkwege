@@ -24,10 +24,6 @@
     --bg-warning: #FAEEDA; --text-warning: #633806; --fill-warning: #EF9F27;
     --fill-danger: #E24B4A; --on-danger: #fff; --radius: 12px; --radius-lg: 18px;
     --shadow-md: 0 4px 16px rgba(46,43,37,0.18);
-    /* [NEU] Eigenständige "Systemhinweis"-Farbe (z. B. Dev-Banner) -- bewusst NEUTRAL statt
-       --fill-warning, damit sie sich klar von echten inhaltlichen Warnungen unterscheidet
-       (s. Nutzungsregel in Punkt 2: --bg-warning bleibt echten Warnungen vorbehalten). */
-    --bg-system: #3a352e; --text-on-system: #fdf8ef;
     --font-body: "Figtree", -apple-system, "Segoe UI", Roboto, sans-serif;
     --font-heading: "Caprasimo", var(--font-body);
     font-family: var(--font-body);
@@ -61,6 +57,11 @@
   .dash-menu-summary::-webkit-details-marker { display:none; }
   .dash-menu-summary .chevron { font-size:var(--fs-body); color:var(--text-muted); transition:transform 0.15s; }
   details[open] > .dash-menu-summary .chevron { transform:rotate(180deg); }
+  /* [NEU] "Alle Antworten ansehen" deutlicher als aufklappbar erkennbar. */
+  .dash-menu-summary { border-color:var(--border-accent); box-shadow:0 1px 3px rgba(0,0,0,0.08); }
+  .dash-menu-summary:hover { background:var(--bg-accent); }
+  .dash-menu-summary .chevron { font-size:var(--fs-title); color:var(--text-primary); }
+  .aufklapp-hinweis { font-size:var(--fs-micro); color:var(--text-secondary); }
   .screen { display: none; padding: 20px; }
   .screen.visible { display: block; }
   button { font-family: inherit; cursor: pointer; border-radius: var(--radius); }
@@ -104,6 +105,9 @@
   /* [NEU] Reduzierte, box-freie Zitat-Optik innerhalb bereits farbig umrandeter Karten (Schritt-
      /Slot-Karten im Dashboard) -- ersetzt dort .quote-box, um Box-in-Box zu vermeiden (s. 5b). */
   .quote-plain { font-style: italic; color: var(--text-secondary); border-left: 3px solid var(--border-strong); padding: 6px 0 6px 10px; margin-top: 6px; font-size: var(--fs-small); }
+  /* [NEU] Schülerzitat als größtes Element der Schrittkarte im Dashboard -- ergänzt
+     .quote-plain, ersetzt es nicht (das bleibt anderswo, z.B. im Frei-Tab, unverändert). */
+  .quote-slot { font-size:var(--fs-title); font-style:normal; color:var(--text-primary); line-height:1.45; padding:8px 0 8px 12px; }
   .banner { background: var(--bg-warning); color: var(--text-warning); font-size:var(--fs-micro); padding:8px; border-radius:var(--radius); margin-bottom:10px; }
   textarea, .editable { width:100%; font-size:var(--fs-small); padding:8px; border-radius:var(--radius); border:1px solid var(--border); }
   .modal-bg { position: fixed; inset:0; background: rgba(0,0,0,0.4); display:none; align-items:center; justify-content:center; z-index: 50; }
@@ -122,7 +126,12 @@
   .kid-record-btn { width: 220px; height: 220px; border-radius: 50%; box-shadow: var(--shadow-md); }
   .kid-mode-btn { width: 92px; height: 92px; border-radius: 50%; }
   .sticky-header { position: sticky; top: 0; z-index: 10; }
-  .dev-banner { background: var(--bg-system); color: var(--text-on-system); font-size:var(--fs-small); line-height: 1.5; padding: 9px 14px; text-align: center; font-weight: 600; }
+  /* [NEU] Kleine, dezente Rollen-Umschaltung unten rechts -- fest positioniert, damit sie
+     immer erreichbar bleibt, aber optisch zurücktritt (kein Vorführ-Hinweis mehr im
+     Fließtext, stattdessen als Tooltip). */
+  .role-switch-mini { position:fixed; bottom:8px; right:8px; display:flex; gap:4px; z-index:20; opacity:0.55; transition:opacity 0.15s; }
+  .role-switch-mini:hover, .role-switch-mini:focus-within { opacity:1; }
+  .role-switch-mini button { font-size:var(--fs-micro); padding:4px 7px; }
 
   /* [NEU] Verbindungsfrage mit mehreren Richtungen: Chip-Auswahl statt Fixtext. */
   .vbf-chip { font-size:var(--fs-micro); padding: 5px 10px; border-radius: 999px; border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text-secondary); }
@@ -153,28 +162,8 @@
 <div class="app">
 
   <div class="sticky-header">
-  <div class="dev-banner">⚠️ Diese Anwendung befindet sich in der Entwicklung und steht noch nicht zur freien Verfügung. Bitte keine echten Daten von Kindern eingeben.</div>
-  <div class="topbar" style="flex-direction:column; align-items:stretch; gap:2px;">
-    <div class="row" style="justify-content:space-between;">
-      <b id="topbar-label" style="margin-right:0;">Demo</b>
-      <div class="row" style="gap:6px;">
-        <button class="navbtn" id="role-lk" onclick="switchRole('lk')"><i class="ti ti-chalkboard"></i> Lehrkraft</button>
-        <button class="navbtn" id="role-kind" onclick="switchRole('kind')"><i class="ti ti-child"></i> Kind</button>
-      </div>
-    </div>
-    <div style="font-size:var(--fs-micro); color:var(--text-muted); text-align:right; margin-bottom:4px;">nur zum Vorführen — im echten Tool meldet sich jede Person am eigenen Gerät an</div>
-    <details style="font-size:var(--fs-micro);">
-      <summary style="color:var(--text-muted); cursor:pointer;">Demo-Sprungmenü (nicht Teil des echten Ablaufs — nur zum Vorführen)</summary>
-      <div class="row" style="gap:6px; flex-wrap:wrap; margin-top:6px;">
-        <button class="navbtn" onclick="show('login')">Login</button>
-        <button class="navbtn" onclick="show('pool')">Aufgaben</button>
-        <button class="navbtn" onclick="show('symbolauswahl')">Kind: Symbol</button>
-        <button class="navbtn" onclick="show('dashboard')">LK-Dashboard</button>
-        <button class="navbtn" onclick="show('tafel')">Tafel</button>
-        <button class="navbtn" onclick="show('heatmap')">Heatmap</button>
-        <button class="navbtn" onclick="show('verwaltung')">Verwaltung</button>
-      </div>
-    </details>
+  <div class="topbar">
+    <b id="topbar-label" style="margin-right:0;">Demo</b>
   </div>
   </div>
 
@@ -367,16 +356,18 @@
     </div>
     <div class="banner" style="background:var(--bg-success); color:var(--text-success); margin-bottom:10px;">
       Hier bereiten Sie das Plenumsgespräch vor: die empfohlene Abfolge übernehmen (und bei Bedarf Schritte tauschen/überspringen), oder die Tafel komplett frei gestalten.
+      <br><b>Hinweis:</b> In der Tafelansicht, die Sie den Lernenden zeigen, ist jeweils nur die Antwort der Lernenden zu sehen.
     </div>
 
     <!-- [NEU] "Alle Antworten ansehen" jetzt ganz oben, als eigenständiger,
          größerer Menüpunkt statt einer kleinen Textzeile -- davor sah man ihn leicht gar
          nicht, obwohl er einen schnellen Überblick über alle eingegangenen Antworten gibt,
          bevor man sich die vorgeschlagene Gesprächsstruktur ansieht. -->
-    <details style="margin-bottom:14px;">
+    <details style="margin-bottom:14px;" ontoggle="document.getElementById('aufklapp-hinweis-text').textContent = this.open ? 'zuklappen' : 'aufklappen';">
       <summary class="dash-menu-summary">
         <i class="ti ti-list-details" style="font-size:var(--fs-title);"></i>
         <span style="flex:1;">Alle Antworten ansehen</span>
+        <span class="aufklapp-hinweis" id="aufklapp-hinweis-text">aufklappen</span>
         <i class="ti ti-chevron-down chevron"></i>
       </summary>
       <div id="kategorie-legende" style="display:flex; flex-wrap:wrap; gap:8px; margin:10px 0;"></div>
@@ -561,6 +552,11 @@ Neu</textarea>
     <span style="cursor:pointer; text-decoration:underline;" onclick="showRechtliches('datenschutz')">Datenschutz</span>
   </div>
 
+</div>
+
+<div class="role-switch-mini" title="Nur zum Vorführen — im echten Tool meldet sich jede Person am eigenen Gerät an">
+  <button class="navbtn" id="role-lk" onclick="switchRole('lk')" title="Als Lehrkraft anzeigen"><i class="ti ti-chalkboard"></i></button>
+  <button class="navbtn" id="role-kind" onclick="switchRole('kind')" title="Als Kind anzeigen"><i class="ti ti-child"></i></button>
 </div>
 
 <div class="modal-bg" id="confirm-end-modal">
@@ -1709,7 +1705,8 @@ function renderEmpfSlotKarte(blockIndex, slotIdx, kategorieIds, namen, pools, on
       </div>`;
   return `<div>
     ${header}
-    <div class="quote-plain">"${child.quote}"</div>
+    <div class="quote-plain quote-slot">"${child.quote}"</div>
+    <div style="margin-top:6px;"><span class="ts" style="font-size:var(--fs-micro); text-decoration:underline; cursor:pointer;" onclick="openDetail('${child.name}')"><i class="ti ti-pencil"></i> Antwort öffnen und Einordnung ändern</span></div>
     ${cat.nachfrage ? `<div class="live-frage-box">
       <div class="live-frage-label"><i class="ti ti-message-circle"></i> direkt stellbar</div>
       <div class="live-frage-text">${cat.nachfrage}</div>
@@ -1786,7 +1783,7 @@ function renderEmpfohlen(){
         <div class="row" style="justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
           <div style="flex:1; min-width:0; border-left:3px solid var(--border-accent); padding-left:10px;">
             <div class="ts" style="font-size:var(--fs-micro); color:var(--text-muted); margin-bottom:3px;">Schritt ${laufendeNummer} — ${b.typ==='isoliert'?'einzeln':'Vergleich'}</div>
-            <div style="font-size:var(--fs-lead); color:var(--text-primary); line-height:1.3; font-weight:500;">${b.einstiegssatz}</div>
+            <div style="font-size:var(--fs-body); color:var(--text-secondary); line-height:1.4;">${b.einstiegssatz}</div>
           </div>
           <button class="navbtn" style="font-size:var(--fs-micro); flex-shrink:0;" onclick="empfSchrittUeberspringen(${i})">überspringen</button>
         </div>
@@ -1857,7 +1854,8 @@ function renderFrei(){
             <div style="flex:1; padding:6px 8px; background:var(--surface-1);">${headerInner}</div>
           </div>`;
       div.innerHTML = `${header}
-        <div class="quote-plain">"${child.quote}"</div>
+        <div class="quote-plain quote-slot">"${child.quote}"</div>
+        <div style="margin-top:6px;"><span class="ts" style="font-size:var(--fs-micro); text-decoration:underline; cursor:pointer;" onclick="event.stopPropagation(); openDetail('${child.name}')"><i class="ti ti-pencil"></i> Antwort öffnen und Einordnung ändern</span></div>
         ${cat.nachfrage ? `<div class="live-frage-box">
           <div class="live-frage-label"><i class="ti ti-message-circle"></i> direkt stellbar</div>
           <div class="live-frage-text">${cat.nachfrage}</div>

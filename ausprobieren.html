@@ -2965,21 +2965,15 @@ const STUDIE = {
   vorab_fragen: [
     { id:"status", typ:"auswahl", text:"Was trifft auf Sie zu?", optionen:["Lehrkraft","Lehrkraft im Vorbereitungsdienst (Referendariat)","Lehramtsstudierende:r","andere"] },
     { id:"berufsjahre", typ:"zahl", text:"Seit wie vielen Jahren unterrichten Sie (inkl. Referendariat)? Studierende tragen 0 ein.", min:0, max:50 },
-    { id:"schulform", typ:"auswahl", text:"An welcher Schulform unterrichten Sie hauptsächlich?", optionen:["Grundschule","Förderschule","Haupt-, Real- oder Gesamtschule","Gymnasium","andere"] },
-    { id:"mathe_studiert", typ:"auswahl", text:"Haben Sie Mathematik als Fach studiert?", optionen:["ja","nein, ich unterrichte Mathematik fachfremd","ich unterrichte kein Mathematik"] },
+    { id:"schulform", typ:"auswahl", text:"An welcher Schulform unterrichten Sie hauptsächlich, und haben Sie Mathematik studiert?", optionen:["Grundschule, Mathematik studiert","Grundschule, Mathematik fachfremd","Förderschule","Haupt-, Real- oder Gesamtschule","Gymnasium","andere"] },
     { id:"ki_nutzung", typ:"auswahl", text:"Wie oft nutzen Sie KI-Anwendungen (z. B. ChatGPT) für Ihre Arbeit?", optionen:["nie","seltener als monatlich","etwa monatlich","etwa wöchentlich","(fast) täglich"] },
     { id:"ki_einst_1", typ:"likert", text:"KI-Anwendungen können Lehrkräften beim Einschätzen von Lernständen sinnvoll helfen." },
-    { id:"ki_einst_2", typ:"likert", text:"Dem Einsatz von KI im Mathematikunterricht stehe ich grundsätzlich offen gegenüber." },
-    { id:"ki_einst_3", typ:"likert", text:"Ergebnissen von KI-Systemen begegne ich eher skeptisch." },
-    { id:"ki_einst_4", typ:"likert", text:"Ich finde es gut, wenn mir KI Routinearbeit abnimmt." }
+    { id:"ki_einst_2", typ:"likert", text:"Ergebnissen von KI-Systemen begegne ich eher skeptisch." }
   ],
   nach_fragen: [
     { id:"vertrauen_1", typ:"likert", text:"Ich vertraue den Einordnungen, die das Tool vorgenommen hat." },
-    { id:"vertrauen_2", typ:"likert", text:"Auf die Einordnungen des Tools kann man sich verlassen." },
-    { id:"vertrauen_3", typ:"likert", text:"Das Tool arbeitet zuverlässig." },
-    { id:"vertrauen_4", typ:"likert", text:"Im Unterricht würde ich die Einordnungen des Tools vor der Nutzung prüfen." },
-    { id:"nutzen_1", typ:"likert", text:"Das Tool hat mir die Planung des Klassengesprächs erleichtert." },
-    { id:"nutzen_2", typ:"likert", text:"Ich kann mir vorstellen, das Tool in meinem Unterricht einzusetzen." },
+    { id:"vertrauen_2", typ:"likert", text:"Im Unterricht würde ich die Einordnungen des Tools vor der Nutzung prüfen." },
+    { id:"nutzen_1", typ:"likert", text:"Ich kann mir vorstellen, das Tool in meinem Unterricht einzusetzen." },
     { id:"trefferquote", typ:"auswahl", text:"Was schätzen Sie: Bei wie vielen der 16 Antworten hat das Tool die Kategorie richtig zugeordnet?", optionen:["16","15","14","13","12","11","10","9","8","7","6","5","4","3","2","1","0"] },
     { id:"anders_eingeordnet", typ:"text", pflicht:false, text:"Gab es Antworten, die Sie anders eingeordnet hätten als das Tool? Wenn ja: welche und warum? (optional)" }
   ]

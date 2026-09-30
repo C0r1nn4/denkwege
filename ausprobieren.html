@@ -178,6 +178,20 @@
   /* Schrittkarten: das Schülerzitat ist das größte Element, der Einstiegssatz tritt zurück */
   body.studie #scr-dashboard .card div[style*="font-size:var(--fs-lead)"] { font-size: var(--fs-body) !important; line-height: 1.4 !important; color: var(--text-secondary) !important; }
   body.studie #scr-dashboard .quote-plain { font-size: var(--fs-title); font-style: normal; color: var(--text-primary); line-height: 1.45; padding: 8px 0 8px 12px; }
+  /* Bausteine / Auswahl */
+  .st-hilfe { font-size: var(--fs-small); color: var(--text-secondary); line-height: 1.45; margin: 0 0 10px; }
+  .st-karten-knoepfe { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .st-karten-knoepfe .navbtn { font-size: var(--fs-small); padding: 8px 10px; }
+  body.studie #frei-area > .card > button.btn { display: none; }
+  .st-gruppe { margin-bottom: 12px; }
+  .st-gruppe-kopf { display: flex; align-items: center; gap: 6px; font-size: var(--fs-micro); font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
+  .st-punkt { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+  .st-wahlkarte { border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; margin-bottom: 6px; background: var(--surface-2); cursor: pointer; }
+  .st-wahlkarte:hover, .st-wahlkarte:focus-visible { border-color: var(--border-accent); outline: none; }
+  .st-wahlkarte.st-gewaehlt { border: 2px solid var(--fill-accent); background: var(--bg-accent); }
+  .st-wahlkarte-kopf { display: flex; justify-content: space-between; gap: 8px; font-size: var(--fs-small); margin-bottom: 2px; }
+  .st-wahlkarte-kopf span { font-size: var(--fs-micro); color: var(--text-secondary); }
+  .st-wahlkarte-zitat { font-size: var(--fs-body); line-height: 1.4; }
   .st-pruef { font-size:var(--fs-micro); line-height:1.5; }
   .st-pruef table { border-collapse:collapse; width:100%; margin:6px 0 12px; }
   .st-pruef td, .st-pruef th { border:1px solid var(--border); padding:3px 5px; text-align:left; vertical-align:top; }
@@ -221,6 +235,7 @@
   <div id="scr-st-willkommen" class="screen">
     <h2 class="scr-title">Ein Klassengespräch mit Denkwege planen</h2>
     <div id="st-pruefbericht"></div>
+    <div id="st-fortsetzen" class="card" style="display:none; border:2px solid var(--fill-accent);"></div>
     <div class="card">
       <div id="st-infotext" class="ts" style="font-size:var(--fs-small); line-height:1.5;"></div>
     </div>
@@ -306,6 +321,16 @@
         <button class="btn" onclick="stAbschlussAbbrechen()">Weiter planen</button>
         <button class="btn btn-primary" onclick="stPlanungAbschliessen()">Abschließen</button>
       </div>
+    </div>
+  </div>
+  <div class="modal-bg" id="st-picker-modal">
+    <div class="modal" style="max-width:520px; max-height:85vh;">
+      <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <div id="st-picker-titel" style="font-weight:600;"></div>
+        <button class="navbtn" onclick="stPickerSchliessen()">Schließen</button>
+      </div>
+      <div class="ts" style="font-size:var(--fs-small); margin-bottom:10px;">Tippen Sie auf die Antwort, die in diesen Baustein soll.</div>
+      <div id="st-picker-liste"></div>
     </div>
   </div>
   <!-- ================= Ende Studienmodus-Bildschirme ================= -->
@@ -733,7 +758,9 @@ Neu</textarea>
 const SUPABASE_URL = "https://iuqyjqcxftcoxwjqpijr.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_WOnHYkefrIzOY-tigGqPKg_Dvjf73Gc";
 // =====================================
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// In der Studienseite abgesichert: Fällt das Supabase-Skript (CDN) aus, läuft die Seite trotzdem;
+// die Studie sendet ihre Daten direkt per fetch und braucht diesen Client nicht.
+const sb = (window.supabase && window.supabase.createClient) ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 function getUrlParam(name){ return new URLSearchParams(window.location.search).get(name); }
 
@@ -3025,6 +3052,7 @@ function stLog(typ, details){
   st.puffer.push({ ...stBasis(), phase: st.phase, typ, details: details || {},
     t_client: new Date().toISOString(), ms_seit_start: Date.now() - st.start });
   if(st.puffer.length >= 25) stFlush();
+  if(st.phase !== 'willkommen') stStandSpeichern();
 }
 async function stFlush(){
   if(st.sendet) return;
@@ -3050,13 +3078,46 @@ function stSpeichern(phase, daten){
   st.offeneAntworten.push({ ...stBasis(), phase, daten });
   stFlush();
 }
-function stBackup(){
-  // Sicherheitskopie im Browser, falls das WLAN ausfällt (wird beim Neuladen nicht automatisch gesendet)
+// --- Zwischenstand im Browser (nur localStorage, keine Datenbank) ---
+// Wird die Seite neu geladen oder versehentlich geschlossen, kann man an derselben Stelle
+// mit derselben Teilnahme-ID weitermachen. Noch nicht gesendete Daten werden dann nachgesendet.
+const ST_STAND_KEY = 'denkwege_ausprobieren_stand';
+const ST_STAND_MAX_ALTER_MS = 4 * 60 * 60 * 1000; // älter als 4 Stunden: nicht mehr anbieten
+function stStandSpeichern(){
   try {
-    localStorage.setItem('denkwege_studie_' + st.teilnahmeId, JSON.stringify({
-      offeneAntworten: st.offeneAntworten, puffer: st.puffer, gespeichert: new Date().toISOString() }));
-  } catch(e){}
+    const ta = document.getElementById('st-begruendung-text');
+    localStorage.setItem(ST_STAND_KEY, JSON.stringify({
+      gespeichert: Date.now(),
+      st: {
+        teilnahmeId: st.teilnahmeId, version: st.version, versionQuelle: st.versionQuelle, test: st.test,
+        start: st.start, phase: st.phase, audioOk: st.audioOk, code: st.code || null,
+        antworten: st.antworten, oeffnungen: st.oeffnungen, planStart: st.planStart,
+        initialSnapshot: st.initialSnapshot, initialSlotNamen: st.initialSlotNamen,
+        zeitHinweisGezeigt: st.zeitHinweisGezeigt, kodierStart: st.kodierStart || null, begrModus: st.begrModus,
+        rec: { anzahl: st.rec.anzahl, roh: st.rec.roh, pfade: st.rec.pfade },
+        begrText: ta ? ta.value : '',
+        offeneAntworten: st.offeneAntworten, puffer: st.puffer
+      },
+      dashboard: st.phase === 'planung' || st.planStart ? {
+        kategorien: state.pool.map(p => [p.name, p.cat]),
+        frei: state.slots.frei, activeTab: state.activeTab, freiLayout: state.freiLayout,
+        visibleCount: state.visibleCount, empfAutomatisch: state.empfAutomatisch,
+        empfBloecke: state.empfBloecke, empfAktivBlock: state.empfAktivBlock
+      } : null
+    }));
+  } catch(e){ /* z. B. privater Modus: dann eben ohne Fortsetzen */ }
 }
+function stStandLaden(){
+  try {
+    const roh = localStorage.getItem(ST_STAND_KEY);
+    if(!roh) return null;
+    const d = JSON.parse(roh);
+    if(!d || !d.st || Date.now() - d.gespeichert > ST_STAND_MAX_ALTER_MS) return null;
+    return d;
+  } catch(e){ return null; }
+}
+function stStandLoeschen(){ try { localStorage.removeItem(ST_STAND_KEY); } catch(e){} }
+function stBackup(){ stStandSpeichern(); }
 setInterval(stFlush, 8000);
 document.addEventListener('visibilitychange', () => {
   stLog('sichtbarkeit', { zustand: document.visibilityState });
@@ -3103,8 +3164,119 @@ window.renderEmpfSlotKarte = function(blockIndex, slotIdx, kategorieIds, namen, 
   const html = stSlotKarteOrig(blockIndex, slotIdx, kategorieIds, namen, pools, onTafel);
   const name = namen[slotIdx];
   if(!state.pool.some(p => p.name === name)) return html;
-  const link = `<div style="margin-top:6px;"><span class="ts" style="font-size:var(--fs-micro); text-decoration:underline; cursor:pointer;" onclick="openDetail(${JSON.stringify(name).replace(/"/g,'&quot;')})"><i class="ti ti-pencil"></i> Antwort öffnen und Einordnung ändern</span></div>`;
-  return html.replace(/<\/div>\s*$/, link + '</div>');
+  // Die beiden Auswahllisten ("anderes Kind…", "Kategorie wechseln…") durch zwei klare Knöpfe ersetzen
+  const box = document.createElement('div');
+  box.innerHTML = html;
+  box.querySelectorAll('select').forEach(sel => { const zeile = sel.closest('.row'); if(zeile) zeile.remove(); else sel.remove(); });
+  const karte = box.firstElementChild || box;
+  const knoepfe = document.createElement('div');
+  knoepfe.className = 'st-karten-knoepfe';
+  const nameAttr = JSON.stringify(name).replace(/"/g, '&quot;');
+  knoepfe.innerHTML = `<button type="button" class="navbtn" onclick="stPickerOeffnen(${blockIndex},${slotIdx})"><i class="ti ti-replace"></i> Andere Antwort einsetzen</button>
+    <button type="button" class="navbtn" onclick="openDetail(${nameAttr})"><i class="ti ti-pencil"></i> Antwort öffnen / Einordnung ändern</button>`;
+  karte.appendChild(knoepfe);
+  return box.innerHTML;
+};
+
+// --- Auswahlfenster: beliebige Antwort in einen Baustein der empfohlenen Reihenfolge legen ---
+let stPickerZiel = null;
+function stKategorieReihenfolge(){
+  const reihe = [...FEHLER_PRIORITAET, ...TRAGFAEHIG_PRIORITAET];
+  state.pool.forEach(p => { if(!reihe.includes(p.cat)) reihe.push(p.cat); });
+  return reihe.filter(k => state.pool.some(p => p.cat === k));
+}
+function stAntwortListeHtml(istAusgewaehlt, aktionFn){
+  return stKategorieReihenfolge().map(k => {
+    const kinder = state.pool.filter(p => p.cat === k);
+    return `<div class="st-gruppe"><div class="st-gruppe-kopf"><span class="st-punkt ${CATS[k].color}"></span>${escapeHtml(CATS[k].label)}</div>` +
+      kinder.map(p => {
+        const markiert = istAusgewaehlt(p.name);
+        return `<div class="st-wahlkarte${markiert ? ' st-gewaehlt' : ''}" role="button" tabindex="0" onclick="${aktionFn(p.name)}">
+          <div class="st-wahlkarte-kopf"><b>${escapeHtml(p.name)}</b><span>${markiert ? markiert : ''}</span></div>
+          <div class="st-wahlkarte-zitat">„${escapeHtml(p.quote)}“</div></div>`;
+      }).join('') + '</div>';
+  }).join('');
+}
+function stPickerOeffnen(i, slot){
+  stPickerZiel = { i, slot };
+  const b = state.empfBloecke[i];
+  const aktuell = b.namen[slot];
+  document.getElementById('st-picker-titel').textContent = `Antwort für Schritt ${state.empfBloecke.filter((x,j) => j <= i && !x.uebersprungen).length} einsetzen`;
+  document.getElementById('st-picker-liste').innerHTML = stAntwortListeHtml(
+    n => n === aktuell ? 'jetzt hier' : '',
+    n => `stSlotBelegen(${JSON.stringify(n).replace(/"/g, '&quot;')})`);
+  document.getElementById('st-picker-modal').classList.add('visible');
+  stLog('picker_geoeffnet', { schritt: i, slot, aktuell });
+}
+function stPickerSchliessen(){
+  document.getElementById('st-picker-modal').classList.remove('visible');
+  stLog('picker_geschlossen', stPickerZiel || {});
+  stPickerZiel = null;
+}
+function stSlotBelegen(name){
+  if(!stPickerZiel) return;
+  const { i, slot } = stPickerZiel;
+  const b = state.empfBloecke[i];
+  const kind = state.pool.find(p => p.name === name);
+  stLog('slot_belegt', { schritt: i, slot, von: b.namen[slot], nach: name, von_kat: b.kategorieIds[slot], nach_kat: kind.cat });
+  if(b.kategorieIds[slot] !== kind.cat){ b.kategorieIds[slot] = kind.cat; b.kategorieAbweichend = true; }
+  b.namen[slot] = name;
+  state.empfAutomatisch = false;
+  document.getElementById('st-picker-modal').classList.remove('visible');
+  stPickerZiel = null;
+  renderDashboard();
+}
+// Wird eine Antwort umkodiert, nachdem die Lehrkraft die Empfehlung schon verändert hat,
+// soll die Kategorie in ihrem Baustein mitziehen (sonst zeigt die Karte die alte Kategorie).
+const stRecodeOrig = window.recode;
+window.recode = function(name, neu){
+  const r = stRecodeOrig(name, neu);
+  if(!state.empfAutomatisch && neu){
+    state.empfBloecke.forEach(b => b.namen.forEach((n, s) => { if(n === name) b.kategorieIds[s] = neu; }));
+    renderDashboard();
+  }
+  return r;
+};
+
+// --- Frei: Antworten direkt auswählen, statt über "Alle Antworten ansehen" + Detailfenster ---
+function stFreiToggle(name){
+  const arr = state.slots.frei;
+  const idx = arr.indexOf(name);
+  stLog('frei_auswahl', { name, aktion: idx > -1 ? 'entfernen' : 'hinzufuegen', position: idx > -1 ? idx : arr.length });
+  if(idx > -1) arr.splice(idx, 1); else arr.push(name);
+  state.visibleCount.frei = Math.min(state.visibleCount.frei, arr.length);
+  renderDashboard();
+}
+const stRenderFreiOrig = window.renderFrei;
+window.renderFrei = function(){
+  stRenderFreiOrig();
+  const area = document.getElementById('slots-area');
+  if(!state.slots.frei.length){
+    area.className = '';
+    area.innerHTML = '<div class="slot-empty" style="grid-column:1/-1;">Noch keine Antwort ausgewählt. Wählen Sie unten Antworten in der Reihenfolge aus, in der sie besprochen werden sollen.</div>';
+  } else {
+    Array.from(area.children).forEach((div, i) => {
+      const name = state.slots.frei[i];
+      if(!name) return;
+      const z = document.createElement('div');
+      z.style.cssText = 'padding:4px 8px 8px;';
+      z.innerHTML = `<span class="ts" style="font-size:var(--fs-micro); text-decoration:underline; cursor:pointer;"><i class="ti ti-x"></i> von der Tafel nehmen</span>`;
+      z.firstElementChild.onclick = ev => { ev.stopPropagation(); stFreiToggle(name); };
+      div.appendChild(z);
+    });
+  }
+  let box = document.getElementById('st-frei-auswahl');
+  if(!box){
+    box = document.createElement('div');
+    box.id = 'st-frei-auswahl';
+    box.className = 'card';
+    document.getElementById('frei-area').appendChild(box);
+  }
+  box.innerHTML = `<div style="font-weight:600; margin-bottom:4px;">Antworten auswählen</div>
+    <div class="ts" style="font-size:var(--fs-small); margin-bottom:10px;">Tippen Sie auf eine Antwort, um sie als nächste auf die Tafel zu legen. Nochmals tippen nimmt sie wieder weg.</div>` +
+    stAntwortListeHtml(
+      n => { const k = state.slots.frei.indexOf(n); return k > -1 ? `ausgewählt als Nr. ${k+1}` : ''; },
+      n => `stFreiToggle(${JSON.stringify(n).replace(/"/g, '&quot;')})`);
 };
 
 // Anzeigename oben in der Leiste
@@ -3473,12 +3645,112 @@ function stPruefbericht(){
   document.getElementById('st-pruefbericht').innerHTML = html;
 }
 
+// --- Fortsetzen nach Neuladen ---
+function stFragenVorbelegen(containerId, fragen){
+  const box = document.getElementById(containerId);
+  fragen.forEach((f, i) => {
+    const wert = st.antworten[f.id];
+    if(wert === undefined || wert === null) return;
+    const div = box.children[i];
+    if(!div) return;
+    if(f.typ === 'likert'){
+      const b = div.querySelector(`button[data-wert="${wert}"]`);
+      if(b){ b.classList.add('active'); b.setAttribute('aria-checked','true'); }
+    } else if(f.typ === 'auswahl'){ div.querySelector('select').value = wert; }
+    else if(f.typ === 'zahl'){ div.querySelector('input').value = wert; }
+    else { div.querySelector('textarea').value = wert; }
+  });
+}
+function stFortsetzen(d){
+  const alt = d.st;
+  Object.assign(st, {
+    teilnahmeId: alt.teilnahmeId, version: alt.version, versionQuelle: alt.versionQuelle, test: alt.test,
+    start: alt.start, phase: alt.phase, audioOk: alt.audioOk, code: alt.code,
+    antworten: alt.antworten || {}, oeffnungen: alt.oeffnungen || {}, planStart: alt.planStart,
+    initialSnapshot: alt.initialSnapshot, initialSlotNamen: alt.initialSlotNamen || [],
+    zeitHinweisGezeigt: alt.zeitHinweisGezeigt, kodierStart: alt.kodierStart, begrModus: alt.begrModus
+  });
+  st.rec.anzahl = alt.rec?.anzahl || 0; st.rec.roh = alt.rec?.roh || []; st.rec.pfade = alt.rec?.pfade || [];
+  // noch nicht gesendete Daten des ersten Anlaufs übernehmen (werden gleich nachgesendet)
+  st.offeneAntworten = [...(alt.offeneAntworten || []), ...st.offeneAntworten.filter(z => z.teilnahme_id === st.teilnahmeId)];
+  st.puffer = [...(alt.puffer || [])];
+  if(d.dashboard){
+    state.pool = stPoolFuerVersion(st.version);
+    const kat = Object.fromEntries(d.dashboard.kategorien || []);
+    state.pool.forEach(p => { if(kat[p.name]) p.cat = kat[p.name]; });
+    state.slots = { empfohlen: [], frei: d.dashboard.frei || [] };
+    state.activeTab = d.dashboard.activeTab || 'empfohlen';
+    state.freiLayout = d.dashboard.freiLayout || 'nebeneinander';
+    state.visibleCount = d.dashboard.visibleCount || { frei: 0 };
+    state.empfAutomatisch = d.dashboard.empfAutomatisch !== false;
+    state.empfBloecke = d.dashboard.empfBloecke || [];
+    state.empfAktivBlock = d.dashboard.empfAktivBlock ?? -1;
+    state.poolFilter = null;
+  }
+  stFragenVorbelegen('st-vorab-felder', STUDIE.vorab_fragen);
+  stFragenVorbelegen('st-nach-felder', STUDIE.nach_fragen);
+  STUDIE.kodier_items.forEach(it => {
+    const k = st.antworten['kod_' + it.id];
+    if(k){ const r = document.querySelector(`input[name="st-kod-${it.id}"][value="${k}"]`); if(r) r.checked = true; }
+  });
+  stLog('fortgesetzt', { pause_ms: Date.now() - d.gespeichert, phase: st.phase });
+  const ziel = { vorab:'st-vorab', auftrag:'st-auftrag', planung:'dashboard', begruendung:'st-begruendung', nach:'st-nach', kodieren:'st-kodieren', ende:'st-ende' }[st.phase];
+  if(st.phase === 'planung'){ show('dashboard'); stLeisteAktualisieren(); }
+  else if(st.phase === 'begruendung'){
+    stBegruendungVorbereiten();
+    if(alt.begrModus === 'text') stZuTextWechseln(true);
+    if(alt.begrText){
+      document.getElementById('st-begruendung-text').value = alt.begrText;
+      document.getElementById('st-text-bereich').style.display = 'block';
+      document.getElementById('st-text-hinweis').textContent = 'Ihre bisherige Begründung. Sie können sie ergänzen oder korrigieren.';
+    }
+    show('st-begruendung');
+  }
+  else if(st.phase === 'ende'){ stEndeRendern(); show('st-ende'); }
+  else show(ziel || 'st-willkommen');
+  stFlush();
+}
+function stNeuBeginnen(){
+  stStandLoeschen();
+  document.getElementById('st-fortsetzen').style.display = 'none';
+  stLog('neu_begonnen_statt_fortsetzen', {});
+}
+function stFortsetzenAnbieten(d){
+  const box = document.getElementById('st-fortsetzen');
+  const fertig = d.st.phase === 'ende';
+  box.innerHTML = fertig
+    ? `<div style="font-weight:600; margin-bottom:6px;">Auf diesem Gerät wurde der Durchgang bereits abgeschlossen.</div>
+       <div class="ts" style="font-size:var(--fs-small); margin-bottom:10px;">Sie können die Abschlussseite erneut ansehen oder einen neuen Durchgang für eine andere Person starten.</div>
+       <div class="row" style="gap:8px;"><button class="btn btn-primary" id="st-fs-ja">Abschlussseite ansehen</button><button class="btn" id="st-fs-nein">Neuer Durchgang</button></div>`
+    : `<div style="font-weight:600; margin-bottom:6px;">Sie waren schon dabei.</div>
+       <div class="ts" style="font-size:var(--fs-small); margin-bottom:10px;">Die Seite wurde neu geladen. Möchten Sie an der Stelle weitermachen, an der Sie aufgehört haben?</div>
+       <div class="row" style="gap:8px;"><button class="btn btn-primary" id="st-fs-ja">Weitermachen</button><button class="btn" id="st-fs-nein">Neu beginnen</button></div>`;
+  box.style.display = 'block';
+  document.getElementById('st-fs-ja').onclick = () => { box.style.display = 'none'; stFortsetzen(d); };
+  document.getElementById('st-fs-nein').onclick = () => {
+    if(!fertig && !confirm('Wirklich neu beginnen? Der bisherige Durchgang wird dann nicht fortgesetzt.')) return;
+    stNeuBeginnen();
+  };
+}
+
 // --- Start ---
 function studieStarten(){
   document.body.classList.add('studie');
   if(STUDIE.aufgabe && !aktiviereAufgabe(STUDIE.aufgabe)){ console.error('Studienaufgabe konnte nicht geladen werden'); }
   wendeAufgabeAufUIAn();
   document.querySelector('#scr-dashboard .banner').innerHTML = 'Planen Sie das Klassengespräch so, wie Sie es in Ihrem Unterricht tun würden.<br><b>Hinweis:</b> In der Tafelansicht, die Sie den Lernenden zeigen, ist jeweils nur die Antwort der Lernenden zu sehen.';
+  // Kurze Erklärung, wie die beiden Ansichten funktionieren
+  const empfHilfe = document.createElement('div');
+  empfHilfe.className = 'st-hilfe';
+  empfHilfe.innerHTML = 'Jeder Schritt ist ein Baustein Ihres Gesprächs. Sie können die vorgeschlagene Antwort übernehmen, über <b>„Andere Antwort einsetzen“</b> eine andere Antwort in den Baustein legen oder den Schritt überspringen.';
+  document.getElementById('empfohlen-area').before(empfHilfe);
+  const freiHilfe = document.createElement('div');
+  freiHilfe.className = 'st-hilfe';
+  freiHilfe.innerHTML = 'Hier stellen Sie das Gespräch selbst zusammen: Wählen Sie unten Antworten in der gewünschten Reihenfolge aus.';
+  document.getElementById('frei-area').prepend(freiHilfe);
+  const stTabSync = () => { empfHilfe.style.display = state.activeTab === 'empfohlen' ? 'block' : 'none'; };
+  const stRenderDashOrig = window.renderDashboard;
+  window.renderDashboard = function(){ const r = stRenderDashOrig(); stTabSync(); return r; };
   // "Alle Antworten ansehen" deutlicher als aufklappbar kennzeichnen
   const summary = document.querySelector('#scr-dashboard .dash-menu-summary');
   if(summary){
@@ -3517,8 +3789,17 @@ function studieStarten(){
   stRenderFragen('st-nach-felder', STUDIE.nach_fragen);
   stKodierenRendern();
   if(getUrlParam('pruefen') === '1') stPruefbericht();
+  // Begründungstext laufend im Zwischenstand sichern
+  document.getElementById('st-begruendung-text').addEventListener('input', () => stStandSpeichern());
   stLog('start', { version_quelle: st.versionQuelle, url: location.href.split('?')[0] });
   show('st-willkommen');
+  const gespeichert = stStandLoeschenFallsTestwechsel(stStandLaden());
+  if(gespeichert && gespeichert.st.phase !== 'willkommen') stFortsetzenAnbieten(gespeichert);
+}
+function stStandLoeschenFallsTestwechsel(d){
+  // Einen Testdurchgang nicht als echten fortsetzen (und umgekehrt)
+  if(d && !!d.st.test !== st.test){ stStandLoeschen(); return null; }
+  return d;
 }
 
 // ---- Start: in studie.html immer direkt in den Studienablauf ----

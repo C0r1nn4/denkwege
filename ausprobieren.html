@@ -192,6 +192,13 @@
   .st-wahlkarte-kopf { display: flex; justify-content: space-between; gap: 8px; font-size: var(--fs-small); margin-bottom: 2px; }
   .st-wahlkarte-kopf span { font-size: var(--fs-micro); color: var(--text-secondary); }
   .st-wahlkarte-zitat { font-size: var(--fs-body); line-height: 1.4; }
+  .st-impuls { margin-top: 4px; }
+  .st-impuls > summary { list-style: none; cursor: pointer; display: inline-block; font-size: var(--fs-small); color: var(--text-secondary); text-decoration: underline; padding: 4px 0; }
+  .st-impuls > summary::-webkit-details-marker { display: none; }
+  .st-impuls > summary::before { content: "💬 "; text-decoration: none; }
+  .st-impuls .st-impuls-auf, .st-impuls[open] .st-impuls-zu { display: none; }
+  .st-impuls[open] .st-impuls-auf { display: inline; }
+  .st-impuls .live-frage-box { margin-top: 4px; }
   .st-pruef { font-size:var(--fs-micro); line-height:1.5; }
   .st-pruef table { border-collapse:collapse; width:100%; margin:6px 0 12px; }
   .st-pruef td, .st-pruef th { border:1px solid var(--border); padding:3px 5px; text-align:left; vertical-align:top; }
@@ -264,7 +271,7 @@
   <div id="scr-st-auftrag" class="screen">
     <h2 class="scr-title">Ihre Aufgabe</h2>
     <div class="card" id="st-auftrag-text" style="font-size:var(--fs-body); line-height:1.55;"></div>
-    <button class="btn btn-primary" onclick="stPlanungStarten()">Zum Dashboard</button>
+    <button class="btn btn-primary" onclick="stPlanungStarten()">Los geht’s: zur Antwortübersicht</button>
   </div>
 
   <div id="scr-st-begruendung" class="screen">
@@ -2898,7 +2905,7 @@ const STUDIE = {
     empfehlung_erklaerung: `Das Gespräch führt vom Fehler über das Problem zur Erklärung.<br><br>
       <b>1. Zehner als Einer:</b> Wer 3 Zehner als 3 Einer deutet, hat noch nicht verstanden, dass der Wert einer Ziffer von ihrer Stelle abhängt. Das wird zuerst geklärt, weil alles Weitere darauf aufbaut.<br><br>
       <b>2. Nicht gebündelt:</b> Hier werden die Zehner schon richtig bei den Zehnern ergänzt, aber es entstehen 12 Zehner. Die Frage „Geht das?“ macht sichtbar, dass gebündelt werden muss.<br><br>
-      <b>3. Bündelung und Übertrag im Vergleich:</b> Beide Antworten kommen auf 3125. Die eine beschreibt nur das Verfahren („die 1 kommt rüber“), die andere erklärt, warum: 10 Zehner sind genauso viel wie 1 Hunderter. Im Vergleich bekommt das bekannte Verfahren seine Bedeutung.<br><br>
+      <b>3. Bündelung und Übertrag im Vergleich:</b> Beide Antworten kommen auf 3125. Die eine beschreibt nur das Verfahren („die 1 kommt rüber“), die andere erklärt, warum: 10 Zehner sind genauso viel wie 1 Hunderter. Im Vergleich bekommt das bekannte Verfahren seine Bedeutung: Hier wird an die Übertrag-Antwort angeknüpft, und die Bündelungserklärung zeigt, warum die 1 rüberkommt.<br><br>
       Kommt eine Kategorie in der Klasse nicht vor, entfällt der Schritt automatisch.`,
     fehler_prioritaet: ["zehner_als_einer","nicht_gebuendelt","hunderter_vergessen","ablehnung_ohne_begruendung"],
     tragfaehig_prioritaet: ["buendelung_erklaert","uebertrag_ohne_begruendung","zahlwert_gerechnet","zustimmung_ohne_begruendung"],
@@ -3094,6 +3101,7 @@ function stStandSpeichern(){
         antworten: st.antworten, oeffnungen: st.oeffnungen, planStart: st.planStart,
         initialSnapshot: st.initialSnapshot, initialSlotNamen: st.initialSlotNamen,
         zeitHinweisGezeigt: st.zeitHinweisGezeigt, kodierStart: st.kodierStart || null, begrModus: st.begrModus,
+        planAnsicht: st.planAnsicht || null,
         rec: { anzahl: st.rec.anzahl, roh: st.rec.roh, pfade: st.rec.pfade },
         begrText: ta ? ta.value : '',
         offeneAntworten: st.offeneAntworten, puffer: st.puffer
@@ -3140,7 +3148,9 @@ function stWrap(name, detailsFn){
 }
 function stKatVon(name){ const p = state.pool.find(x => x.name === name); return p ? p.cat : null; }
 stWrap('switchTab', tab => ({ tab }));
-stWrap('openDetail', name => { st.oeffnungen[name] = (st.oeffnungen[name] || 0) + 1; return { name, kategorie: stKatVon(name) }; });
+stWrap('openDetail', name => { st.oeffnungen[name] = (st.oeffnungen[name] || 0) + 1; return { name, kategorie: stKatVon(name), ansicht: stAktuelleAnsicht() }; });
+stWrap('setPrioritaetsFilter', key => ({ filter: key, ansicht: 'heatmap' }));
+stWrap('toggleRohtextLayer', () => ({ wird_aktiv: !rohtextLayerAktiv }));
 stWrap('closeDetail', () => ({ name: detailChild }));
 stWrap('recode', (name, neu) => ({ name, von: stKatVon(name), nach: neu }));
 stWrap('empfKindTauschen', (i, slot, neuerName) => ({ schritt: i, slot, von: state.empfBloecke[i]?.namen[slot], nach: neuerName }));
@@ -3175,8 +3185,34 @@ window.renderEmpfSlotKarte = function(blockIndex, slotIdx, kategorieIds, namen, 
   knoepfe.innerHTML = `<button type="button" class="navbtn" onclick="stPickerOeffnen(${blockIndex},${slotIdx})"><i class="ti ti-replace"></i> Andere Antwort einsetzen</button>
     <button type="button" class="navbtn" onclick="openDetail(${nameAttr})"><i class="ti ti-pencil"></i> Antwort öffnen / Einordnung ändern</button>`;
   karte.appendChild(knoepfe);
+  stImpulsEinklappen(karte, name);
   return box.innerHTML;
 };
+
+// --- Nachfrage-Impulse eingeklappt als "Impulsidee" (Aufklappen wird protokolliert) ---
+const stImpulsOffen = new Set();
+function stImpulsEinklappen(el, name){
+  el.querySelectorAll('.live-frage-box').forEach(box => {
+    if(box.parentElement && box.parentElement.classList.contains('st-impuls')) return;
+    const det = document.createElement('details');
+    det.className = 'st-impuls';
+    det.dataset.name = name;
+    if(stImpulsOffen.has(name)) det.setAttribute('open', '');
+    const sum = document.createElement('summary');
+    sum.innerHTML = '<span class="st-impuls-zu">Impulsidee anzeigen</span><span class="st-impuls-auf">Impulsidee ausblenden</span>';
+    box.replaceWith(det);
+    det.appendChild(sum);
+    det.appendChild(box);
+  });
+}
+document.addEventListener('toggle', e => {
+  const det = e.target;
+  if(!det.classList || !det.classList.contains('st-impuls')) return;
+  const name = det.dataset.name;
+  if(det.open === stImpulsOffen.has(name)) return; // nur Neuaufbau der Karte, keine echte Bedienung
+  if(det.open) stImpulsOffen.add(name); else stImpulsOffen.delete(name);
+  stLog('impuls', { name, offen: det.open, kategorie: stKatVon(name) });
+}, true);
 
 // --- Auswahlfenster: beliebige Antwort in einen Baustein der empfohlenen Reihenfolge legen ---
 let stPickerZiel = null;
@@ -3231,6 +3267,7 @@ function stSlotBelegen(name){
 const stRecodeOrig = window.recode;
 window.recode = function(name, neu){
   const r = stRecodeOrig(name, neu);
+  if(stAktuelleAnsicht() === 'heatmap') renderHeatmap();
   if(!state.empfAutomatisch && neu){
     state.empfBloecke.forEach(b => b.namen.forEach((n, s) => { if(n === name) b.kategorieIds[s] = neu; }));
     renderDashboard();
@@ -3263,6 +3300,9 @@ window.renderFrei = function(){
       z.innerHTML = `<span class="ts" style="font-size:var(--fs-micro); text-decoration:underline; cursor:pointer;"><i class="ti ti-x"></i> von der Tafel nehmen</span>`;
       z.firstElementChild.onclick = ev => { ev.stopPropagation(); stFreiToggle(name); };
       div.appendChild(z);
+      stImpulsEinklappen(div, name);
+      const det = div.querySelector('.st-impuls');
+      if(det) det.addEventListener('click', ev => ev.stopPropagation()); // Aufklappen öffnet nicht die Detailansicht
     });
   }
   let box = document.getElementById('st-frei-auswahl');
@@ -3309,6 +3349,36 @@ function stDatensatzLaden(){
   state.answersVisibleOnTafel = false;
   aktualisiereEmpfehlung();
 }
+// --- Sitzplan mit Antwortübersicht (Heatmap) aus dem Studiendatensatz aufbauen ---
+// 16 Kinder in 4 Reihen zu je 2 Zweiertischen; feste Sitzordnung unabhängig von der Version.
+function stSitzplanAufbauen(){
+  SYMBOLS = STUDIE.items.map((it, i) => ({ id: 'kind' + i, icon: SYMBOLS_POOL[i % SYMBOLS_POOL.length], name: it.name }));
+  consentState = {}; childLanguage = {}; state.heatmapStatus = {};
+  sitzplanState.placed = {};
+  const xs = [14, 30, 70, 86], ys = [28, 48, 68, 88];
+  SYMBOLS.forEach((sym, i) => {
+    consentState[sym.id] = true;
+    childLanguage[sym.id] = 'de';
+    sitzplanState.placed[sym.id] = { x: xs[i % 4], y: ys[Math.floor(i / 4) % 4] };
+  });
+  stHeatmapStatusSync();
+}
+function stHeatmapStatusSync(){
+  SYMBOLS.forEach(sym => {
+    const p = state.pool.find(x => x.name === sym.name);
+    state.heatmapStatus[sym.id] = p ? p.cat : null;
+  });
+}
+const stRenderHeatmapOrig = window.renderHeatmap;
+window.renderHeatmap = function(){ stHeatmapStatusSync(); return stRenderHeatmapOrig(); };
+function stAktuelleAnsicht(){ const v = document.querySelector('.screen.visible'); return v ? v.id.replace('scr-', '') : null; }
+function stZumDashboard(){
+  stLog('zum_dashboard', { von: 'heatmap' });
+  st.planAnsicht = 'dashboard';
+  show('dashboard');
+  stLeisteAktualisieren();
+}
+
 function stSnapshot(){
   return {
     aktiver_tab: state.activeTab,
@@ -3418,19 +3488,21 @@ function stPlanungStarten(){
   st.initialSnapshot = stSnapshot();
   st.initialSlotNamen = stPlanNamen();
   st.planStart = Date.now();
+  stSitzplanAufbauen();
   stPhase('planung');
   stSpeichern('planung_start', { initial: st.initialSnapshot });
-  show('dashboard');
+  st.planAnsicht = 'heatmap';
+  show('heatmap');
+  stLog('heatmap_gezeigt', {});
   stLeisteAktualisieren();
 }
 function stLeisteAktualisieren(){
-  const el = document.getElementById('st-leiste-zeit');
-  if(!el || st.phase !== 'planung') return;
+  if(st.phase !== 'planung' || !st.planStart) return;
   const min = Math.floor((Date.now() - st.planStart) / 60000);
   const um = min >= STUDIE.empfohlene_minuten;
-  el.textContent = um ? 'Die empfohlene Zeit ist erreicht. Sie können Ihren Plan jetzt abschließen.'
-                      : `Planung läuft seit ${min < 1 ? 'weniger als einer Minute' : min === 1 ? '1 Minute' : min + ' Minuten'} (empfohlen: etwa ${STUDIE.empfohlene_minuten} Minuten)`;
-  document.getElementById('st-leiste').classList.toggle('st-zeit-um', um);
+  const text = um ? 'Die empfohlene Zeit ist erreicht. Sie können Ihren Plan im Dashboard abschließen.'
+                  : `Planung läuft seit ${min < 1 ? 'weniger als einer Minute' : min === 1 ? '1 Minute' : min + ' Minuten'} (empfohlen: etwa ${STUDIE.empfohlene_minuten} Minuten)`;
+  document.querySelectorAll('.st-leiste').forEach(l => { l.querySelector('.st-leiste-zeit').textContent = text; l.classList.toggle('st-zeit-um', um); });
   if(um && !st.zeitHinweisGezeigt){ st.zeitHinweisGezeigt = true; stLog('zeithinweis', {}); }
 }
 setInterval(stLeisteAktualisieren, 15000);
@@ -3668,7 +3740,8 @@ function stFortsetzen(d){
     start: alt.start, phase: alt.phase, audioOk: alt.audioOk, code: alt.code,
     antworten: alt.antworten || {}, oeffnungen: alt.oeffnungen || {}, planStart: alt.planStart,
     initialSnapshot: alt.initialSnapshot, initialSlotNamen: alt.initialSlotNamen || [],
-    zeitHinweisGezeigt: alt.zeitHinweisGezeigt, kodierStart: alt.kodierStart, begrModus: alt.begrModus
+    zeitHinweisGezeigt: alt.zeitHinweisGezeigt, kodierStart: alt.kodierStart, begrModus: alt.begrModus,
+    planAnsicht: alt.planAnsicht || 'dashboard'
   });
   st.rec.anzahl = alt.rec?.anzahl || 0; st.rec.roh = alt.rec?.roh || []; st.rec.pfade = alt.rec?.pfade || [];
   // noch nicht gesendete Daten des ersten Anlaufs übernehmen (werden gleich nachgesendet)
@@ -3686,6 +3759,7 @@ function stFortsetzen(d){
     state.empfBloecke = d.dashboard.empfBloecke || [];
     state.empfAktivBlock = d.dashboard.empfAktivBlock ?? -1;
     state.poolFilter = null;
+    stSitzplanAufbauen();
   }
   stFragenVorbelegen('st-vorab-felder', STUDIE.vorab_fragen);
   stFragenVorbelegen('st-nach-felder', STUDIE.nach_fragen);
@@ -3695,7 +3769,7 @@ function stFortsetzen(d){
   });
   stLog('fortgesetzt', { pause_ms: Date.now() - d.gespeichert, phase: st.phase });
   const ziel = { vorab:'st-vorab', auftrag:'st-auftrag', planung:'dashboard', begruendung:'st-begruendung', nach:'st-nach', kodieren:'st-kodieren', ende:'st-ende' }[st.phase];
-  if(st.phase === 'planung'){ show('dashboard'); stLeisteAktualisieren(); }
+  if(st.phase === 'planung'){ show(st.planAnsicht === 'heatmap' ? 'heatmap' : 'dashboard'); stLeisteAktualisieren(); }
   else if(st.phase === 'begruendung'){
     stBegruendungVorbereiten();
     if(alt.begrModus === 'text') stZuTextWechseln(true);
@@ -3761,15 +3835,38 @@ function studieStarten(){
     summary.parentElement.addEventListener('toggle', e => { hint.textContent = e.target.open ? 'zuklappen' : 'aufklappen'; });
   }
   // Elemente, die in der Studie nicht gebraucht werden, im Dashboard ausblenden
-  ["show('tafel')", "show('heatmap')", "endSession()"].forEach(sel =>
+  ["show('tafel')", "endSession()"].forEach(sel =>
     document.querySelectorAll(`#scr-dashboard [onclick="${sel}"]`).forEach(el => {
       (sel === 'endSession()' ? el.parentElement : el).style.display = 'none';
     }));
   const dash = document.getElementById('scr-dashboard');
   const leiste = document.createElement('div');
-  leiste.id = 'st-leiste'; leiste.className = 'st-leiste';
-  leiste.innerHTML = '<span id="st-leiste-zeit"></span>';
+  leiste.className = 'st-leiste';
+  leiste.innerHTML = '<span class="st-leiste-zeit"></span>';
   dash.insertBefore(leiste, dash.firstChild);
+  // Heatmap ("Sitzplan mit Antwortübersicht") für die Studie herrichten
+  const hm = document.getElementById('scr-heatmap');
+  const leisteH = leiste.cloneNode(true);
+  hm.insertBefore(leisteH, hm.firstChild);
+  hm.querySelector('.scr-title').textContent = 'Sitzplan mit Antwortübersicht';
+  const codeKarte = document.getElementById('sitzungscode-anzeige')?.closest('.card');
+  if(codeKarte) codeKarte.style.display = 'none';
+  const qrBtn = document.getElementById('qr-toggle-btn'); if(qrBtn) qrBtn.style.display = 'none';
+  const hmWeiter = hm.querySelector(`[onclick="show('dashboard')"]`);
+  if(hmWeiter){
+    hmWeiter.removeAttribute('onclick');
+    hmWeiter.onclick = stZumDashboard;
+    hmWeiter.textContent = 'Weiter zum Dashboard (Klassengespräch planen) →';
+    const hinweis = hmWeiter.nextElementSibling; if(hinweis) hinweis.style.display = 'none';
+  }
+  const hmHilfe = document.createElement('div');
+  hmHilfe.className = 'st-hilfe';
+  hmHilfe.textContent = 'Hier sehen Sie auf einen Blick, wie die Klasse geantwortet hat. Tippen Sie auf ein Kind, um seine Antwort zu lesen. Im nächsten Schritt planen Sie im Dashboard das Klassengespräch.';
+  hm.querySelector('.scr-title').after(hmHilfe);
+  const sortSel = document.getElementById('liste-sortierung');
+  if(sortSel) sortSel.addEventListener('change', () => stLog('liste_sortierung', { wert: sortSel.value }));
+  const zurueckHm = dash.querySelector(`[onclick="show('heatmap')"]`);
+  if(zurueckHm){ zurueckHm.removeAttribute('onclick'); zurueckHm.onclick = () => { stLog('zur_heatmap', { von: 'dashboard' }); st.planAnsicht = 'heatmap'; show('heatmap'); }; }
   const abschluss = document.createElement('button');
   abschluss.className = 'btn btn-primary'; abschluss.style.marginTop = '14px';
   abschluss.innerHTML = '<i class="ti ti-check"></i> Planung abschließen';
@@ -3783,8 +3880,9 @@ function studieStarten(){
     <div class="quote-box" style="font-size:var(--fs-body); margin-bottom:12px;">${escapeHtml(AUFGABE_TEXT)}</div>
     <p>Das Tool hat die 16 Antworten mithilfe von KI eingeordnet und schlägt eine Reihenfolge für das Klassengespräch vor.</p>
     <p><b>Ihre Aufgabe:</b> Planen Sie das anschließende Klassengespräch. Welche Antworten sollen in welcher Reihenfolge besprochen werden?
-    Gehen Sie so vor, wie Sie es in Ihrem eigenen Unterricht tun würden. Sie können im Dashboard alles verändern.</p>
-    <p style="margin-bottom:0;">Dafür haben Sie etwa ${STUDIE.empfohlene_minuten} Minuten. Wenn Ihr Plan steht, tippen Sie unten auf „Planung abschließen“.</p>`;
+    Gehen Sie so vor, wie Sie es in Ihrem eigenen Unterricht tun würden.</p>
+    <p>Im Dashboard können Sie Antworten austauschen, Schritte überspringen, die Einordnung einer Antwort ändern oder das Gespräch in der Ansicht „Frei“ selbst zusammenstellen.</p>
+    <p style="margin-bottom:0;">Sie sehen zuerst eine Übersicht, wie die Klasse geantwortet hat, und planen dann im Dashboard. Dafür haben Sie insgesamt etwa ${STUDIE.empfohlene_minuten} Minuten. Wenn Ihr Plan steht, tippen Sie im Dashboard unten auf „Planung abschließen“.</p>`;
   stRenderFragen('st-vorab-felder', STUDIE.vorab_fragen);
   stRenderFragen('st-nach-felder', STUDIE.nach_fragen);
   stKodierenRendern();

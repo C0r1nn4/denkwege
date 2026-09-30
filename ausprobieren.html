@@ -2872,7 +2872,7 @@ const STUDIE = {
         referenzbeispiele:["Es sind 12 Zehner, und 10 Zehner kann ich in einen Hunderter tauschen, weil das genauso viel ist."] },
       { kategorie_id:"uebertrag_ohne_begruendung", bezeichnung:"Übertrag ohne Begründung", kategorietyp:"tragfähige Strategie", praezision:"unpraezise", gueltig_fuer:"ja",
         kurzdefinition:"Lea hat recht. Das Verfahren wird beschrieben (die 1 kommt zu den Hundertern), die Gleichwertigkeit 10 Z = 1 H wird nicht genannt.",
-        nachfrage_impuls:"Was bedeutet die 1, die rüberkommt?",
+        nachfrage_impuls:"Wie viele Zehner stecken in der 1, die rüberkommt?",
         referenzbeispiele:["9 plus 3 ist 12, 2 bleibt stehen, die 1 kommt zum Hunderter."] },
       { kategorie_id:"zahlwert_gerechnet", bezeichnung:"Über den Zahlwert gerechnet", kategorietyp:"tragfähige Strategie", praezision:"praezise", gueltig_fuer:"ja",
         kurzdefinition:"Lea hat recht. Die 3 Zehner werden als 30 gedeutet und addiert; die Stellen werden nicht einzeln betrachtet.",
@@ -2884,11 +2884,11 @@ const STUDIE = {
         referenzbeispiele:["Lea hat recht, weil das so ist."] },
       { kategorie_id:"zehner_als_einer", bezeichnung:"Zehner als Einer", kategorietyp:"Fehler", gueltig_fuer:"nein",
         kurzdefinition:"Die 3 Zehner werden als 3 (Einer) gedeutet, Ergebnis 3098. Positions- und multiplikative Eigenschaft nicht berücksichtigt.",
-        nachfrage_impuls:"Sind 3 Zehner genauso viel wie 3 Einer?",
+        nachfrage_impuls:"Wie viel sind 3 Zehner? Zeig es mit Material.",
         referenzbeispiele:["Tim hat recht, es sind ja nur 3 mehr."] },
       { kategorie_id:"nicht_gebuendelt", bezeichnung:"Nicht gebündelt", kategorietyp:"Fehler", gueltig_fuer:"nein",
         kurzdefinition:"Die Zehner werden richtig an der Zehnerstelle ergänzt, aber die 12 Zehner werden nicht gebündelt (z. B. 30125). Position berücksichtigt, Bündelung nicht.",
-        nachfrage_impuls:"Darf in der Zehnerspalte eine 12 stehen?",
+        nachfrage_impuls:"Was kann man mit 10 von den 12 Zehnern machen?",
         referenzbeispiele:["Bei den Zehnern stehen jetzt 12, also 3 0 12 5."] },
       { kategorie_id:"hunderter_vergessen", bezeichnung:"Bündeln begonnen, Hunderter vergessen", kategorietyp:"Fehler", gueltig_fuer:"nein",
         kurzdefinition:"Die 12 Zehner werden zerlegt, der entstehende Hunderter wird aber nicht ergänzt (z. B. 3025).",
@@ -2903,16 +2903,16 @@ const STUDIE = {
     ]},
     // Text hinter "Warum diese Reihenfolge?" im Dashboard (HTML erlaubt)
     empfehlung_erklaerung: `Das Gespräch führt vom Fehler über das Problem zur Erklärung.<br><br>
-      <b>1. Zehner als Einer:</b> Wer 3 Zehner als 3 Einer deutet, hat noch nicht verstanden, dass der Wert einer Ziffer von ihrer Stelle abhängt. Das wird zuerst geklärt, weil alles Weitere darauf aufbaut.<br><br>
-      <b>2. Nicht gebündelt:</b> Hier werden die Zehner schon richtig bei den Zehnern ergänzt, aber es entstehen 12 Zehner. Die Frage „Geht das?“ macht sichtbar, dass gebündelt werden muss.<br><br>
+      <b>1. Zehner als Einer:</b> Wer 3 Zehner als 3 Einer deutet, hat noch nicht verstanden, dass der Wert einer Ziffer von ihrer Stelle abhängt. Die Frage, wo die 3 Zehner in der Zahl zu sehen sind, klärt das zuerst, weil alles Weitere darauf aufbaut.<br><br>
+      <b>2. Nicht gebündelt:</b> Hier werden die Zehner schon richtig bei den Zehnern ergänzt, aber es entstehen 12 Zehner. Die Frage, ob bei nur 30 mehr dreißigtausend herauskommen kann, macht sichtbar, dass die 12 Zehner so nicht stehen bleiben können und gebündelt werden müssen.<br><br>
       <b>3. Bündelung und Übertrag im Vergleich:</b> Beide Antworten kommen auf 3125. Die eine beschreibt nur das Verfahren („die 1 kommt rüber“), die andere erklärt, warum: 10 Zehner sind genauso viel wie 1 Hunderter. Im Vergleich bekommt das bekannte Verfahren seine Bedeutung: Hier wird an die Übertrag-Antwort angeknüpft, und die Bündelungserklärung zeigt, warum die 1 rüberkommt.<br><br>
       Kommt eine Kategorie in der Klasse nicht vor, entfällt der Schritt automatisch.`,
     fehler_prioritaet: ["zehner_als_einer","nicht_gebuendelt","hunderter_vergessen","ablehnung_ohne_begruendung"],
     tragfaehig_prioritaet: ["buendelung_erklaert","uebertrag_ohne_begruendung","zahlwert_gerechnet","zustimmung_ohne_begruendung"],
     bausteine: [
-      { typ:"isoliert", pool:"fehler", einstiegssatz:"Schauen wir uns an, was mit den 3 Zehnern passiert ist." },
-      { typ:"isoliert", pool:"fehler", einstiegssatz:"Hier stehen jetzt 12 Zehner. Geht das?" },
-      { typ:"vergleich", pools:["tragfaehig","tragfaehig"], einstiegssatz:"Beide kommen auf 3125. Warum kommt die 1 rüber?" }
+      { typ:"isoliert", pool:"fehler", einstiegssatz:"Wo sieht man in dieser Zahl die 3 Zehner, die dazugekommen sind?" },
+      { typ:"isoliert", pool:"fehler", einstiegssatz:"Zu 3095 kommen nur 30 dazu. Kann dabei dreißigtausend herauskommen?" },
+      { typ:"vergleich", pools:["tragfaehig","tragfaehig"], einstiegssatz:"Beide kommen auf 3125. Was bedeutet die 1, die rüberkommt, und wo findet ihr sie in der anderen Erklärung?" }
     ]
   }},
 

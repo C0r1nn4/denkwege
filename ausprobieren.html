@@ -84,8 +84,15 @@
   .c-gray { background: #D3D1C7; } .c-blue { background: #B5D4F4; } .c-amber { background: #FAC775; }
   .c-mint { background: #C9EAA8; } .c-rose { background: #F2AEBE; }
   /* [NEU] Farbfamilien nach Kategorietyp -- s. FARBEN_FEHLER/FARBEN_TRAGFAEHIG weiter unten.
-     Bewusst keine Ampel-Farben (kein reines Rot/Grün): "kühle" Familie für Fehler-Kategorien,
-     "warme" (aber nicht signalrote) Familie für tragfähige Strategien. */
+     [GEÄNDERT] Klarere Trennung: warm = NUR Gelb bis Orange (tragfähige Strategien),
+     kühl = NUR Blau bis Violett (Fehler). Rot/Rosa und Grün/Türkis kommen in keiner Familie
+     mehr vor, weil sie im Schulkontext als "falsch" bzw. "richtig" gelesen werden und die
+     Familien sonst über Kreuz wirken (vorher: Koralle/Rosa = richtig, Türkis = Fehler).
+     Reihenfolge = Vergabereihenfolge; die ersten vier jeder Familie sind maximal verschieden. */
+  .c-gelb { background: #F2D65A; } .c-orange { background: #F4A55A; } .c-apricot { background: #FAD7AE; }
+  .c-ocker { background: #CFA05A; } .c-sand { background: #E9D9A8; } .c-honig { background: #E8B53E; }
+  .c-himmel { background: #9FC8F0; } .c-violett { background: #AD9FE8; } .c-eisblau { background: #D2E2F5; }
+  .c-stahlblau { background: #83A2D4; } .c-lavendel { background: #D6C6F2; } .c-schiefer { background: #A9B6CE; }
   .c-cyan { background: #92D8D8; } .c-indigo { background: #A6A0E8; } .c-petrol { background: #7FC2C2; }
   .c-peach { background: #F5C6A0; } .c-gold { background: #E8C468; } .c-terra { background: #E0A98D; }
   /* [NEU] Neutrale Karte für die Tafelansicht -- ersetzt cat.color dort, damit die Farbfamilie
@@ -266,6 +273,29 @@
     <div class="card" id="st-vorab-felder"></div>
     <div id="st-fehler-vorab" class="st-fehler"></div>
     <button class="btn btn-primary" onclick="stVorabWeiter()">Weiter</button>
+  </div>
+
+  <!-- [NEU] Eigene Antwort VOR Auftrag und Antwortübersicht: Spracheingabe ausprobieren,
+       ohne dass die Lehrkraft schon Einordnungen des Tools gesehen hat. -->
+  <div id="scr-st-eigene" class="screen">
+    <h2 class="scr-title">Zuerst: Ihre eigene Antwort</h2>
+    <div class="card" style="font-size:var(--fs-body); line-height:1.55;">
+      <p style="margin-top:0;">Bevor Sie sehen, wie Kinder geantwortet haben: Beantworten Sie bitte diese Aufgabe kurz selbst.</p>
+      <div class="quote-box" id="st-eigene-aufgabe" style="font-size:var(--fs-body); margin-bottom:12px;"></div>
+      <p style="margin-bottom:0;">Sprechen Sie Ihre Antwort ein, so wie ein Kind sie dem Tablet erklären würde. So probieren Sie gleich die Spracheingabe aus, mit der die Kinder im Tool arbeiten.</p>
+    </div>
+    <div id="st-eigen-aufnahme-bereich" class="card" style="text-align:center; display:none;">
+      <button id="st-eigen-rec-btn" class="btn btn-primary" onclick="stAufnahmeToggle('eigen')"><i class="ti ti-microphone"></i> <span id="st-eigen-rec-label">Aufnahme starten</span></button>
+      <div id="st-eigen-rec-status" class="ts" style="font-size:var(--fs-small); margin-top:8px;">Tipp: Halten Sie das Gerät nah an den Mund oder nutzen Sie Kopfhörer mit Mikrofon.</div>
+      <div style="margin-top:8px;"><span class="ts" style="font-size:var(--fs-micro); text-decoration:underline; cursor:pointer;" onclick="stZuTextWechseln(false,'eigen')">Lieber tippen</span></div>
+    </div>
+    <div id="st-eigen-text-bereich" style="display:none;">
+      <div id="st-eigen-text-hinweis" class="ts" style="font-size:var(--fs-small); margin-bottom:6px;"></div>
+      <textarea id="st-eigen-text" rows="5" style="font-size:var(--fs-body); font-family:inherit;"></textarea>
+    </div>
+    <div class="ts" style="font-size:var(--fs-small); line-height:1.5; margin:12px 0;"><i class="ti ti-info-circle"></i> <b>Hinweis:</b> Wie das Tool Ihre eigene Antwort live einordnet, können Sie erst am Ende ausprobieren: nachdem Sie die Antwortübersicht zum ersten Mal angesehen und Ihre Einschätzung abgegeben haben.</div>
+    <div id="st-fehler-eigene" class="st-fehler"></div>
+    <button class="btn btn-primary" onclick="stEigeneWeiter()">Weiter</button>
   </div>
 
   <div id="scr-st-auftrag" class="screen">
@@ -823,12 +853,12 @@ function aktualisierenAnsicht(){
 // ("praezise") oder ein noch unterwegs befindliches Verständnis ("unpraezise")
 // repräsentiert, ist ein inhaltliches Urteil über die Kategorie selbst.
 let CATS = {
-  korrekt_begruendet: {label:"richtig, begründet", color:"c-teal", typ:"tragfähige Strategie", praezision:"praezise", gueltig_fuer:null, def:"Zahl 6625 korrekt UND eine Stellenwert- oder Bündelungsregel wird erkennbar als Begründung genannt.", nachfrage:"Warum musstest du die 42 Zehner überhaupt umwandeln?"},
-  korrekt_unbegruendet: {label:"richtig, unbegründet", color:"c-mint", typ:"tragfähige Strategie", praezision:"unpraezise", gueltig_fuer:null, def:"Zahl 6625 korrekt, aber keine erkennbare inhaltliche Begründung -- das Verständnis ist noch nicht ausdifferenziert genug, um es zu artikulieren.", nachfrage:"Wie bist du auf die 6625 gekommen? Was ist mit den 42 Zehnern passiert?"},
-  fehler_unbundled: {label:"Fehler: nicht entbündelt (62425)", color:"c-coral", typ:"Fehler", gueltig_fuer:null, def:"42 Zehner werden unverändert/roh in die Zehnerspalte übernommen, keine Regruppierung stattgefunden.", nachfrage:"Darf in einem Kästchen der Stellenwerttafel mehr als eine Ziffer stehen?"},
-  fehler_stellenwert_ignoriert: {label:"Fehler: Stellenwert ignoriert (6247)", color:"c-purple", typ:"Fehler", gueltig_fuer:null, def:"Die '2' von 42 wird fälschlich als Einer-Ziffer gedeutet und zu den 5 Einern addiert.", nachfrage:"Was bedeutet die '2' in '42 Zehner' — ist das eine Einer-Ziffer?"},
-  fehler_mit_buendelungsversuch: {label:"Fehler, mit Bündelungsansatz", color:"c-amber", typ:"Fehler", gueltig_fuer:null, def:"Andere falsche Endzahl, aber im Text wird erkennbar eine Bündelungs- oder Stellenwertregel artikuliert.", nachfrage:"Deine Erklärung zur Umwandlung klingt richtig — wo genau ist beim Rechnen etwas schiefgelaufen?"},
-  fehler_ohne_erklaerung: {label:"Fehler ohne Begründung", color:"c-rose", typ:"Fehler", gueltig_fuer:null, def:"Andere falsche Endzahl, ohne dass eine inhaltliche Begründung erkennbar ist.", nachfrage:"Wie bist du vorgegangen? Erzähl mal Schritt für Schritt."},
+  korrekt_begruendet: {label:"richtig, begründet", color:"c-gelb", typ:"tragfähige Strategie", praezision:"praezise", gueltig_fuer:null, def:"Zahl 6625 korrekt UND eine Stellenwert- oder Bündelungsregel wird erkennbar als Begründung genannt.", nachfrage:"Warum musstest du die 42 Zehner überhaupt umwandeln?"},
+  korrekt_unbegruendet: {label:"richtig, unbegründet", color:"c-orange", typ:"tragfähige Strategie", praezision:"unpraezise", gueltig_fuer:null, def:"Zahl 6625 korrekt, aber keine erkennbare inhaltliche Begründung -- das Verständnis ist noch nicht ausdifferenziert genug, um es zu artikulieren.", nachfrage:"Wie bist du auf die 6625 gekommen? Was ist mit den 42 Zehnern passiert?"},
+  fehler_unbundled: {label:"Fehler: nicht entbündelt (62425)", color:"c-himmel", typ:"Fehler", gueltig_fuer:null, def:"42 Zehner werden unverändert/roh in die Zehnerspalte übernommen, keine Regruppierung stattgefunden.", nachfrage:"Darf in einem Kästchen der Stellenwerttafel mehr als eine Ziffer stehen?"},
+  fehler_stellenwert_ignoriert: {label:"Fehler: Stellenwert ignoriert (6247)", color:"c-violett", typ:"Fehler", gueltig_fuer:null, def:"Die '2' von 42 wird fälschlich als Einer-Ziffer gedeutet und zu den 5 Einern addiert.", nachfrage:"Was bedeutet die '2' in '42 Zehner' — ist das eine Einer-Ziffer?"},
+  fehler_mit_buendelungsversuch: {label:"Fehler, mit Bündelungsansatz", color:"c-eisblau", typ:"Fehler", gueltig_fuer:null, def:"Andere falsche Endzahl, aber im Text wird erkennbar eine Bündelungs- oder Stellenwertregel artikuliert.", nachfrage:"Deine Erklärung zur Umwandlung klingt richtig — wo genau ist beim Rechnen etwas schiefgelaufen?"},
+  fehler_ohne_erklaerung: {label:"Fehler ohne Begründung", color:"c-stahlblau", typ:"Fehler", gueltig_fuer:null, def:"Andere falsche Endzahl, ohne dass eine inhaltliche Begründung erkennbar ist.", nachfrage:"Wie bist du vorgegangen? Erzähl mal Schritt für Schritt."},
   keine_bearbeitung: {label:"keine Bearbeitung", color:"c-gray", typ:null, gueltig_fuer:null, def:"Kein Eintrag / keine Antwort vorhanden.", nachfrage:""},
   unklar: {label:"unklar", color:"c-gray", typ:null, gueltig_fuer:null, def:"Keiner Kategorie sicher zuordenbar", nachfrage:""}
 };
@@ -899,8 +929,9 @@ let istAdmin = false;            // s. uebernehmeLogin() -- steuert nur die Sich
 // c-tafel-neutral weiter oben und renderTafel() weiter unten -- sonst würde die Familie
 // (kühl=Fehler / warm=tragfähig) dort unbeschriftet dasselbe verraten, was Kategorie-Labels
 // heute schon bewusst nicht tun (s. Anforderungsdokument 2.4b).
-const FARBEN_FEHLER = ['c-teal', 'c-blue', 'c-purple', 'c-cyan', 'c-indigo', 'c-petrol'];
-const FARBEN_TRAGFAEHIG = ['c-coral', 'c-amber', 'c-rose', 'c-peach', 'c-gold', 'c-terra'];
+// [GEÄNDERT] Neue Paletten: kühl = nur Blau/Violett, warm = nur Gelb/Orange (s. CSS oben).
+const FARBEN_FEHLER = ['c-himmel', 'c-violett', 'c-eisblau', 'c-stahlblau', 'c-lavendel', 'c-schiefer'];
+const FARBEN_TRAGFAEHIG = ['c-gelb', 'c-orange', 'c-apricot', 'c-ocker', 'c-sand', 'c-honig'];
 const FARBE_HOUSEKEEPING = 'c-gray';
 
 function ladeAufgabe(config) {
@@ -2190,8 +2221,8 @@ function renderLegende(containerId, includeStatus, filterable){
   let html = "";
   if(includeStatus){
     html += `<span style="font-size:var(--fs-micro); color:var(--text-muted);"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;border:1px dashed var(--border-strong); margin-right:4px;"></span>offen</span>
-      <span style="font-size:var(--fs-micro); color:var(--text-muted);"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--fill-warning); margin-right:4px;"></span>läuft</span>
-      <span style="font-size:var(--fs-micro); color:var(--text-muted);"><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#FBE3C7; margin-right:4px;"></span>keine Einwilligung (schriftlich)</span>`;
+      <span style="font-size:var(--fs-micro); color:var(--text-muted);"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--text-secondary); margin-right:4px;"></span>läuft</span>
+      <span style="font-size:var(--fs-micro); color:var(--text-muted);"><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--surface-2);border:1.5px solid var(--border-strong);box-sizing:border-box; margin-right:4px;"></span>keine Einwilligung (schriftlich)</span>`;
   }
   if(filterable){
     const activeAlle = !state.poolFilter;
@@ -2410,20 +2441,20 @@ function renderPrioritaetsLeiste(){
   const { gruppen, vergleichBereit } = berechnePrioritaeten();
   const chips = [
     { key:'konfrontieren', n:gruppen.konfrontieren.length,
-      text:'nicht tragfähig — mit einer tragfähigen Antwort vergleichen', dot:'var(--fill-danger)' },
+      text:'nicht tragfähig — mit einer tragfähigen Antwort vergleichen', dot:'#83A2D4' /* [GEÄNDERT] kühl = Fehler */ },
     { key:'anknuepfen', n:gruppen.anknuepfen.length,
-      text:'tragfähig, aber unpräzise — daran anknüpfen', dot:'var(--fill-warning)' },
+      text:'tragfähig, aber unpräzise — daran anknüpfen', dot:'#FAD7AE' /* [GEÄNDERT] warm, hell */ },
     { key:'vergleichen', n: vergleichBereit ? gruppen.vergleichen.length : 0,
       text: vergleichBereit ? 'tragfähig, aber unterschiedlich — Wege vergleichen'
             : (gruppen.vergleichen.length>0 ? 'tragfähig — bisher nur eine Sichtweise, noch nichts zu vergleichen' : 'tragfähig und präzise'),
-      dot:'var(--fill-success)' },
+      dot:'#F4A55A' /* [GEÄNDERT] warm, kräftig */ },
     { key:'offen', n:gruppen.offen.length, text:'noch offen / unklar', dot:'var(--text-muted)' }
   ];
   el.innerHTML = chips.map(c=>{
     const aktiv = prioritaetsFilter === c.key;
     return `<div onclick="setPrioritaetsFilter('${c.key}')" style="cursor:pointer; display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:var(--radius); border:1px solid ${aktiv?'var(--border-accent)':'var(--border)'}; background:${aktiv?'var(--bg-accent)':'var(--surface-2)'};">
       <span style="min-width:18px; text-align:center; font-weight:700; font-size:var(--fs-body);">${c.n}</span>
-      <span style="width:8px; height:8px; border-radius:50%; background:${c.dot}; flex-shrink:0;"></span>
+      <span style="width:8px; height:8px; border-radius:50%; background:${c.dot}; border:1px solid rgba(32,30,29,0.3); box-sizing:border-box; flex-shrink:0;"></span>
       <span style="font-size:var(--fs-micro); color:var(--text-secondary);">${c.text}</span>
     </div>`;
   }).join('');
@@ -2489,7 +2520,8 @@ function renderHeatmap(){
       const card = document.createElement('div');
       card.style.cssText = "width:150px; border-radius:var(--radius); padding:8px; font-size:var(--fs-micro); line-height:1.35;";
       if(!hasConsent){
-        card.style.background = '#FBE3C7'; card.style.color = 'var(--text-warning)';
+        // [GEÄNDERT] neutral statt Pfirsich -- Farbe bleibt den Einordnungen vorbehalten
+        card.style.background = 'var(--surface-2)'; card.style.border = '1.5px solid var(--border-strong)'; card.style.color = 'var(--text-secondary)';
         card.innerHTML = `<b>${s.name}</b><div style="margin-top:2px;">schriftlich, ohne digitales Tool</div>`;
       } else if(eintrag){
         const cat = CATS[eintrag.cat];
@@ -2536,9 +2568,11 @@ function renderHeatmap(){
     el.style.opacity = gedimmt ? '0.25' : '1';
 
     if(!hasConsent){
-      el.style.background = '#FBE3C7';
+      // [GEÄNDERT] neutral statt Pfirsich -- Farbe bleibt den Einordnungen vorbehalten
+      el.style.background = 'var(--surface-2)';
+      el.style.border = '1.5px solid var(--border-strong)';
       el.style.borderRadius = '8px';
-      el.style.color = 'var(--text-warning)';
+      el.style.color = 'var(--text-secondary)';
       el.innerHTML = `<i class="ti ti-file-text" style="font-size:var(--fs-body);"></i><div>${s.name}</div>`;
     } else if(isFertig){
       el.className = CATS[status].color;
@@ -2547,7 +2581,8 @@ function renderHeatmap(){
       el.textContent = s.name;
       el.onclick = ()=> openDetail(s.name);
     } else if(isLaufend){
-      el.style.background = 'var(--fill-warning)';
+      // [GEÄNDERT] "läuft" neutral-dunkel statt Orange (Orange gehört jetzt zur warmen Familie)
+      el.style.background = 'var(--text-secondary)';
       el.style.borderRadius = '8px';
       el.style.color = '#fff';
       el.style.position = 'relative';
@@ -2587,7 +2622,7 @@ function renderAntwortenliste(){
   el.innerHTML = eintraege.map(e=>{
     const hasConsent = consentState[e.symbol.id];
     if(!hasConsent){
-      return `<div class="pool-item"><span style="width:10px; height:10px; border-radius:3px; background:#FBE3C7; flex-shrink:0;"></span><b style="font-size:var(--fs-small); width:64px; flex-shrink:0;">${e.symbol.name}</b><span class="ts" style="font-size:var(--fs-micro);">schriftlich bearbeitet (ohne digitales Tool)</span></div>`;
+      return `<div class="pool-item"><span style="width:10px; height:10px; border-radius:3px; background:var(--surface-2); border:1.5px solid var(--border-strong); box-sizing:border-box; flex-shrink:0;"></span><b style="font-size:var(--fs-small); width:64px; flex-shrink:0;">${e.symbol.name}</b><span class="ts" style="font-size:var(--fs-micro);">schriftlich bearbeitet (ohne digitales Tool)</span></div>`;
     }
     if(!e.antwort){
       return `<div class="pool-item"><span style="width:10px; height:10px; border-radius:3px; border:1px dashed var(--border-strong); flex-shrink:0;"></span><b style="font-size:var(--fs-small); width:64px; flex-shrink:0;">${e.symbol.name}</b><span class="ts" style="font-size:var(--fs-micro);">noch keine Antwort</span></div>`;
@@ -2994,8 +3029,12 @@ const STUDIE = {
 
   // --- Fragebögen --------------------------------------------------------------------
   // typ: likert (5-stufig) | auswahl | zahl | text.  pflicht: false = optional.
-  // PLATZHALTER-ITEMS für KI-Einstellung und Vertrauen: durch validierte Skalen ersetzen.
-  likert_pole: ["stimme gar nicht zu", "stimme voll zu"],
+  // PLATZHALTER-ITEMS für KI-Einstellung (vorab): noch durch validierte Skala ersetzen.
+  // [GEÄNDERT] Vertrauen (nachher) jetzt: Trust Scale for the AI Context (TAI), Hoffman,
+  // Mueller, Klein & Litman (2023), Front. Comput. Sci. 5, Tab. 8; validiert von Scharowski,
+  // Perrig et al. (2024/2025). Eigene deutsche Arbeitsübersetzung, "[tool]" -> "das Tool".
+  // Situativ angepasste Kurzfassung (5 Items), s. nach_fragen.
+  likert_pole: ["stimme überhaupt nicht zu", "stimme voll zu"],
   vorab_fragen: [
     { id:"status", typ:"auswahl", text:"Was trifft auf Sie zu?", optionen:["Lehrkraft","Lehrkraft im Vorbereitungsdienst (Referendariat)","Lehramtsstudierende:r","andere"] },
     { id:"berufsjahre", typ:"zahl", text:"Seit wie vielen Jahren unterrichten Sie (inkl. Referendariat)? Studierende tragen 0 ein.", min:0, max:50 },
@@ -3005,11 +3044,23 @@ const STUDIE = {
     { id:"ki_einst_2", typ:"likert", text:"Ergebnissen von KI-Systemen begegne ich eher skeptisch." }
   ],
   nach_fragen: [
-    { id:"vertrauen_1", typ:"likert", text:"Ich vertraue den Einordnungen, die das Tool vorgenommen hat." },
-    { id:"vertrauen_2", typ:"likert", text:"Im Unterricht würde ich die Einordnungen des Tools vor der Nutzung prüfen." },
+    // [GEÄNDERT] Situative Kurzfassung der TAI: nur Items, die nach einer einzigen
+    // Planungssituation beantwortbar sind, bezogen auf die heute gesehenen Einordnungen
+    // (Vergangenheitsform). Weggelassen: tai_2 (Vorhersehbarkeit, braucht wiederholte
+    // Nutzung), tai_5 (Schnelligkeit, hier irrelevant), tai_8 (Nutzungsvorliebe, überschneidet
+    // sich mit nutzen_1). IDs behalten die Originalnummer. Auswertung: tai_6 umpolen (6 - Wert),
+    // Mittelwert über tai_1, tai_3, tai_4, tai_6, tai_7; Reliabilität selbst berichten.
+    { id:"tai_1", typ:"likert", text:"Ich hatte Vertrauen in die Einordnungen des Tools." },
+    { id:"tai_3", typ:"likert", text:"Die Einordnungen des Tools waren zuverlässig." },
+    { id:"tai_4", typ:"likert", text:"Wenn ich mich bei meiner Planung auf die Einordnungen des Tools verlassen habe, war ich sicher, dass sie stimmen." },
+    { id:"tai_6", typ:"likert", umgepolt:true, text:"Ich war den Einordnungen des Tools gegenüber misstrauisch." },
+    { id:"tai_7", typ:"likert", text:"Das Tool hat die Antworten besser eingeordnet, als es eine unerfahrene Person gekonnt hätte." },
     { id:"nutzen_1", typ:"likert", text:"Ich kann mir vorstellen, das Tool in meinem Unterricht einzusetzen." },
-    { id:"trefferquote", typ:"auswahl", text:"Was schätzen Sie: Bei wie vielen der 16 Antworten hat das Tool die Kategorie richtig zugeordnet?", optionen:["16","15","14","13","12","11","10","9","8","7","6","5","4","3","2","1","0"] },
-    { id:"anders_eingeordnet", typ:"text", pflicht:false, text:"Gab es Antworten, die Sie anders eingeordnet hätten als das Tool? Wenn ja: welche und warum? (optional)" }
+    // [GEÄNDERT] "trefferquote" und "anders_eingeordnet" entfernt; stattdessen zwei offene
+    // Tool-Feedback-Fragen -- bewusst NACH den Vertrauensitems (kein Priming) und VOR der
+    // Aufklärung (Urteil über das erlebte Tool, nicht über die Manipulation).
+    { id:"feedback_hilfreich", typ:"text", pflicht:false, text:"Was hat Ihnen bei der Planung mit Denkwege am meisten geholfen, und was hat eher gestört? (optional)" },
+    { id:"feedback_nutzbar", typ:"text", pflicht:false, text:"Was müsste sich ändern, damit Sie Denkwege in Ihrem eigenen Unterricht tatsächlich nutzen würden? (optional)" }
   ]
 };
 
@@ -3039,7 +3090,10 @@ const st = {
   initialSlotNamen: [],
   zeitHinweisGezeigt: false,
   begrModus: null,     // 'sprache' | 'text'
-  rec: { recorder:null, chunks:[], mime:'audio/webm', laeuft:false, anzahl:0, roh:[], pfade:[], stream:null }
+  rec: { recorder:null, chunks:[], mime:'audio/webm', laeuft:false, anzahl:0, roh:[], pfade:[], stream:null },
+  // [NEU] eigene Aufnahme der Lehrkraft vor der Planung (getrennt von der Begründung)
+  recEigen: { recorder:null, chunks:[], mime:'audio/webm', laeuft:false, anzahl:0, roh:[], pfade:[], stream:null },
+  eigene: null, eigeneStart: 0, eigeneModus: null
 };
 
 // --- Senden an Supabase (nur INSERT, siehe studie_setup.sql) ---
@@ -3103,6 +3157,9 @@ function stStandSpeichern(){
         zeitHinweisGezeigt: st.zeitHinweisGezeigt, kodierStart: st.kodierStart || null, begrModus: st.begrModus,
         planAnsicht: st.planAnsicht || null,
         rec: { anzahl: st.rec.anzahl, roh: st.rec.roh, pfade: st.rec.pfade },
+        recEigen: { anzahl: st.recEigen.anzahl, roh: st.recEigen.roh, pfade: st.recEigen.pfade },
+        eigene: st.eigene, eigeneStart: st.eigeneStart, eigeneModus: st.eigeneModus,
+        eigeneText: (document.getElementById('st-eigen-text') || {}).value || '',
         begrText: ta ? ta.value : '',
         offeneAntworten: st.offeneAntworten, puffer: st.puffer
       },
@@ -3479,8 +3536,12 @@ function stWillkommenWeiter(){
 function stVorabWeiter(){
   if(!stFragenPruefen(STUDIE.vorab_fragen, 'st-fehler-vorab')) return;
   stSpeichern('vorab', stFragenWerte(STUDIE.vorab_fragen));
+  // Phase bleibt bewusst 'auftrag' (kein neuer Phasenwert in der Datenbank nötig);
+  // ob die eigene Antwort schon abgegeben wurde, steht in st.eigene.
   stPhase('auftrag');
-  show('st-auftrag');
+  st.eigeneStart = Date.now();
+  stEigeneVorbereiten();
+  show('st-eigene');
 }
 // --- 3 Auftrag -> Planung ---
 function stPlanungStarten(){
@@ -3490,7 +3551,7 @@ function stPlanungStarten(){
   st.planStart = Date.now();
   stSitzplanAufbauen();
   stPhase('planung');
-  stSpeichern('planung_start', { initial: st.initialSnapshot });
+  stSpeichern('planung_start', { initial: st.initialSnapshot, eigene_antwort: st.eigene || null });
   st.planAnsicht = 'heatmap';
   show('heatmap');
   stLog('heatmap_gezeigt', {});
@@ -3551,19 +3612,37 @@ function stBegruendungVorbereiten(){
     stZuTextWechseln(true);
   }
 }
-function stZuTextWechseln(ohneLog){
-  if(st.rec.laeuft) return;
-  st.begrModus = 'text';
-  document.getElementById('st-aufnahme-bereich').style.display = 'none';
-  document.getElementById('st-text-bereich').style.display = 'block';
-  document.getElementById('st-text-hinweis').textContent = 'Tippen Sie Ihre Begründung hier ein.';
-  if(!ohneLog) stLog('begruendung_zu_text', {});
+// Zwei Aufnahmestellen mit demselben Ablauf: 'begr' (Begründung nach der Planung) und
+// 'eigen' (eigene Antwort vor der Planung). Getrennte Zustände, damit Texte und Audio-Pfade
+// in der Auswertung auseinanderzuhalten sind.
+const ST_REC_UI = {
+  begr:  { btn:'st-rec-btn', label:'st-rec-label', status:'st-rec-status', ta:'st-begruendung-text',
+           text:'st-text-bereich', hinweis:'st-text-hinweis', aufnahme:'st-aufnahme-bereich',
+           tippHinweis:'Tippen Sie Ihre Begründung hier ein.', mikFehler:'Das Mikrofon konnte nicht gestartet werden. Bitte tippen Sie Ihre Begründung.',
+           nochmal:'Die Verschriftlichung hat nicht geklappt. Nehmen Sie bitte erneut auf oder tippen Sie.' },
+  eigen: { btn:'st-eigen-rec-btn', label:'st-eigen-rec-label', status:'st-eigen-rec-status', ta:'st-eigen-text',
+           text:'st-eigen-text-bereich', hinweis:'st-eigen-text-hinweis', aufnahme:'st-eigen-aufnahme-bereich',
+           tippHinweis:'Tippen Sie Ihre Antwort hier ein.', mikFehler:'Das Mikrofon konnte nicht gestartet werden. Bitte tippen Sie Ihre Antwort.',
+           nochmal:'Die Verschriftlichung hat nicht geklappt. Nehmen Sie bitte erneut auf oder tippen Sie.' }
+};
+function stRecZustand(ziel){ return ziel === 'eigen' ? st.recEigen : st.rec; }
+function stZuTextWechseln(ohneLog, ziel){
+  ziel = ziel || 'begr';
+  const u = ST_REC_UI[ziel];
+  if(stRecZustand(ziel).laeuft) return;
+  if(ziel === 'eigen') st.eigeneModus = 'text'; else st.begrModus = 'text';
+  document.getElementById(u.aufnahme).style.display = 'none';
+  document.getElementById(u.text).style.display = 'block';
+  document.getElementById(u.hinweis).textContent = u.tippHinweis;
+  if(!ohneLog) stLog(ziel === 'eigen' ? 'eigene_zu_text' : 'begruendung_zu_text', {});
 }
-async function stAufnahmeToggle(){
-  const r = st.rec;
-  const label = document.getElementById('st-rec-label');
-  const status = document.getElementById('st-rec-status');
-  const btn = document.getElementById('st-rec-btn');
+async function stAufnahmeToggle(ziel){
+  ziel = ziel || 'begr';
+  const u = ST_REC_UI[ziel];
+  const r = stRecZustand(ziel);
+  const label = document.getElementById(u.label);
+  const status = document.getElementById(u.status);
+  const btn = document.getElementById(u.btn);
   if(!r.laeuft){
     try {
       r.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -3575,11 +3654,11 @@ async function stAufnahmeToggle(){
       r.laeuft = true; r.startZeit = Date.now();
       label.textContent = 'Aufnahme beenden';
       status.textContent = 'Aufnahme läuft …';
-      stLog('aufnahme_start', {});
+      stLog('aufnahme_start', { ziel });
     } catch(e){
-      status.textContent = 'Das Mikrofon konnte nicht gestartet werden. Bitte tippen Sie Ihre Begründung.';
-      stLog('aufnahme_fehler', { fehler: String(e) });
-      stZuTextWechseln(true);
+      status.textContent = u.mikFehler;
+      stLog('aufnahme_fehler', { ziel, fehler: String(e) });
+      stZuTextWechseln(true, ziel);
     }
     return;
   }
@@ -3604,16 +3683,41 @@ async function stAufnahmeToggle(){
     } catch(e){ fehlerText = String(e); }
     r.anzahl++;
     r.roh.push(text);
-    stLog('aufnahme_ende', { dauer_ms: dauer, zeichen: text.length, fehler: fehlerText });
-    const ta = document.getElementById('st-begruendung-text');
-    document.getElementById('st-text-bereich').style.display = 'block';
-    document.getElementById('st-text-hinweis').textContent = 'So haben wir Sie verstanden. Sie können den Text korrigieren oder ergänzen.';
+    stLog('aufnahme_ende', { ziel, dauer_ms: dauer, zeichen: text.length, fehler: fehlerText });
+    const ta = document.getElementById(u.ta);
+    document.getElementById(u.text).style.display = 'block';
+    document.getElementById(u.hinweis).textContent = 'So haben wir Sie verstanden. Sie können den Text korrigieren oder ergänzen.';
     if(text) ta.value = ta.value ? ta.value.trimEnd() + ' ' + text : text;
     btn.disabled = false;
     label.textContent = 'Weitere Aufnahme hinzufügen';
-    status.textContent = fehlerText ? 'Die Verschriftlichung hat nicht geklappt. Nehmen Sie bitte erneut auf oder tippen Sie.' : '';
+    status.textContent = fehlerText ? u.nochmal : '';
+    stStandSpeichern();
   };
   r.recorder.stop();
+}
+// --- 3a Eigene Antwort (vor Auftrag und Antwortübersicht) ---
+function stEigeneVorbereiten(){
+  document.getElementById('st-eigene-aufgabe').innerHTML = escapeHtml(AUFGABE_TEXT);
+  if(st.audioOk && navigator.mediaDevices && window.MediaRecorder){
+    st.eigeneModus = 'sprache';
+    document.getElementById('st-eigen-aufnahme-bereich').style.display = 'block';
+  } else {
+    stZuTextWechseln(true, 'eigen');
+  }
+}
+function stEigeneWeiter(){
+  const fehler = document.getElementById('st-fehler-eigene');
+  if(st.recEigen.laeuft){ fehler.textContent = 'Bitte beenden Sie zuerst die Aufnahme.'; return; }
+  const text = document.getElementById('st-eigen-text').value.trim();
+  if(!text){ fehler.textContent = 'Bitte sprechen Sie Ihre Antwort kurz ein oder tippen Sie sie.'; return; }
+  fehler.textContent = '';
+  st.eigene = {
+    modus: st.eigeneModus, text_final: text, transkripte_roh: st.recEigen.roh,
+    anzahl_aufnahmen: st.recEigen.anzahl, audio_pfade: st.recEigen.pfade,
+    dauer_ms: Date.now() - st.eigeneStart
+  };
+  stLog('eigene_antwort_abgegeben', { modus: st.eigene.modus, zeichen: text.length, anzahl_aufnahmen: st.eigene.anzahl_aufnahmen });
+  show('st-auftrag');
 }
 function stBegruendungWeiter(){
   if(st.rec.laeuft){ document.getElementById('st-fehler-begruendung').textContent = 'Bitte beenden Sie zuerst die Aufnahme.'; return; }
@@ -3744,6 +3848,8 @@ function stFortsetzen(d){
     planAnsicht: alt.planAnsicht || 'dashboard'
   });
   st.rec.anzahl = alt.rec?.anzahl || 0; st.rec.roh = alt.rec?.roh || []; st.rec.pfade = alt.rec?.pfade || [];
+  st.recEigen.anzahl = alt.recEigen?.anzahl || 0; st.recEigen.roh = alt.recEigen?.roh || []; st.recEigen.pfade = alt.recEigen?.pfade || [];
+  st.eigene = alt.eigene || null; st.eigeneStart = alt.eigeneStart || 0; st.eigeneModus = alt.eigeneModus || null;
   // noch nicht gesendete Daten des ersten Anlaufs übernehmen (werden gleich nachgesendet)
   st.offeneAntworten = [...(alt.offeneAntworten || []), ...st.offeneAntworten.filter(z => z.teilnahme_id === st.teilnahmeId)];
   st.puffer = [...(alt.puffer || [])];
@@ -3779,6 +3885,17 @@ function stFortsetzen(d){
       document.getElementById('st-text-hinweis').textContent = 'Ihre bisherige Begründung. Sie können sie ergänzen oder korrigieren.';
     }
     show('st-begruendung');
+  }
+  else if(st.phase === 'auftrag' && !st.eigene){
+    // eigene Antwort noch nicht abgegeben: dort weitermachen
+    stEigeneVorbereiten();
+    if(alt.eigeneModus === 'text') stZuTextWechseln(true, 'eigen');
+    if(alt.eigeneText){
+      document.getElementById('st-eigen-text').value = alt.eigeneText;
+      document.getElementById('st-eigen-text-bereich').style.display = 'block';
+      document.getElementById('st-eigen-text-hinweis').textContent = 'Ihre bisherige Antwort. Sie können sie ergänzen oder korrigieren.';
+    }
+    show('st-eigene');
   }
   else if(st.phase === 'ende'){ stEndeRendern(); show('st-ende'); }
   else show(ziel || 'st-willkommen');
@@ -3889,6 +4006,7 @@ function studieStarten(){
   if(getUrlParam('pruefen') === '1') stPruefbericht();
   // Begründungstext laufend im Zwischenstand sichern
   document.getElementById('st-begruendung-text').addEventListener('input', () => stStandSpeichern());
+  document.getElementById('st-eigen-text').addEventListener('input', () => stStandSpeichern());
   stLog('start', { version_quelle: st.versionQuelle, url: location.href.split('?')[0] });
   show('st-willkommen');
   const gespeichert = stStandLoeschenFallsTestwechsel(stStandLaden());

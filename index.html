@@ -935,7 +935,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_WOnHYkefrIzOY-tigGqPKg_Dvjf73Gc";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Version dieser Datei (JJJJ-MM-TT-NN). Bei JEDER Änderung hochzählen und im Änderungsprotokoll des Projektkontexts eintragen.
-const APP_VERSION = "2026-10-22-01";
+const APP_VERSION = "2026-10-22-02";
 (function(){ const el = document.getElementById('app-version'); if(el) el.textContent = 'v' + APP_VERSION; console.info('Denkwege', APP_VERSION); })();
 function getUrlParam(name){ return new URLSearchParams(window.location.search).get(name); }
 
@@ -1449,7 +1449,9 @@ async function lkAnmelden(){
   show('login');
 }
 async function uebernehmeLogin(user){
-  aktiveKlassenraum = user.user_metadata?.klassenraum || "3b";
+  // Klassenraum kommt aus app_metadata (vom Nutzer nicht änderbar; die RLS-Policies lesen dasselbe Feld).
+  // Fallback auf user_metadata nur für Konten, die noch nicht umgestellt sind.
+  aktiveKlassenraum = user.app_metadata?.klassenraum || user.user_metadata?.klassenraum || "3b";
   aktiverAnzeigename = user.user_metadata?.anzeige_name || user.email;
   document.getElementById('klassenraum-name-anzeige').textContent = "Klasse " + aktiveKlassenraum;
   // Admin-Button nur sichtbar mit ?admin in der URL UND echter Admin-Rolle im Account

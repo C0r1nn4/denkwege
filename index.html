@@ -156,6 +156,285 @@
   .switch .slider::before { content: ""; position: absolute; top: 2px; left: 2px; width: 17px; height: 17px; border-radius: 50%; background: var(--surface-2); box-shadow: 0 1px 2px rgba(0,0,0,0.25); transition: transform .15s; }
   .switch input:checked + .slider { background: var(--fill-success); border-color: var(--fill-success); }
   .switch input:checked + .slider::before { transform: translateX(17px); }
+
+
+  /* ===== Kindansicht: gleiche Gestaltungssprache, aber weniger visuelle Unruhe =====
+     Reine Darstellungsebene: keine IDs, Ereignisse, Abläufe oder Datenzugriffe geändert. */
+  #scr-code-eingabe,
+  #scr-symbolauswahl,
+  #scr-aufnahme {
+    padding: clamp(18px, 4vw, 30px) clamp(14px, 4vw, 24px) 34px;
+  }
+  #scr-code-eingabe .navbtn,
+  #scr-symbolauswahl .navbtn,
+  #scr-aufnahme .navbtn {
+    min-height: 44px;
+  }
+  #scr-code-eingabe > div:nth-child(2),
+  #scr-symbolauswahl h2.scr-title {
+    line-height: 1.15;
+    margin-bottom: 12px;
+    font-size: clamp(30px, 6vw, 38px);
+  }
+  #scr-code-eingabe .ts,
+  #scr-symbolauswahl .ts {
+    line-height: 1.45;
+  }
+  #code-eingabe-slots { gap: clamp(10px, 3vw, 18px) !important; }
+  #code-eingabe-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: clamp(7px, 2vw, 14px) !important;
+  }
+  #scr-symbolauswahl .grid4 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(10px, 2.5vw, 16px);
+  }
+  .kid-symbol-btn {
+    min-width: 0;
+    padding: 8px 4px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border);
+    box-shadow: 0 3px 10px rgba(46,43,37,.08);
+    transition: transform .12s ease, border-color .12s ease, background .12s ease;
+  }
+  .kid-symbol-btn:active { transform: scale(.97); }
+  .kid-symbol-btn:focus-visible,
+  .kid-big-icon-btn:focus-visible,
+  .kid-mode-btn:focus-visible,
+  .kid-record-btn:focus-visible {
+    outline: 3px solid var(--fill-accent);
+    outline-offset: 3px;
+  }
+  .kid-symbol-btn .emoji { font-size: clamp(34px, 8vw, 46px); line-height: 1.15; }
+  .kid-symbol-btn .name { font-size: clamp(12px, 3.4vw, 15px); overflow-wrap: anywhere; }
+  #scr-aufnahme > .card {
+    text-align: left;
+    border-radius: 22px;
+    padding: clamp(16px, 4vw, 24px);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 14px rgba(46,43,37,.06);
+  }
+  #aufnahme-anweisung { font-size: clamp(23px, 5vw, 30px) !important; line-height: 1.35 !important; }
+  #scr-aufnahme > .card > div[style*="height:80px"] {
+    min-height: 76px;
+    border: 1px dashed var(--border-strong);
+    background: var(--surface-1) !important;
+    color: var(--text-secondary);
+  }
+  #wahl-bereich {
+    padding: 18px 14px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: var(--surface-2);
+  }
+  #wahl-bereich .btn { min-height: 76px; border-radius: 16px; }
+  #mode-speak, #mode-type, .kid-mode-btn {
+    box-shadow: 0 3px 10px rgba(46,43,37,.08);
+    transition: transform .12s ease;
+  }
+  #mode-speak:active, #mode-type:active, .kid-mode-btn:active { transform: scale(.97); }
+  #record-area { padding: 18px 10px 8px; }
+  .kid-record-btn {
+    width: clamp(168px, 48vw, 210px);
+    height: clamp(168px, 48vw, 210px);
+    border: 8px solid var(--surface-2) !important;
+    box-shadow: 0 0 0 2px rgba(32,30,29,.10), 0 8px 20px rgba(46,43,37,.16);
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  .kid-record-btn:active { transform: scale(.97); }
+  #record-label { line-height: 1.4; }
+  #review-area {
+    border-top: 1px solid var(--border) !important;
+    background: var(--surface-2);
+    border-radius: 18px;
+    padding: 20px 14px 14px !important;
+  }
+  #transcript-edit {
+    min-height: 210px !important;
+    width: 100%;
+    box-sizing: border-box;
+    border: 1.5px solid var(--border-strong) !important;
+    border-radius: 14px;
+    background: #fffdf8;
+    line-height: 1.5;
+  }
+  #done-area .card {
+    border-radius: 20px;
+    box-shadow: 0 3px 12px rgba(46,43,37,.06);
+  }
+  #done-area .btn { min-height: 58px; border-radius: 16px; }
+  #symbol-confirm { padding: 18px; -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+  #symbol-confirm .modal {
+    width: min(100%, 420px);
+    padding: 26px 20px;
+    border-radius: 24px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    box-shadow: 0 18px 55px rgba(32,30,29,.22);
+  }
+  #symbol-confirm-icon { line-height: 1.1; }
+  #symbol-confirm .kid-big-icon-btn { width: 78px; height: 78px; }
+  #scr-code-eingabe .btn { min-height: 54px; border-radius: 15px; }
+  @media (max-width: 420px) {
+    #scr-symbolauswahl .grid4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    #code-eingabe-grid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+    #scr-aufnahme .row { gap: 16px !important; }
+    #wahl-bereich .row { gap: 10px !important; }
+    #wahl-bereich .btn { width: min(44%, 130px) !important; padding: 14px 8px !important; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .kid-symbol-btn, .kid-record-btn, #mode-speak, #mode-type, .kid-mode-btn { transition: none; }
+  }
+
+
+  /* Lehrkraft-Dashboard: eigenständige Arbeitsfläche statt schmaler Mobilansicht */
+  .app:has(#scr-dashboard.visible) {
+    max-width: 1240px;
+    background: #f7f1e7;
+    box-shadow: 0 0 42px rgba(46,43,37,.07);
+  }
+  #scr-dashboard {
+    padding: clamp(18px, 3vw, 34px);
+    padding-bottom: 20px;
+  }
+  #scr-dashboard > .row:first-child {
+    align-items: center !important;
+    gap: 18px;
+    margin: 0 0 18px !important;
+    padding: 0 0 18px !important;
+    border-bottom: 1px solid rgba(32,30,29,.14) !important;
+  }
+  #scr-dashboard #dashboard-aufgabe-text {
+    font-family: var(--font-heading);
+    font-size: clamp(22px, 2.4vw, 30px) !important;
+    line-height: 1.2;
+    margin-top: 3px;
+  }
+  #scr-dashboard #dashboard-verstehenskern { font-size: 13px !important; margin-top: 7px !important; }
+  #scr-dashboard > .banner {
+    border: 1px solid rgba(124,143,92,.26);
+    border-radius: 14px;
+    padding: 13px 16px;
+    line-height: 1.55;
+    font-size: 14px;
+    margin-bottom: 18px !important;
+  }
+  #scr-dashboard details { margin-bottom: 18px !important; }
+  #scr-dashboard .dash-menu-summary {
+    padding: 11px 14px;
+    border-color: rgba(32,30,29,.16);
+    box-shadow: none;
+    background: rgba(255,250,241,.72);
+    font-size: 14px;
+  }
+  #scr-dashboard .dash-menu-summary:hover { border-color: var(--border-accent); }
+  #scr-dashboard #pool-area { gap: 10px; }
+  #scr-dashboard .segmented {
+    display: inline-flex;
+    max-width: 100%;
+    padding: 4px;
+    border-radius: 13px;
+    border-color: rgba(32,30,29,.12);
+    margin-bottom: 18px !important;
+  }
+  #scr-dashboard .seg-btn { min-width: 155px; padding: 10px 18px; font-size: 14px; white-space: nowrap; flex: none; }
+  #scr-dashboard .seg-btn.active { box-shadow: 0 2px 6px rgba(46,43,37,.12); }
+  #scr-dashboard #empfohlen-area,
+  #scr-dashboard #frei-area { min-width: 0; }
+  #scr-dashboard #empfehlung-erklaerung {
+    padding: 13px 16px !important;
+    border-radius: 12px !important;
+    line-height: 1.55;
+  }
+  #scr-dashboard .card {
+    border-color: rgba(32,30,29,.13);
+    box-shadow: 0 2px 9px rgba(46,43,37,.035);
+  }
+  #scr-dashboard #empfohlen-area > .card,
+  #scr-dashboard #frei-area > .card {
+    padding: clamp(14px, 2vw, 22px);
+    margin-bottom: 14px;
+  }
+  #scr-dashboard #empfohlen-area .quote-slot,
+  #scr-dashboard #frei-area .quote-slot {
+    font-size: clamp(17px, 1.6vw, 21px);
+    line-height: 1.5;
+  }
+  #scr-dashboard #empfohlen-area .navbtn,
+  #scr-dashboard #frei-area .navbtn { min-height: 34px; }
+  #scr-dashboard #frei-area .grid2 { gap: 12px; }
+  #scr-dashboard #frei-area #slots-area > div {
+    min-width: 0;
+    border: 1px solid rgba(32,30,29,.13);
+    border-radius: 13px;
+    overflow: hidden;
+    background: var(--surface-2);
+    padding-bottom: 10px;
+  }
+  #scr-dashboard #frei-area #slots-area .quote-slot { padding: 12px 14px; }
+  #scr-dashboard > button.btn { max-width: 560px; }
+  #scr-dashboard > button.btn-primary {
+    margin-top: 16px !important;
+    min-height: 52px;
+    box-shadow: 0 3px 9px rgba(198,113,57,.16);
+  }
+  #scr-dashboard > button.btn:not(.btn-primary) { margin-top: 8px !important; }
+  #scr-dashboard > div[style*="border-top:1px dashed"] {
+    max-width: 560px;
+    margin-top: 26px !important;
+    padding-top: 14px !important;
+  }
+  #scr-dashboard #dashboard-sticky-footer {
+    position: sticky;
+    z-index: 8;
+    bottom: 0;
+    margin: 26px calc(-1 * clamp(18px, 3vw, 34px)) 0 !important;
+    padding: 12px clamp(18px, 3vw, 34px) calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+    background: rgba(247,241,231,.96) !important;
+    border-top: 1px solid rgba(32,30,29,.14) !important;
+    box-shadow: 0 -8px 24px rgba(46,43,37,.07) !important;
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+  }
+  #scr-dashboard #dashboard-sticky-footer > div:first-child {
+    max-width: 560px;
+    padding: 7px 12px !important;
+    border: 1px solid rgba(198,113,57,.17);
+    background: #fbe7d8 !important;
+  }
+  #scr-dashboard #dashboard-step-nav { max-width: 760px; }
+  #scr-dashboard #dashboard-step-nav .row { gap: 10px !important; }
+  #scr-dashboard #dashboard-step-nav .btn { min-height: 48px; padding: 12px 14px; font-size: 14px; }
+  #scr-dashboard #dashboard-step-nav .btn-primary { box-shadow: 0 2px 7px rgba(198,113,57,.14); }
+  #scr-dashboard button:focus-visible,
+  #scr-dashboard summary:focus-visible { outline: 3px solid var(--fill-accent); outline-offset: 3px; }
+  @media (min-width: 900px) {
+    #scr-dashboard #empfohlen-area > .card { padding: 22px 24px; }
+    #scr-dashboard #empfohlen-area .quote-slot { padding-top: 12px; padding-bottom: 12px; }
+    #scr-dashboard #pool-area { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    #scr-dashboard #frei-area #slots-area.grid2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 680px) {
+    .app:has(#scr-dashboard.visible) { max-width: 100%; }
+    #scr-dashboard { padding: 16px; }
+    #scr-dashboard .segmented { display: flex; width: 100%; }
+    #scr-dashboard .seg-btn { min-width: 0; padding: 10px 8px; flex: 1; white-space: normal; }
+    #scr-dashboard #empfohlen-area .row { flex-wrap: wrap; }
+    #scr-dashboard #empfohlen-area .quote-slot,
+    #scr-dashboard #frei-area .quote-slot { font-size: 17px; }
+    #scr-dashboard #dashboard-step-nav .row { flex-direction: column; }
+    #scr-dashboard #dashboard-step-nav .btn { width: 100%; }
+    #scr-dashboard #dashboard-sticky-footer {
+      margin-left: -16px !important; margin-right: -16px !important;
+      padding-left: 16px !important; padding-right: 16px !important;
+    }
+    #scr-dashboard #frei-area #slots-area.grid2 { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #scr-dashboard * { scroll-behavior: auto !important; transition: none !important; }
+  }
+
 </style>
 </head>
 <body>
@@ -594,10 +873,8 @@ Neu</textarea>
 
 <script>
 // ==== HIER DEINE WERTE EINTRAGEN ====
-const SUPABASE_URL = "https://iuqyjqcxftcoxwjqpijr.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_WOnHYkefrIzOY-tigGqPKg_Dvjf73Gc";
 // =====================================
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = supabase.createClient("https://iuqyjqcxftcoxwjqpijr.supabase.co", "sb_publishable_WOnHYkefrIzOY-tigGqPKg_Dvjf73Gc");
 
 function getUrlParam(name){ return new URLSearchParams(window.location.search).get(name); }
 
@@ -1129,14 +1406,15 @@ async function uebernehmeLogin(user){
 // beim Login (uebernehmeLogin) und bei jedem Öffnen der Verwaltung aufgerufen.
 async function ladeKinderlisteAusSupabase(){
   const { data, error } = await sb.from('kinder')
-    .select('id, symbol_id, name, icon, einwilligung')
-    .eq('klassenraum', aktiveKlassenraum)
-    .order('symbol_id');
+    .select('id, symbol_id, icon, einwilligung')
+    .eq('klassenraum', aktiveKlassenraum);
   if(error){
     console.error('Kinderliste konnte nicht aus Supabase geladen werden:', error.message);
     return false;
   }
-  SYMBOLS = data.map(row => ({ id: row.symbol_id, icon: row.icon, name: row.name, kindId: row.id }));
+  data.sort((a,b) => (parseInt(a.symbol_id.replace(/\D/g,''),10)||0) - (parseInt(b.symbol_id.replace(/\D/g,''),10)||0));
+  const lokaleNamen = ladeLokaleNamen();
+  SYMBOLS = data.map((row,i) => ({ id: row.symbol_id, icon: row.icon, name: lokaleNamen[row.symbol_id] || platzhalterName(row.symbol_id, i), kindId: row.id }));
   data.forEach(row => { consentState[row.symbol_id] = row.einwilligung; });
   if(document.getElementById('kinderliste')) renderKinderliste();
   const anzahlAnzeige = document.getElementById('klassenraum-anzahl-anzeige');
@@ -1150,8 +1428,25 @@ async function lkAbmelden(){
   show('start');
 }
 
+// ---- Klarnamen: bewusst NUR lokal auf dem Gerät der Lehrkraft (Datensparsamkeit) ----
+// In Supabase landen nur Symbol-ID + Symbol (pseudonym). Die Zuordnung Symbol -> Name liegt im
+// localStorage dieses Browsers; auf einem anderen Gerät/Browser zeigt die LK-Ansicht dann
+// "Kind 1, Kind 2 ..." plus Symbol, bis die Namen dort neu eingetragen werden ("Kinder anlegen").
+function namenSchluessel(){ return 'denkwege_namen_' + aktiveKlassenraum; }
+function ladeLokaleNamen(){
+  try { return JSON.parse(localStorage.getItem(namenSchluessel()) || '{}') || {}; } catch(e){ return {}; }
+}
+function speichereLokaleNamen(map){
+  try { localStorage.setItem(namenSchluessel(), JSON.stringify(map)); } catch(e){ /* z.B. privates Fenster */ }
+}
+function platzhalterName(symbolId, index){
+  const n = parseInt(String(symbolId).replace(/\D/g,''), 10);
+  return 'Kind ' + (Number.isNaN(n) ? index + 1 : n + 1);
+}
+
 async function syncKinderMitSupabase(){
-  const rows = SYMBOLS.map(s => ({ klassenraum: aktiveKlassenraum, symbol_id: s.id, name: s.name, icon: s.icon }));
+  // Bewusst KEIN name-Feld: Klarnamen verlassen das LK-Gerät nicht.
+  const rows = SYMBOLS.map(s => ({ klassenraum: aktiveKlassenraum, symbol_id: s.id, icon: s.icon }));
   const { data, error } = await sb.from('kinder')
     .upsert(rows, { onConflict: 'klassenraum,symbol_id' })
     .select('id, symbol_id, einwilligung');
@@ -1175,7 +1470,8 @@ async function syncKinderMitSupabase(){
 async function ladeKinderlisteFuerSitzung(code){
   const { data, error } = await sb.rpc('hole_kinderliste_fuer_code', { p_code: code });
   if(error || !data || data.length === 0) return false;
-  SYMBOLS = data.map(row => ({ id: row.symbol_id, icon: row.icon, name: row.name, kindId: row.id }));
+  // Name wird bewusst ignoriert (Kindgerät kennt nur Symbole); icon dient als Anzeigename.
+  SYMBOLS = data.map(row => ({ id: row.symbol_id, icon: row.icon, name: row.icon, kindId: row.id }));
   reinitialisiereKinderZustand(false);
   return true;
 }
@@ -1419,7 +1715,7 @@ function renderSymbols(){
   SYMBOLS.forEach(s=>{
     const b = document.createElement('button');
     b.className='kid-symbol-btn';
-    b.innerHTML = `<span class="emoji">${s.icon}</span><span class="name">${s.name}</span>`;
+    b.innerHTML = `<span class="emoji">${s.icon}</span>`;
     b.onclick = ()=>selectSymbol(s);
     g.appendChild(b);
   });
@@ -2600,6 +2896,7 @@ async function loescheKindVollstaendig(id){
     if(e2){ alert('Löschen des Kindes fehlgeschlagen: ' + e2.message); return; }
   }
   SYMBOLS = SYMBOLS.filter(s=>s.id!==id);
+  const lokaleNamen = ladeLokaleNamen(); delete lokaleNamen[id]; speichereLokaleNamen(lokaleNamen);
   delete consentState[id]; delete childLanguage[id]; delete state.heatmapStatus[id]; delete sitzplanState.placed[id];
   renderKinderliste();
 }
@@ -2632,8 +2929,10 @@ async function submitSchnellanlage(){
   // Komplette Liste neu aufbauen (nicht nur vorhandene Einträge umbenennen), damit
   // auch mehr Kinder als zuvor angelegt werden können, bis MAX_KINDER.
   SYMBOLS = lines.map((name,i) => ({ id: "kind"+i, icon: SYMBOLS_POOL[i % SYMBOLS_POOL.length], name }));
+  const namenMap = {}; SYMBOLS.forEach(s => { namenMap[s.id] = s.name; });
+  speichereLokaleNamen(namenMap); // nur lokal, nicht nach Supabase
   reinitialisiereKinderZustand(false);
-  await syncKinderMitSupabase(); // Namen sofort mit Supabase abgleichen, nicht erst beim Sitzungsstart
+  await syncKinderMitSupabase(); // Symbole sofort mit Supabase abgleichen (ohne Namen), nicht erst beim Sitzungsstart
   show('sitzplan');
 }
 

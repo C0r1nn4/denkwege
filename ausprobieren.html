@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Denkwege ausprobieren</title>
+<meta name="app-version" content="2026-10-22-01">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
@@ -24,10 +25,6 @@
     --bg-warning: #FAEEDA; --text-warning: #633806; --fill-warning: #EF9F27;
     --fill-danger: #E24B4A; --on-danger: #fff; --radius: 12px; --radius-lg: 18px;
     --shadow-md: 0 4px 16px rgba(46,43,37,0.18);
-    /* [NEU] Eigenständige "Systemhinweis"-Farbe (z. B. Dev-Banner) -- bewusst NEUTRAL statt
-       --fill-warning, damit sie sich klar von echten inhaltlichen Warnungen unterscheidet
-       (s. Nutzungsregel in Punkt 2: --bg-warning bleibt echten Warnungen vorbehalten). */
-    --bg-system: #3a352e; --text-on-system: #fdf8ef;
     --font-body: "Figtree", -apple-system, "Segoe UI", Roboto, sans-serif;
     --font-heading: "Caprasimo", var(--font-body);
     font-family: var(--font-body);
@@ -61,6 +58,11 @@
   .dash-menu-summary::-webkit-details-marker { display:none; }
   .dash-menu-summary .chevron { font-size:var(--fs-body); color:var(--text-muted); transition:transform 0.15s; }
   details[open] > .dash-menu-summary .chevron { transform:rotate(180deg); }
+  /* [NEU] "Alle Antworten ansehen" deutlicher als aufklappbar erkennbar. */
+  .dash-menu-summary { border-color:var(--border-accent); box-shadow:0 1px 3px rgba(0,0,0,0.08); }
+  .dash-menu-summary:hover { background:var(--bg-accent); }
+  .dash-menu-summary .chevron { font-size:var(--fs-title); color:var(--text-primary); }
+  .aufklapp-hinweis { font-size:var(--fs-micro); color:var(--text-secondary); }
   .screen { display: none; padding: 20px; }
   .screen.visible { display: block; }
   button { font-family: inherit; cursor: pointer; border-radius: var(--radius); }
@@ -111,6 +113,9 @@
   /* [NEU] Reduzierte, box-freie Zitat-Optik innerhalb bereits farbig umrandeter Karten (Schritt-
      /Slot-Karten im Dashboard) -- ersetzt dort .quote-box, um Box-in-Box zu vermeiden (s. 5b). */
   .quote-plain { font-style: italic; color: var(--text-secondary); border-left: 3px solid var(--border-strong); padding: 6px 0 6px 10px; margin-top: 6px; font-size: var(--fs-small); }
+  /* [NEU] Schülerzitat als größtes Element der Schrittkarte im Dashboard -- ergänzt
+     .quote-plain, ersetzt es nicht (das bleibt anderswo, z.B. im Frei-Tab, unverändert). */
+  .quote-slot { font-size:var(--fs-title); font-style:normal; color:var(--text-primary); line-height:1.45; padding:8px 0 8px 12px; }
   .banner { background: var(--bg-warning); color: var(--text-warning); font-size:var(--fs-micro); padding:8px; border-radius:var(--radius); margin-bottom:10px; }
   textarea, .editable { width:100%; font-size:var(--fs-small); padding:8px; border-radius:var(--radius); border:1px solid var(--border); }
   .modal-bg { position: fixed; inset:0; background: rgba(0,0,0,0.4); display:none; align-items:center; justify-content:center; z-index: 50; }
@@ -129,7 +134,12 @@
   .kid-record-btn { width: 220px; height: 220px; border-radius: 50%; box-shadow: var(--shadow-md); }
   .kid-mode-btn { width: 92px; height: 92px; border-radius: 50%; }
   .sticky-header { position: sticky; top: 0; z-index: 10; }
-  .dev-banner { background: var(--bg-system); color: var(--text-on-system); font-size:var(--fs-small); line-height: 1.5; padding: 9px 14px; text-align: center; font-weight: 600; }
+  /* [NEU] Kleine, dezente Rollen-Umschaltung unten rechts -- fest positioniert, damit sie
+     immer erreichbar bleibt, aber optisch zurücktritt (kein Vorführ-Hinweis mehr im
+     Fließtext, stattdessen als Tooltip). */
+  .role-switch-mini { position:fixed; bottom:8px; right:8px; display:flex; gap:4px; z-index:20; opacity:0.55; transition:opacity 0.15s; }
+  .role-switch-mini:hover, .role-switch-mini:focus-within { opacity:1; }
+  .role-switch-mini button { font-size:var(--fs-micro); padding:4px 7px; }
 
   /* [NEU] Verbindungsfrage mit mehreren Richtungen: Chip-Auswahl statt Fixtext. */
   .vbf-chip { font-size:var(--fs-micro); padding: 5px 10px; border-radius: 999px; border: 1px solid var(--border-strong); background: var(--surface-2); color: var(--text-secondary); }
@@ -155,7 +165,319 @@
   .switch input:checked + .slider { background: var(--fill-success); border-color: var(--fill-success); }
   .switch input:checked + .slider::before { transform: translateX(17px); }
 
-  /* ================= STUDIENMODUS (nur studie.html) ================= */
+
+  /* ===== Kindansicht: gleiche Gestaltungssprache, aber weniger visuelle Unruhe =====
+     Reine Darstellungsebene: keine IDs, Ereignisse, Abläufe oder Datenzugriffe geändert. */
+  #scr-code-eingabe,
+  #scr-symbolauswahl,
+  #scr-aufnahme {
+    padding: clamp(18px, 4vw, 30px) clamp(14px, 4vw, 24px) 34px;
+  }
+  #scr-code-eingabe .navbtn,
+  #scr-symbolauswahl .navbtn,
+  #scr-aufnahme .navbtn {
+    min-height: 44px;
+  }
+  #scr-code-eingabe > div:nth-child(2),
+  #scr-symbolauswahl h2.scr-title {
+    line-height: 1.15;
+    margin-bottom: 12px;
+    font-size: clamp(30px, 6vw, 38px);
+  }
+  #scr-code-eingabe .ts,
+  #scr-symbolauswahl .ts {
+    line-height: 1.45;
+  }
+  #code-eingabe-slots { gap: clamp(10px, 3vw, 18px) !important; }
+  #code-eingabe-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: clamp(7px, 2vw, 14px) !important;
+  }
+  #scr-symbolauswahl .grid4 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(10px, 2.5vw, 16px);
+  }
+  .kid-symbol-btn {
+    min-width: 0;
+    padding: 8px 4px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border);
+    box-shadow: 0 3px 10px rgba(46,43,37,.08);
+    transition: transform .12s ease, border-color .12s ease, background .12s ease;
+  }
+  .kid-symbol-btn:active { transform: scale(.97); }
+  .kid-symbol-btn:focus-visible,
+  .kid-big-icon-btn:focus-visible,
+  .kid-mode-btn:focus-visible,
+  .kid-record-btn:focus-visible {
+    outline: 3px solid var(--fill-accent);
+    outline-offset: 3px;
+  }
+  .kid-symbol-btn .emoji { font-size: clamp(34px, 8vw, 46px); line-height: 1.15; }
+  .kid-symbol-btn .name { font-size: clamp(12px, 3.4vw, 15px); overflow-wrap: anywhere; }
+  #scr-aufnahme > .card {
+    text-align: left;
+    border-radius: 22px;
+    padding: clamp(16px, 4vw, 24px);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 14px rgba(46,43,37,.06);
+  }
+  #aufnahme-anweisung { font-size: clamp(23px, 5vw, 30px) !important; line-height: 1.35 !important; }
+  #scr-aufnahme > .card > div[style*="height:80px"] {
+    min-height: 76px;
+    border: 1px dashed var(--border-strong);
+    background: var(--surface-1) !important;
+    color: var(--text-secondary);
+  }
+  #wahl-bereich {
+    padding: 18px 14px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: var(--surface-2);
+  }
+  #wahl-bereich .btn { min-height: 76px; border-radius: 16px; }
+  #mode-speak, #mode-type, .kid-mode-btn {
+    box-shadow: 0 3px 10px rgba(46,43,37,.08);
+    transition: transform .12s ease;
+  }
+  #mode-speak:active, #mode-type:active, .kid-mode-btn:active { transform: scale(.97); }
+  #record-area { padding: 18px 10px 8px; }
+  .kid-record-btn {
+    width: clamp(168px, 48vw, 210px);
+    height: clamp(168px, 48vw, 210px);
+    border: 8px solid var(--surface-2) !important;
+    box-shadow: 0 0 0 2px rgba(32,30,29,.10), 0 8px 20px rgba(46,43,37,.16);
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  .kid-record-btn:active { transform: scale(.97); }
+  #record-label { line-height: 1.4; }
+  #review-area {
+    border-top: 1px solid var(--border) !important;
+    background: var(--surface-2);
+    border-radius: 18px;
+    padding: 20px 14px 14px !important;
+  }
+  #transcript-edit {
+    min-height: 210px !important;
+    width: 100%;
+    box-sizing: border-box;
+    border: 1.5px solid var(--border-strong) !important;
+    border-radius: 14px;
+    background: #fffdf8;
+    line-height: 1.5;
+  }
+  #done-area .card {
+    border-radius: 20px;
+    box-shadow: 0 3px 12px rgba(46,43,37,.06);
+  }
+  #done-area .btn { min-height: 58px; border-radius: 16px; }
+  #symbol-confirm { padding: 18px; -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+  #symbol-confirm .modal {
+    width: min(100%, 420px);
+    padding: 26px 20px;
+    border-radius: 24px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    box-shadow: 0 18px 55px rgba(32,30,29,.22);
+  }
+  #symbol-confirm-icon { line-height: 1.1; }
+  #symbol-confirm .kid-big-icon-btn { width: 78px; height: 78px; }
+  #scr-code-eingabe .btn { min-height: 54px; border-radius: 15px; }
+  @media (max-width: 420px) {
+    #scr-symbolauswahl .grid4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    #code-eingabe-grid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+    #scr-aufnahme .row { gap: 16px !important; }
+    #wahl-bereich .row { gap: 10px !important; }
+    #wahl-bereich .btn { width: min(44%, 130px) !important; padding: 14px 8px !important; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .kid-symbol-btn, .kid-record-btn, #mode-speak, #mode-type, .kid-mode-btn { transition: none; }
+  }
+
+
+  /* Lehrkraft-Dashboard: eigenständige Arbeitsfläche statt schmaler Mobilansicht */
+  .app:has(#scr-dashboard.visible) {
+    max-width: 1240px;
+    background: #f7f1e7;
+    box-shadow: 0 0 42px rgba(46,43,37,.07);
+  }
+  #scr-dashboard {
+    padding: clamp(18px, 3vw, 34px);
+    padding-bottom: 20px;
+  }
+  #scr-dashboard > .row:first-child {
+    align-items: center !important;
+    gap: 18px;
+    margin: 0 0 18px !important;
+    padding: 0 0 18px !important;
+    border-bottom: 1px solid rgba(32,30,29,.14) !important;
+  }
+  #scr-dashboard #dashboard-aufgabe-text {
+    font-family: var(--font-heading);
+    font-size: clamp(22px, 2.4vw, 30px) !important;
+    line-height: 1.2;
+    margin-top: 3px;
+  }
+  #scr-dashboard #dashboard-verstehenskern { font-size: 13px !important; margin-top: 7px !important; }
+  #scr-dashboard > .banner {
+    border: 1px solid rgba(124,143,92,.26);
+    border-radius: 14px;
+    padding: 13px 16px;
+    line-height: 1.55;
+    font-size: 14px;
+    margin-bottom: 18px !important;
+  }
+  #scr-dashboard details { margin-bottom: 18px !important; }
+  #scr-dashboard .dash-menu-summary {
+    padding: 11px 14px;
+    border-color: rgba(32,30,29,.16);
+    box-shadow: none;
+    background: rgba(255,250,241,.72);
+    font-size: 14px;
+  }
+  #scr-dashboard .dash-menu-summary:hover { border-color: var(--border-accent); }
+  #scr-dashboard #pool-area { gap: 10px; }
+  #scr-dashboard .segmented {
+    display: inline-flex;
+    max-width: 100%;
+    padding: 4px;
+    border-radius: 13px;
+    border-color: rgba(32,30,29,.12);
+    margin-bottom: 18px !important;
+  }
+  #scr-dashboard .seg-btn { min-width: 155px; padding: 10px 18px; font-size: 14px; white-space: nowrap; flex: none; }
+  #scr-dashboard .seg-btn.active { box-shadow: 0 2px 6px rgba(46,43,37,.12); }
+  #scr-dashboard #empfohlen-area,
+  #scr-dashboard #frei-area { min-width: 0; }
+  #scr-dashboard #empfehlung-erklaerung {
+    padding: 13px 16px !important;
+    border-radius: 12px !important;
+    line-height: 1.55;
+  }
+  #scr-dashboard .card {
+    border-color: rgba(32,30,29,.13);
+    box-shadow: 0 2px 9px rgba(46,43,37,.035);
+  }
+  #scr-dashboard #empfohlen-area > .card,
+  #scr-dashboard #frei-area > .card {
+    padding: clamp(14px, 2vw, 22px);
+    margin-bottom: 14px;
+  }
+  #scr-dashboard #empfohlen-area .quote-slot,
+  #scr-dashboard #frei-area .quote-slot {
+    font-size: clamp(17px, 1.6vw, 21px);
+    line-height: 1.5;
+  }
+  #scr-dashboard #empfohlen-area .navbtn,
+  #scr-dashboard #frei-area .navbtn { min-height: 34px; }
+  #scr-dashboard #frei-area .grid2 { gap: 12px; }
+  #scr-dashboard #frei-area #slots-area > div {
+    min-width: 0;
+    border: 1px solid rgba(32,30,29,.13);
+    border-radius: 13px;
+    overflow: hidden;
+    background: var(--surface-2);
+    padding-bottom: 10px;
+  }
+  #scr-dashboard #frei-area #slots-area .quote-slot { padding: 12px 14px; }
+  #scr-dashboard > button.btn { max-width: 560px; }
+  #scr-dashboard > button.btn-primary {
+    margin-top: 16px !important;
+    min-height: 52px;
+    box-shadow: 0 3px 9px rgba(198,113,57,.16);
+  }
+  #scr-dashboard > button.btn:not(.btn-primary) { margin-top: 8px !important; }
+  #scr-dashboard > div[style*="border-top:1px dashed"] {
+    max-width: 560px;
+    margin-top: 26px !important;
+    padding-top: 14px !important;
+  }
+  #scr-dashboard #dashboard-sticky-footer {
+    position: sticky;
+    z-index: 8;
+    bottom: 0;
+    margin: 26px calc(-1 * clamp(18px, 3vw, 34px)) 0 !important;
+    padding: 12px clamp(18px, 3vw, 34px) calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+    background: rgba(247,241,231,.96) !important;
+    border-top: 1px solid rgba(32,30,29,.14) !important;
+    box-shadow: 0 -8px 24px rgba(46,43,37,.07) !important;
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+  }
+  #scr-dashboard #dashboard-sticky-footer > div:first-child {
+    max-width: 560px;
+    padding: 7px 12px !important;
+    border: 1px solid rgba(198,113,57,.17);
+    background: #fbe7d8 !important;
+  }
+  #scr-dashboard #dashboard-step-nav { max-width: 760px; }
+  #scr-dashboard #dashboard-step-nav .row { gap: 10px !important; }
+  #scr-dashboard #dashboard-step-nav .btn { min-height: 48px; padding: 12px 14px; font-size: 14px; }
+  #scr-dashboard #dashboard-step-nav .btn-primary { box-shadow: 0 2px 7px rgba(198,113,57,.14); }
+  #scr-dashboard button:focus-visible,
+  #scr-dashboard summary:focus-visible { outline: 3px solid var(--fill-accent); outline-offset: 3px; }
+  @media (min-width: 900px) {
+    #scr-dashboard #empfohlen-area > .card { padding: 22px 24px; }
+    #scr-dashboard #empfohlen-area .quote-slot { padding-top: 12px; padding-bottom: 12px; }
+    #scr-dashboard #pool-area { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    #scr-dashboard #frei-area #slots-area.grid2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 680px) {
+    .app:has(#scr-dashboard.visible) { max-width: 100%; }
+    #scr-dashboard { padding: 16px; }
+    #scr-dashboard .segmented { display: flex; width: 100%; }
+    #scr-dashboard .seg-btn { min-width: 0; padding: 10px 8px; flex: 1; white-space: normal; }
+    #scr-dashboard #empfohlen-area .row { flex-wrap: wrap; }
+    #scr-dashboard #empfohlen-area .quote-slot,
+    #scr-dashboard #frei-area .quote-slot { font-size: 17px; }
+    #scr-dashboard #dashboard-step-nav .row { flex-direction: column; }
+    #scr-dashboard #dashboard-step-nav .btn { width: 100%; }
+    #scr-dashboard #dashboard-sticky-footer {
+      margin-left: -16px !important; margin-right: -16px !important;
+      padding-left: 16px !important; padding-right: 16px !important;
+    }
+    #scr-dashboard #frei-area #slots-area.grid2 { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #scr-dashboard * { scroll-behavior: auto !important; transition: none !important; }
+  }
+
+
+  /* ===== Karten-Knöpfe, "Impulsidee", Auswahlfenster und Frei-Liste (in der Studie entwickelt, hier fest eingebaut) ===== */
+  .karten-knoepfe { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .karten-knoepfe .navbtn { font-size: var(--fs-small); padding: 8px 10px; }
+  .wahl-gruppe { margin-bottom: 12px; }
+  .wahl-gruppe-kopf { display: flex; align-items: center; gap: 6px; font-size: var(--fs-micro); font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
+  .wahl-punkt { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+  .wahlkarte { border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; margin-bottom: 6px; background: var(--surface-2); cursor: pointer; }
+  .wahlkarte:hover, .wahlkarte:focus-visible { border-color: var(--border-accent); outline: none; }
+  .wahlkarte.gewaehlt { border: 2px solid var(--fill-accent); background: var(--bg-accent); }
+  .wahlkarte-kopf { display: flex; justify-content: space-between; gap: 8px; font-size: var(--fs-small); margin-bottom: 2px; }
+  .wahlkarte-kopf span { font-size: var(--fs-micro); color: var(--text-secondary); }
+  .wahlkarte-zitat { font-size: var(--fs-body); line-height: 1.4; }
+  .impuls { margin-top: 4px; }
+  .impuls > summary { list-style: none; cursor: pointer; display: inline-block; font-size: var(--fs-small); color: var(--text-secondary); text-decoration: underline; padding: 4px 0; }
+  .impuls > summary::-webkit-details-marker { display: none; }
+  .impuls > summary::before { content: "💬 "; text-decoration: none; }
+  .impuls .impuls-auf, .impuls[open] .impuls-zu { display: none; }
+  .impuls[open] .impuls-auf { display: inline; }
+  .impuls .live-frage-box { margin-top: 4px; }
+
+  /* ===== Tafelansicht im eigenen Fenster (?ansicht=tafel): reine Projektionsansicht ===== */
+  body.tafel-fenster .sticky-header, body.tafel-fenster .role-switch-mini, body.tafel-fenster #scr-tafel > .banner,
+  body.tafel-fenster #scr-tafel > .row, body.tafel-fenster #tafel-schritt-steuerung { display:none !important; }
+  body.tafel-fenster .app { max-width: none; }
+  body.tafel-fenster .app > div[style*="padding:22px 16px 8px"] { display:none; }
+  body.tafel-fenster #scr-tafel { padding: 28px 32px; }
+  body.tafel-fenster #tafel-slots > div { font-size: clamp(22px, 2.8vw, 44px) !important; line-height: 1.4; padding: 22px !important; }
+  body.tafel-fenster #tafel-aufgabe { font-size: clamp(22px, 2.6vw, 40px) !important; }
+  body.tafel-fenster #tafel-code-anzeige { font-size: clamp(52px, 8vw, 110px) !important; }
+  #tafel-fenster-leiste { position:fixed; top:8px; right:8px; display:flex; gap:6px; align-items:center; opacity:0.45; transition:opacity .15s; z-index:30; }
+  #tafel-fenster-leiste:hover, #tafel-fenster-leiste:focus-within { opacity:1; }
+  #tafel-fenster-leiste .navbtn { font-size:var(--fs-micro); padding:5px 8px; }
+  #tafel-fenster-status { font-size:var(--fs-micro); color:var(--text-muted); }
+  /* ================= STUDIENMODUS (nur ausprobieren.html) ================= */
   body.studie .dev-banner, body.studie #role-lk, body.studie #role-kind,
   body.studie .topbar details, body.studie .topbar > div:nth-of-type(2),
   body.studie #dashboard-sticky-footer { display:none !important; }
@@ -187,62 +509,27 @@
   body.studie #scr-dashboard .quote-plain { font-size: var(--fs-title); font-style: normal; color: var(--text-primary); line-height: 1.45; padding: 8px 0 8px 12px; }
   /* Bausteine / Auswahl */
   .st-hilfe { font-size: var(--fs-small); color: var(--text-secondary); line-height: 1.45; margin: 0 0 10px; }
-  .st-karten-knoepfe { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-  .st-karten-knoepfe .navbtn { font-size: var(--fs-small); padding: 8px 10px; }
-  body.studie #frei-area > .card > button.btn { display: none; }
-  .st-gruppe { margin-bottom: 12px; }
-  .st-gruppe-kopf { display: flex; align-items: center; gap: 6px; font-size: var(--fs-micro); font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
-  .st-punkt { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
-  .st-wahlkarte { border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; margin-bottom: 6px; background: var(--surface-2); cursor: pointer; }
-  .st-wahlkarte:hover, .st-wahlkarte:focus-visible { border-color: var(--border-accent); outline: none; }
-  .st-wahlkarte.st-gewaehlt { border: 2px solid var(--fill-accent); background: var(--bg-accent); }
-  .st-wahlkarte-kopf { display: flex; justify-content: space-between; gap: 8px; font-size: var(--fs-small); margin-bottom: 2px; }
-  .st-wahlkarte-kopf span { font-size: var(--fs-micro); color: var(--text-secondary); }
-  .st-wahlkarte-zitat { font-size: var(--fs-body); line-height: 1.4; }
-  .st-impuls { margin-top: 4px; }
-  .st-impuls > summary { list-style: none; cursor: pointer; display: inline-block; font-size: var(--fs-small); color: var(--text-secondary); text-decoration: underline; padding: 4px 0; }
-  .st-impuls > summary::-webkit-details-marker { display: none; }
-  .st-impuls > summary::before { content: "💬 "; text-decoration: none; }
-  .st-impuls .st-impuls-auf, .st-impuls[open] .st-impuls-zu { display: none; }
-  .st-impuls[open] .st-impuls-auf { display: inline; }
-  .st-impuls .live-frage-box { margin-top: 4px; }
   .st-pruef { font-size:var(--fs-micro); line-height:1.5; }
   .st-pruef table { border-collapse:collapse; width:100%; margin:6px 0 12px; }
   .st-pruef td, .st-pruef th { border:1px solid var(--border); padding:3px 5px; text-align:left; vertical-align:top; }
   .st-warn { color:#9b2c24; font-weight:600; }
+  /* Tafel-Fenster und Versionsanzeige gehören nicht in die Studie */
+  body.studie #app-version, body.studie #tafel-fenster-btn, body.studie .role-switch-mini { display:none !important; }
 </style>
 </head>
 <body>
 <div class="app">
 
   <div class="sticky-header">
-  <div class="dev-banner">⚠️ Diese Anwendung befindet sich in der Entwicklung und steht noch nicht zur freien Verfügung. Bitte keine echten Daten von Kindern eingeben.</div>
-  <div class="topbar" style="flex-direction:column; align-items:stretch; gap:2px;">
-    <div class="row" style="justify-content:space-between;">
-      <b id="topbar-label" style="margin-right:0;">Demo</b>
-      <div class="row" style="gap:6px;">
-        <button class="navbtn" id="role-lk" onclick="switchRole('lk')"><i class="ti ti-chalkboard"></i> Lehrkraft</button>
-        <button class="navbtn" id="role-kind" onclick="switchRole('kind')"><i class="ti ti-child"></i> Kind</button>
-      </div>
-    </div>
-    <div style="font-size:var(--fs-micro); color:var(--text-muted); text-align:right; margin-bottom:4px;">nur zum Vorführen — im echten Tool meldet sich jede Person am eigenen Gerät an</div>
-    <details style="font-size:var(--fs-micro);">
-      <summary style="color:var(--text-muted); cursor:pointer;">Demo-Sprungmenü (nicht Teil des echten Ablaufs — nur zum Vorführen)</summary>
-      <div class="row" style="gap:6px; flex-wrap:wrap; margin-top:6px;">
-        <button class="navbtn" onclick="show('login')">Login</button>
-        <button class="navbtn" onclick="show('pool')">Aufgaben</button>
-        <button class="navbtn" onclick="show('symbolauswahl')">Kind: Symbol</button>
-        <button class="navbtn" onclick="show('dashboard')">LK-Dashboard</button>
-        <button class="navbtn" onclick="show('tafel')">Tafel</button>
-        <button class="navbtn" onclick="show('heatmap')">Heatmap</button>
-        <button class="navbtn" onclick="show('verwaltung')">Verwaltung</button>
-      </div>
-    </details>
+  <div class="topbar">
+    <b id="topbar-label" style="margin-right:0;">Demo</b>
+    <span id="app-version" class="ts" style="font-size:10px;"></span>
+    <button class="navbtn" id="tafel-fenster-btn" style="display:none;" onclick="oeffneTafelFenster()" title="Öffnet die Tafelansicht in einem eigenen Fenster, das Sie auf den Beamer oder das Smartboard ziehen können"><i class="ti ti-external-link"></i> Tafel in neuem Fenster</button>
   </div>
   </div>
 
   <!-- ================================================================
-       STUDIENMODUS: eigene Bildschirme (nur in studie.html)
+       STUDIENMODUS: eigene Bildschirme (nur in ausprobieren.html)
        Ablauf: willkommen -> vorab -> auftrag -> dashboard (Planung)
                -> begruendung -> nach -> kodieren -> ende
        ================================================================ -->
@@ -358,16 +645,6 @@
         <button class="btn" onclick="stAbschlussAbbrechen()">Weiter planen</button>
         <button class="btn btn-primary" onclick="stPlanungAbschliessen()">Abschließen</button>
       </div>
-    </div>
-  </div>
-  <div class="modal-bg" id="st-picker-modal">
-    <div class="modal" style="max-width:520px; max-height:85vh;">
-      <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:6px;">
-        <div id="st-picker-titel" style="font-weight:600;"></div>
-        <button class="navbtn" onclick="stPickerSchliessen()">Schließen</button>
-      </div>
-      <div class="ts" style="font-size:var(--fs-small); margin-bottom:10px;">Tippen Sie auf die Antwort, die in diesen Baustein soll.</div>
-      <div id="st-picker-liste"></div>
     </div>
   </div>
   <!-- ================= Ende Studienmodus-Bildschirme ================= -->
@@ -561,16 +838,18 @@
     </div>
     <div class="banner" style="background:var(--bg-success); color:var(--text-success); margin-bottom:10px;">
       Hier bereiten Sie das Plenumsgespräch vor: die empfohlene Abfolge übernehmen (und bei Bedarf Schritte tauschen/überspringen), oder die Tafel komplett frei gestalten.
+      <br><b>Hinweis:</b> In der Tafelansicht, die Sie den Lernenden zeigen, ist jeweils nur die Antwort der Lernenden zu sehen.
     </div>
 
     <!-- [NEU] "Alle Antworten ansehen" jetzt ganz oben, als eigenständiger,
          größerer Menüpunkt statt einer kleinen Textzeile -- davor sah man ihn leicht gar
          nicht, obwohl er einen schnellen Überblick über alle eingegangenen Antworten gibt,
          bevor man sich die vorgeschlagene Gesprächsstruktur ansieht. -->
-    <details style="margin-bottom:14px;">
+    <details style="margin-bottom:14px;" ontoggle="document.getElementById('aufklapp-hinweis-text').textContent = this.open ? 'zuklappen' : 'aufklappen';">
       <summary class="dash-menu-summary">
         <i class="ti ti-list-details" style="font-size:var(--fs-title);"></i>
         <span style="flex:1;">Alle Antworten ansehen</span>
+        <span class="aufklapp-hinweis" id="aufklapp-hinweis-text">aufklappen</span>
         <i class="ti ti-chevron-down chevron"></i>
       </summary>
       <div id="kategorie-legende" style="display:flex; flex-wrap:wrap; gap:8px; margin:10px 0;"></div>
@@ -597,11 +876,12 @@
         </div>
         <div class="ts" style="font-size:var(--fs-micro); margin-bottom:6px;">Für die Tafel ausgewählt:</div>
         <div class="grid2" id="slots-area" style="margin-bottom:8px;"></div>
-        <button class="btn" onclick="addSlot()"><i class="ti ti-plus"></i> Weiteres Feld für die Tafel hinzufügen</button>
+        <!-- [GEÄNDERT] "Weiteres Feld hinzufügen" entfällt: Antworten werden unten gezielt aus der Liste gewählt (s. renderFrei). -->
       </div>
     </div>
 
     <button class="btn btn-primary" style="margin-top:8px;" onclick="show('tafel')"><i class="ti ti-presentation"></i> Tafelansicht anzeigen (Erweitern-Modus)</button>
+    <button class="btn" style="margin-top:8px;" onclick="oeffneTafelFenster()"><i class="ti ti-external-link"></i> Tafelansicht in neuem Fenster öffnen</button>
     <button class="btn" style="margin-top:8px;" onclick="show('heatmap')"><i class="ti ti-map-2"></i> Zurück zum Sitzplan mit Antwortübersicht</button>
     <div style="margin-top:22px; padding-top:14px; border-top:1px dashed var(--border-strong);">
       <button class="btn btn-danger-outline" onclick="endSession()"><i class="ti ti-square-x"></i> Sitzung beenden</button>
@@ -621,7 +901,7 @@
 
   <!-- TAFELANSICHT -->
   <div id="scr-tafel" class="screen">
-    <div class="banner"><i class="ti ti-projector"></i> Demo: Dies ist die Projektions-Ansicht — im echten Betrieb liefe sie parallel (eigenes Fenster) neben dem LK-Dashboard, kein Hin-und-Zurück-Navigieren nötig.</div>
+    <div class="banner"><i class="ti ti-projector"></i> Projektions-Ansicht. Über „Tafel in neuem Fenster“ (oben rechts) öffnen Sie sie in einem eigenen Fenster, das parallel zum Dashboard auf Beamer oder Smartboard läuft.</div>
     <div class="row" style="justify-content:space-between; align-items:center; padding:8px 10px; background:var(--surface-2); border-radius:var(--radius); border:1px solid var(--border); margin-bottom:12px;">
       <span style="font-size:var(--fs-small);">Antworten auf der Tafel zeigen</span>
       <label class="switch"><input type="checkbox" id="antworten-toggle-tafel" onchange="toggleAntwortenSichtbar(this.checked)"><span class="slider"></span></label>
@@ -757,6 +1037,22 @@ Neu</textarea>
 
 </div>
 
+<div class="role-switch-mini" title="Nur zum Vorführen — im echten Tool meldet sich jede Person am eigenen Gerät an">
+  <button class="navbtn" id="role-lk" onclick="switchRole('lk')" title="Als Lehrkraft anzeigen"><i class="ti ti-chalkboard"></i></button>
+  <button class="navbtn" id="role-kind" onclick="switchRole('kind')" title="Als Kind anzeigen"><i class="ti ti-child"></i></button>
+</div>
+
+<div class="modal-bg" id="picker-modal">
+  <div class="modal" style="max-width:520px; max-height:85vh; overflow:auto;">
+    <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:6px;">
+      <div id="picker-titel" style="font-weight:600;"></div>
+      <button class="navbtn" onclick="schliessePicker()">Schließen</button>
+    </div>
+    <div class="ts" style="font-size:var(--fs-small); margin-bottom:10px;">Tippen Sie auf die Antwort, die in diesen Baustein soll.</div>
+    <div id="picker-liste"></div>
+  </div>
+</div>
+
 <div class="modal-bg" id="confirm-end-modal">
   <div class="modal" style="text-align:center;">
     <i class="ti ti-alert-triangle" style="font-size:var(--fs-kid); color:var(--fill-warning);"></i>
@@ -799,6 +1095,9 @@ const SUPABASE_ANON_KEY = "sb_publishable_WOnHYkefrIzOY-tigGqPKg_Dvjf73Gc";
 // die Studie sendet ihre Daten direkt per fetch und braucht diesen Client nicht.
 const sb = (window.supabase && window.supabase.createClient) ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
+// Version dieser Datei (JJJJ-MM-TT-NN). Bei JEDER Änderung hochzählen und im Änderungsprotokoll des Projektkontexts eintragen.
+const APP_VERSION = "2026-10-22-01"; // Studienseite (ausprobieren.html); gleicher Stand wie die Basis index.html 2026-10-22-01
+(function(){ const el = document.getElementById('app-version'); if(el) el.textContent = 'v' + APP_VERSION; console.info('Denkwege', APP_VERSION); })();
 function getUrlParam(name){ return new URLSearchParams(window.location.search).get(name); }
 
 // Sitzungscode als 3 Symbole statt 4 Buchstaben -- Kinder, die noch nicht sicher
@@ -929,9 +1228,15 @@ let istAdmin = false;            // s. uebernehmeLogin() -- steuert nur die Sich
 // c-tafel-neutral weiter oben und renderTafel() weiter unten -- sonst würde die Familie
 // (kühl=Fehler / warm=tragfähig) dort unbeschriftet dasselbe verraten, was Kategorie-Labels
 // heute schon bewusst nicht tun (s. Anforderungsdokument 2.4b).
-// [GEÄNDERT] Neue Paletten: kühl = nur Blau/Violett, warm = nur Gelb/Orange (s. CSS oben).
+// [GEÄNDERT] Neue Paletten: kühl = nur Blau/Violett (Fehler), warm = nur Gelb/Orange (tragfähig); s. CSS.
 const FARBEN_FEHLER = ['c-himmel', 'c-violett', 'c-eisblau', 'c-stahlblau', 'c-lavendel', 'c-schiefer'];
 const FARBEN_TRAGFAEHIG = ['c-gelb', 'c-orange', 'c-apricot', 'c-ocker', 'c-sand', 'c-honig'];
+// [NEU] Manuelle Farbwahl pro Kategorie (Feld "farbe" in der YAML, z.B. "farbe: indigo") --
+// alle 12 Töne (die beiden Familien oben) sind bewusst so kuratiert, dass keiner wie ein Ampel-Rot/-Grün
+// wirkt, daher dürfen sie FREI jedem Kategorietyp zugeordnet werden. [GEÄNDERT] Die früheren Namen
+// (teal, coral, rose, mint …) sind als Wert für "farbe" nicht mehr erlaubt.
+// Ohne "farbe" greift weiterhin die automatische Zuweisung nach Familie weiter unten.
+const ALLE_FARBEN = FARBEN_FEHLER.concat(FARBEN_TRAGFAEHIG);
 const FARBE_HOUSEKEEPING = 'c-gray';
 
 function ladeAufgabe(config) {
@@ -978,18 +1283,29 @@ function ladeAufgabe(config) {
       fehler.push(`Kategorie "${k.kategorie_id}": gueltig_fuer muss "ja" oder "nein" sein, nicht "${k.gueltig_fuer}".`);
     }
 
-    // [NEU] Farbfamilie richtet sich nach kategorietyp statt nach reiner Reihenfolge. Ein
-    // (noch) ungültiger kategorietyp bekommt vorläufig Housekeeping-Grau -- die eigentliche
-    // Fehlermeldung dazu kommt weiter unten unverändert.
+    // [NEU] Manuelle Farbe (Feld "farbe") hat Vorrang vor der automatischen Familienzuweisung.
+    // Housekeeping bleibt immer grau, unabhängig von "farbe" (falls versehentlich gesetzt).
     let color;
-    const palette = !istHousekeeping ? FARBEN_NACH_TYP[k.kategorietyp] : null;
-    if (istHousekeeping || !palette) {
+    if (istHousekeeping) {
       color = FARBE_HOUSEKEEPING;
-    } else if (farbIndex[k.kategorietyp] >= palette.length) {
-      fehler.push(`Mehr als ${palette.length} Kategorien vom Typ "${k.kategorietyp}" in dieser Aufgabe -- die Farbfamilie in der CSS muss zuerst erweitert werden.`);
-      color = FARBE_HOUSEKEEPING;
+    } else if (k.farbe) {
+      const klasse = 'c-' + k.farbe;
+      if (!ALLE_FARBEN.includes(klasse)) {
+        fehler.push(`Kategorie "${k.kategorie_id}": farbe "${k.farbe}" ist nicht bekannt -- erlaubt sind: ${ALLE_FARBEN.map(f=>f.slice(2)).join(', ')}.`);
+        color = FARBE_HOUSEKEEPING;
+      } else {
+        color = klasse;
+      }
     } else {
-      color = palette[farbIndex[k.kategorietyp]++];
+      const palette = FARBEN_NACH_TYP[k.kategorietyp];
+      if (!palette) {
+        color = FARBE_HOUSEKEEPING; // ungültiger kategorietyp -- Fehlermeldung kommt weiter unten
+      } else if (farbIndex[k.kategorietyp] >= palette.length) {
+        fehler.push(`Mehr als ${palette.length} Kategorien vom Typ "${k.kategorietyp}" in dieser Aufgabe ohne eigene "farbe" -- entweder die Farbfamilie in der CSS erweitern oder weiteren Kategorien eine manuelle "farbe" geben.`);
+        color = FARBE_HOUSEKEEPING;
+      } else {
+        color = palette[farbIndex[k.kategorietyp]++];
+      }
     }
 
     if (k.kategorietyp === 'tragfähige Strategie' && k.praezision && !['praezise','unpraezise'].includes(k.praezision)) {
@@ -1009,7 +1325,9 @@ function ladeAufgabe(config) {
       // [NEU] Referenzbeispiele werden jetzt tatsächlich mitgespeichert -- vorher wurden sie
       // beim Einlesen geparst, aber nirgends abgelegt und erreichten dadurch nie die
       // KI-Kategorisierung, obwohl der Standard-Klassifikations-Prompt genau das behauptet.
-      beispiele: Array.isArray(k.referenzbeispiele) ? k.referenzbeispiele.filter(r => (r||'').trim()) : []
+      beispiele: Array.isArray(k.referenzbeispiele) ? k.referenzbeispiele.filter(r => (r||'').trim()) : [],
+      // [NEU] Grundlage für die automatisch komponierte Baustein-Begründung, s. berechneEmpfBloecke().
+      verstehenskern_bezug: (k.verstehenskern_bezug || '').trim() || null
     };
   });
 
@@ -1033,14 +1351,17 @@ function ladeAufgabe(config) {
   // unterschiedliche Fehler gegeneinander, oder ["tragfaehig","tragfaehig"] für zwei
   // unterschiedliche tragfähige Wege -- entspricht den drei Vergleichsarten, die früher
   // vergleichsArt() aus einer MOST-Kombination ablas). WELCHE Kategorie einen Baustein
-  // konkret füllt, steht nicht im Baustein selbst, sondern ergibt sich zur Laufzeit aus
-  // fehler_prioritaet/tragfaehig_prioritaet: die höchstpriorisierten tatsächlich
-  // vorgekommenen Kategorien des jeweiligen Pools werden der Reihe nach verteilt, ohne
-  // eine Kategorie doppelt zu vergeben. Kommt eine Kategorie nicht vor (oder braucht ein
-  // gleicher-Pool-Vergleich zwei, aber nur eine ist da), entfällt der Baustein automatisch,
-  // s. berechneEmpfBloecke(). Eine "Anschlussfrage" gibt es bewusst nicht mehr als eigenes
-  // Feld -- Einstiegssatz (Impuls) und die Live-Frage je Kategorie decken das ab.
-  const ERLAUBTE_POOLS = ['fehler', 'tragfaehig'];
+  // [NEU] Bausteine referenzieren jetzt DIREKT eine (isoliert) bzw. zwei (vergleich) echte
+  // kategorie_id -- keine abstrakten "pools" mehr. Das löst ein Autoring-Problem: vorher
+  // ergab sich die konkret gezeigte Kategorie erst zur Laufzeit aus fehler_prioritaet/
+  // tragfaehig_prioritaet, wodurch eine pro-Baustein-Begründung nie wusste, für welche
+  // Kategorie sie eigentlich galt. Die Begründung ("Warum dieser Schritt?") kommt jetzt
+  // automatisch aus verstehenskern_bezug der referenzierten Kategorie(n) -- kein separates
+  // begruendung-Feld mehr. fehler_prioritaet/tragfaehig_prioritaet bleiben trotzdem
+  // bestehen, werden aber nur noch für die Sortierung im freien Kategorie-Pool und die
+  // Simulationsvorschau im Autoring-Tool genutzt, nicht mehr fürs Auffüllen der Bausteine.
+  // Kommt für eine referenzierte Kategorie keine tatsächliche Antwort rein, entfällt der
+  // Baustein automatisch, s. berechneEmpfBloecke().
   const FEHLER_PRIORITAET = a.fehler_prioritaet || [];
   pruefeKombination(FEHLER_PRIORITAET, 'fehler_prioritaet');
   FEHLER_PRIORITAET.forEach(id => {
@@ -1055,18 +1376,30 @@ function ladeAufgabe(config) {
   const BAUSTEINE = (a.bausteine || []).map((b, i) => {
     if (!ERLAUBTE_BAUSTEIN_TYPEN.includes(b.typ)) fehler.push(`bausteine[${i}]: typ muss "isoliert" oder "vergleich" sein, nicht "${b.typ}".`);
     if (b.typ === 'isoliert') {
-      const pool = b.pool || 'fehler';
-      if (!ERLAUBTE_POOLS.includes(pool)) fehler.push(`bausteine[${i}]: pool muss "fehler" oder "tragfaehig" sein, nicht "${b.pool}".`);
-      return { typ: b.typ, pools: [pool], einstiegssatz: (b.einstiegssatz || '').trim() };
+      const katId = b.kategorie_id;
+      if (!katId || typeof katId !== 'string') {
+        fehler.push(`bausteine[${i}]: kategorie_id fehlt oder ist kein Text.`);
+      } else if (!CATS[katId]) {
+        fehler.push(`bausteine[${i}]: kategorie_id "${katId}" ist keine bekannte Kategorie.`);
+      } else if (!CATS[katId].typ) {
+        fehler.push(`bausteine[${i}]: kategorie_id "${katId}" ist eine Housekeeping-Kategorie (kein kategorietyp) -- als Baustein nicht sinnvoll.`);
+      }
+      return { typ: b.typ, kategorie_id: katId, einstiegssatz: (b.einstiegssatz || '').trim() };
     }
     if (b.typ === 'vergleich') {
-      const pools = b.pools || ['fehler', 'tragfaehig'];
-      if (!Array.isArray(pools) || pools.length !== 2 || pools.some(p => !ERLAUBTE_POOLS.includes(p))) {
-        fehler.push(`bausteine[${i}]: pools muss ein Array aus genau zwei Werten "fehler"/"tragfaehig" sein.`);
+      const ids = b.kategorie_ids;
+      if (!Array.isArray(ids) || ids.length !== 2) {
+        fehler.push(`bausteine[${i}]: kategorie_ids muss ein Array aus genau zwei kategorie_id sein.`);
+      } else {
+        ids.forEach(katId => {
+          if (!CATS[katId]) fehler.push(`bausteine[${i}]: kategorie_id "${katId}" ist keine bekannte Kategorie.`);
+          else if (!CATS[katId].typ) fehler.push(`bausteine[${i}]: kategorie_id "${katId}" ist eine Housekeeping-Kategorie (kein kategorietyp) -- als Baustein nicht sinnvoll.`);
+        });
+        if (ids[0] === ids[1]) fehler.push(`bausteine[${i}]: kategorie_ids vergleicht dieselbe Kategorie mit sich selbst.`);
       }
-      return { typ: b.typ, pools, einstiegssatz: (b.einstiegssatz || '').trim() };
+      return { typ: b.typ, kategorie_ids: Array.isArray(ids) ? ids : [], einstiegssatz: (b.einstiegssatz || '').trim() };
     }
-    return { typ: b.typ, pools: [], einstiegssatz: (b.einstiegssatz || '').trim() };
+    return { typ: b.typ, einstiegssatz: (b.einstiegssatz || '').trim() };
   });
 
   const AUFGABE_UEBERSETZUNGEN = (a.uebersetzungen || []).map(u => ({ sprache: u.sprache, text: u.text }));
@@ -1179,20 +1512,27 @@ function handleAufgabeUploadInDB(event){
       event.target.value = '';
       return;
     }
-    const { error } = await sb.from('aufgaben').insert({
+    // [NEU] Vorher ein reines insert() -- eine zweite Version derselben aufgabe_id (z.B. nach
+    // inhaltlicher Überarbeitung) lief dann zwangsläufig in den Eindeutigkeits-Fehler der DB.
+    // Jetzt: neue aufgabe_id → neuer Entwurf; bekannte aufgabe_id → bestehende Zeile wird
+    // ersetzt (Inhalt komplett überschrieben). Bewusst IMMER wieder als Entwurf (aktiv:false),
+    // auch beim Ersetzen einer bereits freigegebenen Aufgabe -- jede neue Version durchläuft
+    // so erneut die Freigabe, bevor sie live geht, statt eine laufende Klasse ungeprüft auf
+    // neuen Inhalt umzustellen.
+    const { error } = await sb.from('aufgaben').upsert({
       aufgabe_id: ergebnis.AUFGABE_ID,
       aufgabenformat: ergebnis.aufgabenformat,
       aufgabentext: ergebnis.aufgabentext,
       verstehenskern: ergebnis.verstehenskern,
       konfiguration: config,
       aktiv: false
-    });
+    }, { onConflict: 'aufgabe_id' });
     if(error){
       zeigeLadeFehler(['Konnte nicht in der Aufgabenbibliothek gespeichert werden: ' + error.message]);
       event.target.value = '';
       return;
     }
-    alert('Als Entwurf gespeichert: ' + ergebnis.AUFGABE_ID + '. Zur Freigabe unten in der Liste antippen.');
+    alert('Gespeichert als Entwurf: ' + ergebnis.AUFGABE_ID + ' (neu angelegt oder vorhandene Version ersetzt). Zur Freigabe unten in der Liste antippen.');
     event.target.value = '';
     ladeAufgabenAdminListe();
   };
@@ -1290,14 +1630,15 @@ async function uebernehmeLogin(user){
 // beim Login (uebernehmeLogin) und bei jedem Öffnen der Verwaltung aufgerufen.
 async function ladeKinderlisteAusSupabase(){
   const { data, error } = await sb.from('kinder')
-    .select('id, symbol_id, name, icon, einwilligung')
-    .eq('klassenraum', aktiveKlassenraum)
-    .order('symbol_id');
+    .select('id, symbol_id, icon, einwilligung')
+    .eq('klassenraum', aktiveKlassenraum);
   if(error){
     console.error('Kinderliste konnte nicht aus Supabase geladen werden:', error.message);
     return false;
   }
-  SYMBOLS = data.map(row => ({ id: row.symbol_id, icon: row.icon, name: row.name, kindId: row.id }));
+  data.sort((a,b) => (parseInt(a.symbol_id.replace(/\D/g,''),10)||0) - (parseInt(b.symbol_id.replace(/\D/g,''),10)||0));
+  const lokaleNamen = ladeLokaleNamen();
+  SYMBOLS = data.map((row,i) => ({ id: row.symbol_id, icon: row.icon, name: lokaleNamen[row.symbol_id] || platzhalterName(row.symbol_id, i), kindId: row.id }));
   data.forEach(row => { consentState[row.symbol_id] = row.einwilligung; });
   if(document.getElementById('kinderliste')) renderKinderliste();
   const anzahlAnzeige = document.getElementById('klassenraum-anzahl-anzeige');
@@ -1311,8 +1652,25 @@ async function lkAbmelden(){
   show('start');
 }
 
+// ---- Klarnamen: bewusst NUR lokal auf dem Gerät der Lehrkraft (Datensparsamkeit) ----
+// In Supabase landen nur Symbol-ID + Symbol (pseudonym). Die Zuordnung Symbol -> Name liegt im
+// localStorage dieses Browsers; auf einem anderen Gerät/Browser zeigt die LK-Ansicht dann
+// "Kind 1, Kind 2 ..." plus Symbol, bis die Namen dort neu eingetragen werden ("Kinder anlegen").
+function namenSchluessel(){ return 'denkwege_namen_' + aktiveKlassenraum; }
+function ladeLokaleNamen(){
+  try { return JSON.parse(localStorage.getItem(namenSchluessel()) || '{}') || {}; } catch(e){ return {}; }
+}
+function speichereLokaleNamen(map){
+  try { localStorage.setItem(namenSchluessel(), JSON.stringify(map)); } catch(e){ /* z.B. privates Fenster */ }
+}
+function platzhalterName(symbolId, index){
+  const n = parseInt(String(symbolId).replace(/\D/g,''), 10);
+  return 'Kind ' + (Number.isNaN(n) ? index + 1 : n + 1);
+}
+
 async function syncKinderMitSupabase(){
-  const rows = SYMBOLS.map(s => ({ klassenraum: aktiveKlassenraum, symbol_id: s.id, name: s.name, icon: s.icon }));
+  // Bewusst KEIN name-Feld: Klarnamen verlassen das LK-Gerät nicht.
+  const rows = SYMBOLS.map(s => ({ klassenraum: aktiveKlassenraum, symbol_id: s.id, icon: s.icon }));
   const { data, error } = await sb.from('kinder')
     .upsert(rows, { onConflict: 'klassenraum,symbol_id' })
     .select('id, symbol_id, einwilligung');
@@ -1336,7 +1694,8 @@ async function syncKinderMitSupabase(){
 async function ladeKinderlisteFuerSitzung(code){
   const { data, error } = await sb.rpc('hole_kinderliste_fuer_code', { p_code: code });
   if(error || !data || data.length === 0) return false;
-  SYMBOLS = data.map(row => ({ id: row.symbol_id, icon: row.icon, name: row.name, kindId: row.id }));
+  // Name wird bewusst ignoriert (Kindgerät kennt nur Symbole); icon dient als Anzeigename.
+  SYMBOLS = data.map(row => ({ id: row.symbol_id, icon: row.icon, name: row.icon, kindId: row.id }));
   reinitialisiereKinderZustand(false);
   return true;
 }
@@ -1382,21 +1741,18 @@ let state = {
   aktuelleWahl: null // "ja"/"nein"/null -- nur relevant bei HAT_WAHL, pro Kind neu gesetzt in confirmSymbol()
 };
 
-// [NEU] "Empfohlene Reihenfolge" statt fester Tabs: BAUSTEINE ist eine geordnete Liste von
-// Schritten (typ "isoliert" mit "pool", oder "vergleich" mit "pools": [Seite1, Seite2] --
-// je "fehler" oder "tragfaehig"), OHNE feste Kategorie-Zuordnung -- welche Kategorie welchen
-// Baustein füllt, entscheidet berechneEmpfBloecke() zur Laufzeit anhand der Prioritätslisten.
-// Hier: zwei Isoliert-Schritte aus dem Fehler-Pool, gefolgt von einem Vergleich Fehler↔tragfähig.
-// Ein Vergleich könnte stattdessen genauso pools:["fehler","fehler"] (zwei unterschiedliche
-// Fehler gegeneinander) oder ["tragfaehig","tragfaehig"] (zwei unterschiedliche tragfähige
-// Wege) sein -- s. buendeln_6t2h42z5e.yaml für ein Beispiel mit Fehler-gegen-Fehler.
+// [NEU] "Empfohlene Reihenfolge" statt fester Tabs: BAUSTEINE ist eine geordnete Liste von Schritten.
+// Neues Schema: Jeder Baustein verweist direkt auf eine (typ "isoliert": kategorie_id) bzw. zwei
+// (typ "vergleich": kategorie_ids) echte Kategorien; die Begründung ("Warum diese Reihenfolge?") wird
+// aus verstehenskern_bezug dieser Kategorien zusammengesetzt (s. berechneEmpfBloecke). Kommt für eine
+// Kategorie keine Antwort, entfällt der Baustein automatisch. [BEHOBEN] Dieser Standardwert (Demo, bevor eine
+// Aufgabe geladen ist) hatte noch das alte Schema mit "pools" und warf beim Öffnen des Dashboards einen Fehler.
 let BAUSTEINE = [
-  { typ: "isoliert", pools: ["fehler"], einstiegssatz: "Schauen wir uns erst an, wie ein Kind mit den 42 Zehnern umgegangen ist." },
-  { typ: "isoliert", pools: ["fehler"], einstiegssatz: "Hier ist noch ein anderer Weg mit den 42 Zehnern." },
-  { typ: "vergleich", pools: ["fehler", "tragfaehig"], einstiegssatz: "Jetzt vergleichen wir das mit einer Erklärung, die zur richtigen Zahl führt." }
+  { typ: "isoliert", kategorie_id: "fehler_stellenwert_ignoriert", einstiegssatz: "Schauen wir uns erst an, wie ein Kind mit den 42 Zehnern umgegangen ist." },
+  { typ: "isoliert", kategorie_id: "fehler_unbundled", einstiegssatz: "Hier ist noch ein anderer Weg mit den 42 Zehnern." },
+  { typ: "vergleich", kategorie_ids: ["fehler_mit_buendelungsversuch", "korrekt_begruendet"], einstiegssatz: "Jetzt vergleichen wir das mit einer Erklärung, die zur richtigen Zahl führt." }
 ];
-// [NEU] Reihenfolge = Priorität. Die höchstpriorisierten tatsächlich vorgekommenen Fehler
-// füllen zuerst die Isoliert-Bausteine, der nächste verbleibende füllt den Vergleich.
+// Reihenfolge = Priorität. Seit dem neuen Baustein-Schema sortieren diese Listen nur noch den freien Kategorie-Pool.
 let FEHLER_PRIORITAET = ["fehler_stellenwert_ignoriert", "fehler_unbundled", "fehler_mit_buendelungsversuch", "fehler_ohne_erklaerung"];
 let TRAGFAEHIG_PRIORITAET = ["korrekt_begruendet", "korrekt_unbegruendet"];
 
@@ -1408,46 +1764,44 @@ let TRAGFAEHIG_PRIORITAET = ["korrekt_begruendet", "korrekt_unbegruendet"];
 // derselbe Fall nicht doppelt auftaucht. Wird NUR aufgerufen, solange state.empfAutomatisch
 // true ist -- sobald die Lehrkraft manuell eingreift, bleibt state.empfBloecke unverändert.
 function berechneEmpfBloecke(){
-  const PRIOLISTE = { fehler: FEHLER_PRIORITAET, tragfaehig: TRAGFAEHIG_PRIORITAET };
   const POOL_LABEL = { fehler: 'Fehler', tragfaehig: 'tragfähige Antwort' };
-  const vorhanden = {
-    fehler: FEHLER_PRIORITAET.filter(id => state.pool.some(p=>p.cat===id)),
-    tragfaehig: TRAGFAEHIG_PRIORITAET.filter(id => state.pool.some(p=>p.cat===id))
-  };
-  const naechsterIndex = { fehler: 0, tragfaehig: 0 };
-  function ziehen(pool){
-    const katId = vorhanden[pool][naechsterIndex[pool]];
-    if(katId) naechsterIndex[pool]++;
-    return katId || null;
+  function poolVonTyp(katId){
+    const typ = CATS[katId] && CATS[katId].typ;
+    return typ === 'Fehler' ? 'fehler' : (typ === 'tragfähige Strategie' ? 'tragfaehig' : null);
   }
+  function label(katId){ return (CATS[katId] && CATS[katId].label) || katId; }
+  function bezug(katId){ return CATS[katId] && CATS[katId].verstehenskern_bezug; }
+
   return BAUSTEINE.map((b, i) => {
     if(b.typ === 'isoliert'){
-      const pool = b.pools[0];
-      const katId = ziehen(pool);
-      if(!katId){
-        return { typ:'isoliert', pools:b.pools, index:i, einstiegssatz:b.einstiegssatz, uebersprungen:'auto',
-          kategorieIds:[], namen:[], begruendung:`Kein weiterer, bisher nicht gezeigter Fall aus "${POOL_LABEL[pool]}" ist in dieser Klasse vorgekommen.` };
-      }
+      const katId = b.kategorie_id;
       const kind = state.pool.find(p=>p.cat===katId);
-      return { typ:'isoliert', pools:b.pools, index:i, einstiegssatz:b.einstiegssatz, uebersprungen:false,
+      const pool = poolVonTyp(katId);
+      if(!kind){
+        return { typ:'isoliert', pools:[pool], index:i, einstiegssatz:b.einstiegssatz, uebersprungen:'auto',
+          kategorieIds:[katId], namen:[],
+          begruendung:`Keine Antwort für die Kategorie "${label(katId)}" ist in dieser Klasse eingegangen.` };
+      }
+      return { typ:'isoliert', pools:[pool], index:i, einstiegssatz:b.einstiegssatz, uebersprungen:false,
         kategorieIds:[katId], namen:[kind.name],
-        begruendung:`Höchste Priorität (Rang ${PRIOLISTE[pool].indexOf(katId)+1} von ${PRIOLISTE[pool].length}) unter den bisher noch nicht gezeigten "${POOL_LABEL[pool]}"-Kategorien.` };
+        begruendung: bezug(katId) || `Für die Kategorie "${label(katId)}" ist kein verstehenskern_bezug hinterlegt.` };
     }
-    const [poolA, poolB] = b.pools;
-    const katA = ziehen(poolA);
-    const katB = ziehen(poolB);
-    if(!katA || !katB){
-      if(katA) naechsterIndex[poolA]--; // Ziehung rückgängig -- steht dem nächsten Baustein wieder zur Verfügung
-      if(katB) naechsterIndex[poolB]--;
-      return { typ:'vergleich', pools:b.pools, index:i, einstiegssatz:b.einstiegssatz, uebersprungen:'auto',
-        kategorieIds:[], namen:[],
-        begruendung: !katA ? `Kein weiterer Fall aus "${POOL_LABEL[poolA]}" für den Vergleich vorgekommen.` : `Kein weiterer Fall aus "${POOL_LABEL[poolB]}" für den Vergleich vorgekommen.` };
-    }
+    const [katA, katB] = b.kategorie_ids;
     const kindA = state.pool.find(p=>p.cat===katA);
     const kindB = state.pool.find(p=>p.cat===katB);
-    return { typ:'vergleich', pools:b.pools, index:i, einstiegssatz:b.einstiegssatz, uebersprungen:false,
+    const poolA = poolVonTyp(katA), poolB = poolVonTyp(katB);
+    if(!kindA || !kindB){
+      return { typ:'vergleich', pools:[poolA,poolB], index:i, einstiegssatz:b.einstiegssatz, uebersprungen:'auto',
+        kategorieIds:[katA,katB], namen:[],
+        begruendung: !kindA ? `Keine Antwort für die Kategorie "${label(katA)}" eingegangen.` : `Keine Antwort für die Kategorie "${label(katB)}" eingegangen.` };
+    }
+    const bezugA = bezug(katA), bezugB = bezug(katB);
+    const begruendungText = (bezugA || bezugB)
+      ? `<b>${label(katA)}:</b> ${bezugA || '(kein verstehenskern_bezug hinterlegt)'}<br><b>${label(katB)}:</b> ${bezugB || '(kein verstehenskern_bezug hinterlegt)'}`
+      : `Für keine der beiden Kategorien ist ein verstehenskern_bezug hinterlegt.`;
+    return { typ:'vergleich', pools:[poolA,poolB], index:i, einstiegssatz:b.einstiegssatz, uebersprungen:false,
       kategorieIds:[katA, katB], namen:[kindA.name, kindB.name],
-      begruendung:`Höchste Priorität je Seite unter den noch nicht gezeigten Kategorien (${POOL_LABEL[poolA]} Rang ${PRIOLISTE[poolA].indexOf(katA)+1}; ${POOL_LABEL[poolB]} Rang ${PRIOLISTE[poolB].indexOf(katB)+1}).` };
+      begruendung: begruendungText };
   });
 }
 
@@ -1496,6 +1850,8 @@ function show(id){
     verwaltung:"Verwaltung", schnellanlage:"Kinder anlegen", sitzplan:"Sitzplan", lernverlauf:"Lernverlauf",
     "aufgaben-admin":"Aufgaben-Verwaltung"
   }[id] || "Demo";
+  const tfBtn = document.getElementById('tafel-fenster-btn');
+  if(tfBtn) tfBtn.style.display = ['aufgabe','dashboard','heatmap','tafel','sitzplan','verwaltung','pool'].includes(id) ? 'inline-flex' : 'none';
   const role = (id==='symbolauswahl'||id==='aufnahme') ? 'kind' : 'lk';
   roleLastScreen[role] = id;
   document.getElementById('role-lk').classList.toggle('active', role==='lk');
@@ -1582,7 +1938,7 @@ function renderSymbols(){
   SYMBOLS.forEach(s=>{
     const b = document.createElement('button');
     b.className='kid-symbol-btn';
-    b.innerHTML = `<span class="emoji">${s.icon}</span><span class="name">${s.name}</span>`;
+    b.innerHTML = `<span class="emoji">${s.icon}</span>`;
     b.onclick = ()=>selectSymbol(s);
     g.appendChild(b);
   });
@@ -1855,11 +2211,9 @@ function renderEmpfSlotKarte(blockIndex, slotIdx, kategorieIds, namen, pools, on
   const child = state.pool.find(p=>p.name===name);
   const cat = CATS[katId];
   if(!child || !cat) return '<div class="slot-empty">Antwort nicht mehr verfügbar</div>';
-  const geschwister = state.pool.filter(p=>p.cat===katId && p.name!==name);
   const istVergleich = namen.length > 1;
   const POOL_LABEL_KURZ = { fehler: 'Fehler', tragfaehig: 'tragfähig' };
   const rollenLabel = istVergleich ? (POOL_LABEL_KURZ[pools[slotIdx]] || '') + ': ' : '';
-  const alternativeKategorien = Object.keys(CATS).filter(k => CATS[k].typ === cat.typ && k !== katId && state.pool.some(p=>p.cat===k));
   const headerInner = `<div class="row" style="justify-content:space-between;">
         <b style="font-size:var(--fs-small);">${rollenLabel}${child.name} · ${cat.label}</b>
         <span class="tag ${onTafel?'tag-success':'tag-neutral'}">${onTafel?'auf Tafel':'nicht auf Tafel'}</span>
@@ -1875,20 +2229,11 @@ function renderEmpfSlotKarte(blockIndex, slotIdx, kategorieIds, namen, pools, on
       </div>`;
   return `<div>
     ${header}
-    <div class="quote-plain">"${child.quote}"</div>
-    ${cat.nachfrage ? `<div class="live-frage-box">
-      <div class="live-frage-label"><i class="ti ti-message-circle"></i> direkt stellbar</div>
-      <div class="live-frage-text">${cat.nachfrage}</div>
-    </div>` : ''}
-    <div class="row" style="gap:6px; margin-top:6px; flex-wrap:wrap;">
-      <select class="navbtn" style="font-size:var(--fs-micro);" ${geschwister.length?'':'disabled'} onchange="empfKindTauschen(${blockIndex},${slotIdx},this.value); this.selectedIndex=0;">
-        <option value="">${geschwister.length ? 'anderes Kind, gleiche Kategorie…' : 'keine weitere Antwort dieser Kategorie'}</option>
-        ${geschwister.map(g=>`<option value="${g.name}">${g.name}</option>`).join('')}
-      </select>
-      ${alternativeKategorien.length ? `<select class="navbtn" style="font-size:var(--fs-micro);" onchange="empfKategorieWechseln(${blockIndex},${slotIdx},this.value); this.selectedIndex=0;">
-        <option value="">Kategorie wechseln…</option>
-        ${alternativeKategorien.map(k=>`<option value="${k}">${CATS[k].label}</option>`).join('')}
-      </select>` : ''}
+    <div class="quote-plain quote-slot">"${child.quote}"</div>
+    ${impulsHtml(child.name, cat.nachfrage)}
+    <div class="karten-knoepfe">
+      <button type="button" class="navbtn" onclick="oeffnePicker(${blockIndex},${slotIdx})"><i class="ti ti-replace"></i> Andere Antwort einsetzen</button>
+      <button type="button" class="navbtn" onclick="openDetail(${JSON.stringify(child.name).replace(/"/g,'&quot;')})"><i class="ti ti-pencil"></i> Antwort öffnen / Einordnung ändern</button>
     </div>
   </div>`;
 }
@@ -2023,17 +2368,35 @@ function renderFrei(){
             <div style="flex:1; padding:6px 8px; background:var(--surface-1);">${headerInner}</div>
           </div>`;
       div.innerHTML = `${header}
-        <div class="quote-plain">"${child.quote}"</div>
-        ${cat.nachfrage ? `<div class="live-frage-box">
-          <div class="live-frage-label"><i class="ti ti-message-circle"></i> direkt stellbar</div>
-          <div class="live-frage-text">${cat.nachfrage}</div>
-        </div>` : ''}`;
+        <div class="quote-plain quote-slot">"${child.quote}"</div>
+        <div style="margin-top:6px; display:flex; gap:16px; flex-wrap:wrap;">
+          <span class="ts" style="font-size:var(--fs-micro); text-decoration:underline; cursor:pointer;" onclick="event.stopPropagation(); openDetail(${JSON.stringify(child.name).replace(/"/g,'&quot;')})"><i class="ti ti-pencil"></i> Antwort öffnen und Einordnung ändern</span>
+          <span class="ts" style="font-size:var(--fs-micro); text-decoration:underline; cursor:pointer;" onclick="event.stopPropagation(); freiToggle(${JSON.stringify(child.name).replace(/"/g,'&quot;')})"><i class="ti ti-x"></i> von der Tafel nehmen</span>
+        </div>
+        ${impulsHtml(child.name, cat.nachfrage)}`;
     } else {
       div.className='slot-empty'; div.textContent = 'leere Tafelanzeige — Antwort aus dem Pool antippen';
       div.onclick = null; div.style.cursor='default';
     }
     area.appendChild(div);
   });
+  if(!slotIds.length){
+    area.className = '';
+    area.innerHTML = '<div class="slot-empty" style="grid-column:1/-1;">Noch keine Antwort ausgewählt. Wählen Sie unten Antworten in der Reihenfolge aus, in der sie besprochen werden sollen.</div>';
+  }
+  // Auswahlliste: Antworten direkt antippen (statt über "Alle Antworten ansehen" + Detailfenster)
+  let box = document.getElementById('frei-auswahl');
+  if(!box){
+    box = document.createElement('div');
+    box.id = 'frei-auswahl';
+    box.className = 'card';
+    document.getElementById('frei-area').appendChild(box);
+  }
+  box.innerHTML = `<div style="font-weight:600; margin-bottom:4px;">Antworten auswählen</div>
+    <div class="ts" style="font-size:var(--fs-small); margin-bottom:10px;">Tippen Sie auf eine Antwort, um sie als nächste auf die Tafel zu legen. Nochmals tippen nimmt sie wieder weg.</div>` +
+    antwortListeHtml(
+      n => { const k = state.slots.frei.indexOf(n); return k > -1 ? `ausgewählt als Nr. ${k+1}` : ''; },
+      n => `freiToggle(${JSON.stringify(n).replace(/"/g, '&quot;')})`);
   const stepNav = document.getElementById('dashboard-step-nav');
   const keinVorheriger = state.visibleCount.frei <= 0;
   const keinNaechster = state.visibleCount.frei >= slotIds.length;
@@ -2187,21 +2550,7 @@ function toggleTafelQR(){
     : '<i class="ti ti-qrcode"></i> QR-Code auf Tafel anzeigen';
   show('tafel');
 }
-function renderTafelQR(){
-  const section = document.getElementById('tafel-qr-section');
-  section.style.display = qrAufTafel ? 'block' : 'none';
-  if(!qrAufTafel) return;
-  document.getElementById('tafel-code-anzeige').textContent = sitzungscode ? codeAlsSymbole(sitzungscode) : "⭐⭐⭐";
-  const box = document.getElementById('tafel-qr-box');
-  box.innerHTML = "";
-  try {
-    const basisUrl = window.location.origin + window.location.pathname;
-    const beitrittsLink = basisUrl + "?geraet=kind&code=" + sitzungscode;
-    new QRCode(box, { text: beitrittsLink, width: 140, height: 140 });
-  } catch(e){
-    box.innerHTML = '<div class="ts" style="font-size:var(--fs-micro);">(QR-Bibliothek nicht geladen — Demo ohne Internetverbindung)</div>';
-  }
-}
+// (renderTafelQR ist in tafelZeichnen() aufgegangen -- s. Block "Tafelansicht im eigenen Fenster")
 function addSlot(){
   const unused = state.pool.find(p=>!state.slots.frei.includes(p.name));
   if(unused) state.slots.frei.push(unused.name);
@@ -2211,10 +2560,100 @@ function recode(name, newCat){
   if(!newCat) return;
   const child = state.pool.find(p=>p.name===name);
   if(child) child.cat = newCat;
+  // Hat die Lehrkraft die Empfehlung schon verändert, muss die Kategorie auch in ihren Bausteinen mitziehen
+  // (sonst zeigt die Karte die alte Kategorie).
+  if(!state.empfAutomatisch){
+    state.empfBloecke.forEach(bl => bl.namen.forEach((n, s) => { if(n === name) bl.kategorieIds[s] = newCat; }));
+  }
   renderDashboard();
+  const heatmapOffen = document.getElementById('scr-heatmap').classList.contains('visible');
+  if(heatmapOffen) renderHeatmap();
   renderTafel();
   if(detailChild===name) renderDetail();
 }
+// ---- Impulsidee, Auswahlfenster und Frei-Auswahl (in der Studie entwickelt, hier fest eingebaut) ----
+// Bedien-Ereignisse meldet das Tool über trackEvent(); im normalen Tool ist das ein No-op. Die Studienseite
+// setzt window.onTrackEvent, um sie mitzuprotokollieren.
+function trackEvent(typ, daten){
+  if(typeof window.onTrackEvent === 'function'){ try { window.onTrackEvent(typ, daten || {}); } catch(e){ /* Protokoll darf nie stören */ } }
+}
+const impulsOffen = new Set();
+function impulsHtml(name, nachfrage){
+  if(!nachfrage) return '';
+  return `<details class="impuls" data-name="${escapeHtml(name).replace(/"/g,'&quot;')}" ${impulsOffen.has(name)?'open':''} onclick="event.stopPropagation()">
+    <summary><span class="impuls-zu">Impulsidee anzeigen</span><span class="impuls-auf">Impulsidee ausblenden</span></summary>
+    <div class="live-frage-box">
+      <div class="live-frage-label"><i class="ti ti-message-circle"></i> direkt stellbar</div>
+      <div class="live-frage-text">${nachfrage}</div>
+    </div></details>`;
+}
+document.addEventListener('toggle', e => {
+  const det = e.target;
+  if(!det.classList || !det.classList.contains('impuls')) return;
+  const name = det.dataset.name;
+  if(det.open === impulsOffen.has(name)) return; // nur Neuaufbau der Karte, keine echte Bedienung
+  if(det.open) impulsOffen.add(name); else impulsOffen.delete(name);
+  const kind = state.pool.find(x => x.name === name);
+  trackEvent('impuls', { name, offen: det.open, kategorie: kind ? kind.cat : null });
+}, true);
+
+let pickerZiel = null;
+function kategorieReihenfolge(){
+  const reihe = [...FEHLER_PRIORITAET, ...TRAGFAEHIG_PRIORITAET];
+  state.pool.forEach(p => { if(!reihe.includes(p.cat)) reihe.push(p.cat); });
+  return reihe.filter(k => state.pool.some(p => p.cat === k));
+}
+// Alle Antworten, nach Kategorie gruppiert, jede antippbar (für Auswahlfenster und Frei-Liste)
+function antwortListeHtml(istAusgewaehlt, aktionFn){
+  return kategorieReihenfolge().map(k => {
+    const kinder = state.pool.filter(p => p.cat === k);
+    return `<div class="wahl-gruppe"><div class="wahl-gruppe-kopf"><span class="wahl-punkt ${CATS[k].color}"></span>${escapeHtml(CATS[k].label)}</div>` +
+      kinder.map(p => {
+        const markiert = istAusgewaehlt(p.name);
+        return `<div class="wahlkarte${markiert ? ' gewaehlt' : ''}" role="button" tabindex="0" onclick="${aktionFn(p.name)}">
+          <div class="wahlkarte-kopf"><b>${escapeHtml(p.name)}</b><span>${markiert ? markiert : ''}</span></div>
+          <div class="wahlkarte-zitat">„${escapeHtml(p.quote)}“</div></div>`;
+      }).join('') + '</div>';
+  }).join('');
+}
+function oeffnePicker(i, slot){
+  pickerZiel = { i, slot };
+  const b = state.empfBloecke[i];
+  const aktuell = b.namen[slot];
+  document.getElementById('picker-titel').textContent = `Antwort für Schritt ${state.empfBloecke.filter((x,j) => j <= i && !x.uebersprungen).length} einsetzen`;
+  document.getElementById('picker-liste').innerHTML = antwortListeHtml(
+    n => n === aktuell ? 'jetzt hier' : '',
+    n => `slotBelegen(${JSON.stringify(n).replace(/"/g, '&quot;')})`);
+  document.getElementById('picker-modal').classList.add('visible');
+  trackEvent('picker_geoeffnet', { schritt: i, slot, aktuell });
+}
+function schliessePicker(){
+  document.getElementById('picker-modal').classList.remove('visible');
+  trackEvent('picker_geschlossen', pickerZiel || {});
+  pickerZiel = null;
+}
+function slotBelegen(name){
+  if(!pickerZiel) return;
+  const { i, slot } = pickerZiel;
+  const b = state.empfBloecke[i];
+  const kind = state.pool.find(p => p.name === name);
+  trackEvent('slot_belegt', { schritt: i, slot, von: b.namen[slot], nach: name, von_kat: b.kategorieIds[slot], nach_kat: kind.cat });
+  if(b.kategorieIds[slot] !== kind.cat){ b.kategorieIds[slot] = kind.cat; b.kategorieAbweichend = true; }
+  b.namen[slot] = name;
+  state.empfAutomatisch = false;
+  document.getElementById('picker-modal').classList.remove('visible');
+  pickerZiel = null;
+  renderDashboard();
+}
+function freiToggle(name){
+  const arr = state.slots.frei;
+  const idx = arr.indexOf(name);
+  trackEvent('frei_auswahl', { name, aktion: idx > -1 ? 'entfernen' : 'hinzufuegen', position: idx > -1 ? idx : arr.length });
+  if(idx > -1) arr.splice(idx, 1); else arr.push(name);
+  state.visibleCount.frei = Math.min(state.visibleCount.frei, arr.length);
+  renderDashboard();
+}
+
 function renderLegende(containerId, includeStatus, filterable){
   const el = document.getElementById(containerId);
   if(!el) return;
@@ -2247,7 +2686,18 @@ function renderPool(){
   const area = document.getElementById('pool-area');
   if(!area) return;
   area.innerHTML = "";
-  const visiblePool = state.poolFilter ? state.pool.filter(p=>p.cat===state.poolFilter) : state.pool;
+  // [NEU] fehler_prioritaet/tragfaehig_prioritaet sortieren jetzt den freien Kategorie-Pool
+  // (ihre einzig verbliebene Aufgabe, seit Bausteine feste kategorie_id referenzieren statt
+  // Pools automatisch aufzufüllen).
+  function prioritaetsRang(catId){
+    const typ = CATS[catId] && CATS[catId].typ;
+    const liste = typ === 'Fehler' ? FEHLER_PRIORITAET : (typ === 'tragfähige Strategie' ? TRAGFAEHIG_PRIORITAET : null);
+    if(!liste) return Infinity;
+    const idx = liste.indexOf(catId);
+    return idx === -1 ? Infinity : idx;
+  }
+  const visiblePool = (state.poolFilter ? state.pool.filter(p=>p.cat===state.poolFilter) : state.pool)
+    .slice().sort((a,b) => prioritaetsRang(a.cat) - prioritaetsRang(b.cat));
   visiblePool.forEach(p=>{
     const cat = CATS[p.cat];
     const inSlot = state.slots[state.activeTab].includes(p.name);
@@ -2319,68 +2769,149 @@ function toggleAntwortenSichtbar(checked){
   if(btn2) btn2.checked = checked;
   renderTafel();
 }
-function renderTafel(){
-  renderTafelQR();
-  renderTafelSteuerung();
-  const area = document.getElementById('tafel-slots');
+// =====================================================================
+// Tafelansicht im eigenen Fenster
+// Die Tafel lässt sich jederzeit zusätzlich in einem zweiten Browserfenster öffnen
+// (?ansicht=tafel), das die Lehrkraft auf Beamer/Smartboard zieht. Gesteuert wird weiter im
+// Dashboard-Fenster; beide Fenster sprechen über einen BroadcastChannel (gleiche Adresse,
+// gleicher Browser). Es wird nur übertragen, was ohnehin auf der Tafel steht (Zitate, Aufgabentext,
+// Beitrittscode) -- keine Kindernamen, nichts wird gespeichert. Schließt die Lehrkraft das
+// Dashboard-Fenster, bleibt der letzte Stand im Tafel-Fenster stehen.
+// =====================================================================
+const istTafelFenster = getUrlParam('ansicht') === 'tafel';
+let tafelKanal = null;
+try { if('BroadcastChannel' in window) tafelKanal = new BroadcastChannel('denkwege-tafel'); } catch(e){ tafelKanal = null; }
+let tafelFenster = null;
+let tafelAufgabeSichtbar = false;
+
+// Was gerade auf der Tafel zu sehen sein soll -- als reine Daten, damit beide Fenster dasselbe zeichnen.
+function tafelModell(){
+  const m = {
+    antwortenSichtbar: !!state.answersVisibleOnTafel, aufgabeSichtbar: tafelAufgabeSichtbar, aufgabeText: AUFGABE_TEXT,
+    qr: qrAufTafel, code: sitzungscode,
+    beitrittsLink: window.location.origin + window.location.pathname + '?geraet=kind&code=' + sitzungscode,
+    layout: 'raster', leer: null, karten: []
+  };
+  if(qrAufTafel) return m;
+  if(!state.answersVisibleOnTafel){ m.leer = 'ausgeblendet'; return m; }
+  // "Empfohlene Reihenfolge": ERSETZEN statt anhäufen -- nur der aktuell zugeschaltete Block ist
+  // auf der Tafel. Ein Vergleichs-Block hat zwei Antworten, die gemeinsam nebeneinander erscheinen.
+  if(state.activeTab === 'empfohlen'){
+    const block = state.empfBloecke.filter(b=>!b.uebersprungen)[state.empfAktivBlock];
+    if(!block){ m.leer = 'kein-schritt'; return m; }
+    block.namen.forEach(name=>{
+      const child = state.pool.find(p=>p.name===name);
+      if(child) m.karten.push({ text: child.quote, nummer: null });
+    });
+    return m;
+  }
+  m.layout = (state.activeTab === 'frei' && state.freiLayout === 'untereinander') ? 'stapel' : 'raster';
+  state.slots[state.activeTab].forEach((name,i)=>{
+    if(i >= state.visibleCount[state.activeTab]) return; // Zuschalten gilt in "frei" IMMER, unabhängig vom Layout
+    const child = state.pool.find(p=>p.name===name);
+    if(child) m.karten.push({ text: child.quote, nummer: m.layout === 'stapel' ? i+1 : null });
+  });
+  return m;
+}
+// Zeichnet die Tafel aus einem Modell -- im Hauptfenster in den Tafel-Bildschirm, im Tafel-Fenster genauso.
+function tafelZeichnen(m){
+  const section = document.getElementById('tafel-qr-section');
+  section.style.display = m.qr ? 'block' : 'none';
   const aufgabeEl = document.getElementById('tafel-aufgabe');
-  if(qrAufTafel){
+  aufgabeEl.textContent = m.aufgabeText || '';
+  aufgabeEl.style.display = (m.aufgabeSichtbar && !m.qr) ? 'block' : 'none';
+  const area = document.getElementById('tafel-slots');
+  if(m.qr){
+    document.getElementById('tafel-code-anzeige').textContent = m.code ? codeAlsSymbole(m.code) : "⭐⭐⭐";
+    const box = document.getElementById('tafel-qr-box');
+    box.innerHTML = "";
+    try {
+      const seite = istTafelFenster ? 240 : 140;
+      new QRCode(box, { text: m.beitrittsLink, width: seite, height: seite });
+    } catch(e){
+      box.innerHTML = '<div class="ts" style="font-size:var(--fs-micro);">(QR-Bibliothek nicht geladen — Demo ohne Internetverbindung)</div>';
+    }
     area.innerHTML = "";
-    aufgabeEl.style.display = 'none';
     return;
   }
-  if(!state.answersVisibleOnTafel){
+  if(m.leer === 'ausgeblendet'){
     area.className = '';
     area.innerHTML = '<div class="ts" style="text-align:center; padding:24px;"><i class="ti ti-eye-off" style="font-size:var(--fs-lead);"></i><div style="margin-top:6px;">Antworten sind noch ausgeblendet</div></div>';
     return;
   }
-  // [NEU] "Empfohlene Reihenfolge": ERSETZEN statt anhäufen -- nur der aktuell zugeschaltete
-  // Block ist auf der Tafel, frühere Schritte verschwinden wieder. Ein Vergleichs-Block hat
-  // zwei Antworten, die dann gemeinsam (nebeneinander, grid2) erscheinen -- kein zweiter Klick
-  // nötig, ein Schritt = ein Zuschalten.
-  if(state.activeTab === 'empfohlen'){
+  if(m.leer === 'kein-schritt'){
     area.className = 'grid2';
-    area.innerHTML = "";
-    const sichtbareBloecke = state.empfBloecke.filter(b=>!b.uebersprungen);
-    const aktuellerBlock = sichtbareBloecke[state.empfAktivBlock];
-    if(!aktuellerBlock){
-      area.innerHTML = '<div class="ts" style="text-align:center; padding:24px; grid-column:1/-1;">Noch kein Schritt zugeschaltet</div>';
-      return;
-    }
-    aktuellerBlock.namen.forEach(name=>{
-      const child = state.pool.find(p=>p.name===name);
-      if(!child) return;
-      const div = document.createElement('div');
-      // [NEU] Auf der Tafel bewusst KEINE Kategorie-Farbe mehr (s. c-tafel-neutral, Kap.
-      // CSS) -- sonst würde die Farbfamilie (kühl=Fehler/warm=tragfähig) unbeschriftet
-      // genau das verraten, was Kategorie-Labels hier schon bisher nicht tun sollen.
-      // Unterscheidung der nebeneinanderliegenden Karten erfolgt allein über Position + Text.
-      div.className = 'c-tafel-neutral';
-      div.style.cssText = "border-radius:12px; padding:14px; font-size:var(--fs-body);";
-      div.innerHTML = child.quote;
-      area.appendChild(div);
-    });
+    area.innerHTML = '<div class="ts" style="text-align:center; padding:24px; grid-column:1/-1;">Noch kein Schritt zugeschaltet</div>';
     return;
   }
-  const gestapelt = state.activeTab === 'frei' && state.freiLayout === 'untereinander';
+  const gestapelt = m.layout === 'stapel';
   area.className = gestapelt ? '' : 'grid2';
   area.innerHTML = "";
-  const slotIds = state.slots[state.activeTab];
-  slotIds.forEach((name,i)=>{
-    if(i >= state.visibleCount[state.activeTab]) return; // Zuschalten gilt in "frei" IMMER, unabhängig vom Layout
-    const child = state.pool.find(p=>p.name===name);
-    if(!child) return;
+  m.karten.forEach(k=>{
     const div = document.createElement('div');
-    // [NEU] s. Kommentar im "empfohlen"-Zweig weiter oben -- auch im Frei-Tab keine
-    // Kategorie-Farbe auf der Tafel, nur Position (und bei "untereinander" die Nummer).
+    // Auf der Tafel bewusst KEINE Kategorie-Farbe (c-tafel-neutral): sonst verriete die Farbfamilie
+    // (kühl = Fehler / warm = tragfähig) unbeschriftet genau das, was Kategorie-Labels hier nicht tun sollen.
     div.className = 'c-tafel-neutral';
     div.style.cssText = "border-radius:12px; padding:14px; font-size:var(--fs-body);" + (gestapelt ? " margin-bottom:12px; display:flex; gap:10px; align-items:flex-start;" : "");
     div.innerHTML = gestapelt
-      ? `<div style="font-size:var(--fs-lead); font-weight:600; opacity:0.5; min-width:24px;">${i+1}</div><div>${child.quote}</div>`
-      : child.quote;
+      ? `<div style="font-size:var(--fs-lead); font-weight:600; opacity:0.5; min-width:24px;">${k.nummer}</div><div>${escapeHtml(k.text)}</div>`
+      : escapeHtml(k.text);
     area.appendChild(div);
   });
 }
+function renderTafel(){
+  if(istTafelFenster) return; // das Tafel-Fenster zeichnet nur, was ihm das Dashboard-Fenster schickt
+  renderTafelSteuerung();
+  tafelZeichnen(tafelModell());
+  tafelSenden();
+}
+function tafelSenden(){
+  if(!tafelKanal || istTafelFenster) return;
+  try { tafelKanal.postMessage({ typ:'modell', modell: tafelModell() }); } catch(e){ /* Fenster zu / Kanal weg: egal */ }
+}
+if(tafelKanal && !istTafelFenster){
+  // Ein frisch geöffnetes Tafel-Fenster meldet sich mit "hallo" und bekommt sofort den aktuellen Stand.
+  tafelKanal.onmessage = ev => { if(ev.data && ev.data.typ === 'hallo') tafelSenden(); };
+}
+function oeffneTafelFenster(){
+  if(!tafelKanal){ alert('Dieser Browser kann kein zweites Tafel-Fenster mit dem Dashboard verbinden. Bitte die Tafelansicht im selben Fenster verwenden.'); return; }
+  if(tafelFenster && !tafelFenster.closed){ tafelFenster.focus(); tafelSenden(); return; }
+  const url = window.location.origin + window.location.pathname + '?ansicht=tafel';
+  tafelFenster = window.open(url, 'denkwege-tafel', 'popup=yes,width=1100,height=720');
+  if(!tafelFenster) alert('Das Tafel-Fenster wurde vom Browser blockiert. Bitte Pop-ups für diese Seite erlauben und noch einmal tippen.');
+}
+function initTafelFenster(){
+  document.body.classList.add('tafel-fenster');
+  document.title = 'Denkwege – Tafel';
+  show('tafel');
+  document.getElementById('tafel-slots').innerHTML = '<div class="ts" style="text-align:center; padding:24px;">Warte auf das Dashboard-Fenster …</div>';
+  const leiste = document.createElement('div');
+  leiste.id = 'tafel-fenster-leiste';
+  leiste.innerHTML = '<span id="tafel-fenster-status"></span><button class="navbtn" id="tafel-vollbild-btn"><i class="ti ti-maximize"></i> Vollbild</button>';
+  document.body.appendChild(leiste);
+  document.getElementById('tafel-vollbild-btn').onclick = () => {
+    if(document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen?.();
+  };
+  if(!tafelKanal){
+    document.getElementById('tafel-slots').innerHTML = '<div class="ts" style="text-align:center; padding:24px;">Dieser Browser kann das Tafel-Fenster nicht mit dem Dashboard verbinden.</div>';
+    return;
+  }
+  let empfangen = false;
+  tafelKanal.onmessage = ev => {
+    if(!ev.data || ev.data.typ !== 'modell') return;
+    empfangen = true;
+    document.getElementById('tafel-fenster-status').textContent = '';
+    tafelZeichnen(ev.data.modell);
+  };
+  const hallo = () => { try { tafelKanal.postMessage({ typ:'hallo' }); } catch(e){} };
+  hallo();
+  const takt = setInterval(() => {
+    if(empfangen){ clearInterval(takt); return; }
+    document.getElementById('tafel-fenster-status').textContent = 'Dashboard-Fenster nicht gefunden – bitte dort „Tafel in neuem Fenster“ tippen.';
+    hallo();
+  }, 2000);
+}
+
 // [NEU] Steuerung DIREKT auf der Tafel-Ansicht (nicht nur im LK-Dashboard) -- falls nur ein
 // Smartboard vorhanden ist, auf dem die Lehrkraft ohnehin steht, muss sie nicht zwischen
 // Dashboard und Tafel hin- und herwechseln, um den nächsten Schritt zuzuschalten. Nutzt
@@ -2407,7 +2938,7 @@ function toggleTafelAufgabe(checked){
     qrAufTafel = false;
     document.getElementById('qr-toggle-btn').innerHTML = '<i class="ti ti-qrcode"></i> QR-Code auf Tafel anzeigen';
   }
-  document.getElementById('tafel-aufgabe').style.display = checked ? 'block' : 'none';
+  tafelAufgabeSichtbar = checked;
   const toggle = document.getElementById('aufgabe-toggle');
   if(toggle) toggle.checked = checked;
   renderTafel();
@@ -2754,6 +3285,7 @@ async function loescheKindVollstaendig(id){
     if(e2){ alert('Löschen des Kindes fehlgeschlagen: ' + e2.message); return; }
   }
   SYMBOLS = SYMBOLS.filter(s=>s.id!==id);
+  const lokaleNamen = ladeLokaleNamen(); delete lokaleNamen[id]; speichereLokaleNamen(lokaleNamen);
   delete consentState[id]; delete childLanguage[id]; delete state.heatmapStatus[id]; delete sitzplanState.placed[id];
   renderKinderliste();
 }
@@ -2786,8 +3318,10 @@ async function submitSchnellanlage(){
   // Komplette Liste neu aufbauen (nicht nur vorhandene Einträge umbenennen), damit
   // auch mehr Kinder als zuvor angelegt werden können, bis MAX_KINDER.
   SYMBOLS = lines.map((name,i) => ({ id: "kind"+i, icon: SYMBOLS_POOL[i % SYMBOLS_POOL.length], name }));
+  const namenMap = {}; SYMBOLS.forEach(s => { namenMap[s.id] = s.name; });
+  speichereLokaleNamen(namenMap); // nur lokal, nicht nach Supabase
   reinitialisiereKinderZustand(false);
-  await syncKinderMitSupabase(); // Namen sofort mit Supabase abgleichen, nicht erst beim Sitzungsstart
+  await syncKinderMitSupabase(); // Symbole sofort mit Supabase abgleichen (ohne Namen), nicht erst beim Sitzungsstart
   show('sitzplan');
 }
 
@@ -2855,18 +3389,18 @@ function canvasClick(e){
 // Aufruf hier synchronisiert alle Textstellen (Tafel, Dashboard, Aufnahme-Anweisung, ...)
 // mit den bereits gesetzten Demo-Konstanten, genau wie nach einem echten Upload.
 // =====================================================================
-// STUDIENMODUS (nur in studie.html)
+// STUDIENMODUS (nur in ausprobieren.html)
 // Planungsaufgabe für Lehrkräfte: Vertrauen in KI-Einordnungen.
 // Alles, was du inhaltlich anpassen willst, steht im Block STUDIE direkt
 // hier unten. Der Rest (ab "2. TECHNIK") muss normalerweise nicht
 // verändert werden.
 //
 // Aufruf:
-//   studie.html?v=A          Version A (für die eine Hälfte der Gruppe)
-//   studie.html?v=B          Version B (für die andere Hälfte)
-//   studie.html              Version wird zufällig gewählt
+//   ausprobieren.html?v=A          Version A (für die eine Hälfte der Gruppe)
+//   ausprobieren.html?v=B          Version B (für die andere Hälfte)
+//   ausprobieren.html              Version wird zufällig gewählt
 //   ...&test=1               Testlauf: alle Daten werden als test markiert
-//   studie.html?pruefen=1    zeigt vorab einen Prüfbericht zu beiden Versionen
+//   ausprobieren.html?pruefen=1    zeigt vorab einen Prüfbericht zu beiden Versionen
 // =====================================================================
 
 // ---------- 1. KONFIGURATION ----------
@@ -2945,9 +3479,9 @@ const STUDIE = {
     fehler_prioritaet: ["zehner_als_einer","nicht_gebuendelt","hunderter_vergessen","ablehnung_ohne_begruendung"],
     tragfaehig_prioritaet: ["buendelung_erklaert","uebertrag_ohne_begruendung","zahlwert_gerechnet","zustimmung_ohne_begruendung"],
     bausteine: [
-      { typ:"isoliert", pool:"fehler", einstiegssatz:"Wo sieht man in dieser Zahl die 3 Zehner, die dazugekommen sind?" },
-      { typ:"isoliert", pool:"fehler", einstiegssatz:"Zu 3095 kommen nur 30 dazu. Kann dabei dreißigtausend herauskommen?" },
-      { typ:"vergleich", pools:["tragfaehig","tragfaehig"], einstiegssatz:"Beide kommen auf 3125. Was bedeutet die 1, die rüberkommt, und wo findet ihr sie in der anderen Erklärung?" }
+      { typ:"isoliert", kategorie_id:"zehner_als_einer", einstiegssatz:"Wo sieht man in dieser Zahl die 3 Zehner, die dazugekommen sind?" },
+      { typ:"isoliert", kategorie_id:"nicht_gebuendelt", einstiegssatz:"Zu 3095 kommen nur 30 dazu. Kann dabei dreißigtausend herauskommen?" },
+      { typ:"vergleich", kategorie_ids:["buendelung_erklaert","uebertrag_ohne_begruendung"], einstiegssatz:"Beide kommen auf 3125. Was bedeutet die 1, die rüberkommt, und wo findet ihr sie in der anderen Erklärung?" }
     ]
   }},
 
@@ -2990,7 +3524,7 @@ const STUDIE = {
   // ki: die absichtlich FALSCHEN Einordnungen (alle anderen Kinder = "wahr"),
   //   jeweils mit Erkennbarkeit: "offensichtlich" (Lesen genügt) oder "fachlich"
   //   (Unterscheidung erfordert Stellenwertwissen).
-  // Den Prüfbericht (studie.html?pruefen=1) nach jeder Änderung ansehen!
+  // Den Prüfbericht (ausprobieren.html?pruefen=1) nach jeder Änderung ansehen!
   versionen: {
     A: {
       reihenfolge: ["Z1","N2","E1","Zu1","H1","B1","U1","N1","B2","A1","U2","E2","B3","Zu2","N3","U3"],
@@ -3223,158 +3757,9 @@ stWrap('setPoolFilter', k => ({ filter: k }));
 stWrap('seqStep', dir => ({ richtung: dir }));
 stWrap('zeigeHintergrundInfo', () => ({}));
 
-// Auf den Antwort-Karten der empfohlenen Reihenfolge einen Link zur Detailansicht
-// ergänzen (dort lässt sich die Einordnung korrigieren, s. Anforderungsdokument 2.4a).
-// Im bisherigen Dashboard ging das nur über "Alle Antworten ansehen".
-const stSlotKarteOrig = window.renderEmpfSlotKarte;
-window.renderEmpfSlotKarte = function(blockIndex, slotIdx, kategorieIds, namen, pools, onTafel){
-  const html = stSlotKarteOrig(blockIndex, slotIdx, kategorieIds, namen, pools, onTafel);
-  const name = namen[slotIdx];
-  if(!state.pool.some(p => p.name === name)) return html;
-  // Die beiden Auswahllisten ("anderes Kind…", "Kategorie wechseln…") durch zwei klare Knöpfe ersetzen
-  const box = document.createElement('div');
-  box.innerHTML = html;
-  box.querySelectorAll('select').forEach(sel => { const zeile = sel.closest('.row'); if(zeile) zeile.remove(); else sel.remove(); });
-  const karte = box.firstElementChild || box;
-  const knoepfe = document.createElement('div');
-  knoepfe.className = 'st-karten-knoepfe';
-  const nameAttr = JSON.stringify(name).replace(/"/g, '&quot;');
-  knoepfe.innerHTML = `<button type="button" class="navbtn" onclick="stPickerOeffnen(${blockIndex},${slotIdx})"><i class="ti ti-replace"></i> Andere Antwort einsetzen</button>
-    <button type="button" class="navbtn" onclick="openDetail(${nameAttr})"><i class="ti ti-pencil"></i> Antwort öffnen / Einordnung ändern</button>`;
-  karte.appendChild(knoepfe);
-  stImpulsEinklappen(karte, name);
-  return box.innerHTML;
-};
-
-// --- Nachfrage-Impulse eingeklappt als "Impulsidee" (Aufklappen wird protokolliert) ---
-const stImpulsOffen = new Set();
-function stImpulsEinklappen(el, name){
-  el.querySelectorAll('.live-frage-box').forEach(box => {
-    if(box.parentElement && box.parentElement.classList.contains('st-impuls')) return;
-    const det = document.createElement('details');
-    det.className = 'st-impuls';
-    det.dataset.name = name;
-    if(stImpulsOffen.has(name)) det.setAttribute('open', '');
-    const sum = document.createElement('summary');
-    sum.innerHTML = '<span class="st-impuls-zu">Impulsidee anzeigen</span><span class="st-impuls-auf">Impulsidee ausblenden</span>';
-    box.replaceWith(det);
-    det.appendChild(sum);
-    det.appendChild(box);
-  });
-}
-document.addEventListener('toggle', e => {
-  const det = e.target;
-  if(!det.classList || !det.classList.contains('st-impuls')) return;
-  const name = det.dataset.name;
-  if(det.open === stImpulsOffen.has(name)) return; // nur Neuaufbau der Karte, keine echte Bedienung
-  if(det.open) stImpulsOffen.add(name); else stImpulsOffen.delete(name);
-  stLog('impuls', { name, offen: det.open, kategorie: stKatVon(name) });
-}, true);
-
-// --- Auswahlfenster: beliebige Antwort in einen Baustein der empfohlenen Reihenfolge legen ---
-let stPickerZiel = null;
-function stKategorieReihenfolge(){
-  const reihe = [...FEHLER_PRIORITAET, ...TRAGFAEHIG_PRIORITAET];
-  state.pool.forEach(p => { if(!reihe.includes(p.cat)) reihe.push(p.cat); });
-  return reihe.filter(k => state.pool.some(p => p.cat === k));
-}
-function stAntwortListeHtml(istAusgewaehlt, aktionFn){
-  return stKategorieReihenfolge().map(k => {
-    const kinder = state.pool.filter(p => p.cat === k);
-    return `<div class="st-gruppe"><div class="st-gruppe-kopf"><span class="st-punkt ${CATS[k].color}"></span>${escapeHtml(CATS[k].label)}</div>` +
-      kinder.map(p => {
-        const markiert = istAusgewaehlt(p.name);
-        return `<div class="st-wahlkarte${markiert ? ' st-gewaehlt' : ''}" role="button" tabindex="0" onclick="${aktionFn(p.name)}">
-          <div class="st-wahlkarte-kopf"><b>${escapeHtml(p.name)}</b><span>${markiert ? markiert : ''}</span></div>
-          <div class="st-wahlkarte-zitat">„${escapeHtml(p.quote)}“</div></div>`;
-      }).join('') + '</div>';
-  }).join('');
-}
-function stPickerOeffnen(i, slot){
-  stPickerZiel = { i, slot };
-  const b = state.empfBloecke[i];
-  const aktuell = b.namen[slot];
-  document.getElementById('st-picker-titel').textContent = `Antwort für Schritt ${state.empfBloecke.filter((x,j) => j <= i && !x.uebersprungen).length} einsetzen`;
-  document.getElementById('st-picker-liste').innerHTML = stAntwortListeHtml(
-    n => n === aktuell ? 'jetzt hier' : '',
-    n => `stSlotBelegen(${JSON.stringify(n).replace(/"/g, '&quot;')})`);
-  document.getElementById('st-picker-modal').classList.add('visible');
-  stLog('picker_geoeffnet', { schritt: i, slot, aktuell });
-}
-function stPickerSchliessen(){
-  document.getElementById('st-picker-modal').classList.remove('visible');
-  stLog('picker_geschlossen', stPickerZiel || {});
-  stPickerZiel = null;
-}
-function stSlotBelegen(name){
-  if(!stPickerZiel) return;
-  const { i, slot } = stPickerZiel;
-  const b = state.empfBloecke[i];
-  const kind = state.pool.find(p => p.name === name);
-  stLog('slot_belegt', { schritt: i, slot, von: b.namen[slot], nach: name, von_kat: b.kategorieIds[slot], nach_kat: kind.cat });
-  if(b.kategorieIds[slot] !== kind.cat){ b.kategorieIds[slot] = kind.cat; b.kategorieAbweichend = true; }
-  b.namen[slot] = name;
-  state.empfAutomatisch = false;
-  document.getElementById('st-picker-modal').classList.remove('visible');
-  stPickerZiel = null;
-  renderDashboard();
-}
-// Wird eine Antwort umkodiert, nachdem die Lehrkraft die Empfehlung schon verändert hat,
-// soll die Kategorie in ihrem Baustein mitziehen (sonst zeigt die Karte die alte Kategorie).
-const stRecodeOrig = window.recode;
-window.recode = function(name, neu){
-  const r = stRecodeOrig(name, neu);
-  if(stAktuelleAnsicht() === 'heatmap') renderHeatmap();
-  if(!state.empfAutomatisch && neu){
-    state.empfBloecke.forEach(b => b.namen.forEach((n, s) => { if(n === name) b.kategorieIds[s] = neu; }));
-    renderDashboard();
-  }
-  return r;
-};
-
-// --- Frei: Antworten direkt auswählen, statt über "Alle Antworten ansehen" + Detailfenster ---
-function stFreiToggle(name){
-  const arr = state.slots.frei;
-  const idx = arr.indexOf(name);
-  stLog('frei_auswahl', { name, aktion: idx > -1 ? 'entfernen' : 'hinzufuegen', position: idx > -1 ? idx : arr.length });
-  if(idx > -1) arr.splice(idx, 1); else arr.push(name);
-  state.visibleCount.frei = Math.min(state.visibleCount.frei, arr.length);
-  renderDashboard();
-}
-const stRenderFreiOrig = window.renderFrei;
-window.renderFrei = function(){
-  stRenderFreiOrig();
-  const area = document.getElementById('slots-area');
-  if(!state.slots.frei.length){
-    area.className = '';
-    area.innerHTML = '<div class="slot-empty" style="grid-column:1/-1;">Noch keine Antwort ausgewählt. Wählen Sie unten Antworten in der Reihenfolge aus, in der sie besprochen werden sollen.</div>';
-  } else {
-    Array.from(area.children).forEach((div, i) => {
-      const name = state.slots.frei[i];
-      if(!name) return;
-      const z = document.createElement('div');
-      z.style.cssText = 'padding:4px 8px 8px;';
-      z.innerHTML = `<span class="ts" style="font-size:var(--fs-micro); text-decoration:underline; cursor:pointer;"><i class="ti ti-x"></i> von der Tafel nehmen</span>`;
-      z.firstElementChild.onclick = ev => { ev.stopPropagation(); stFreiToggle(name); };
-      div.appendChild(z);
-      stImpulsEinklappen(div, name);
-      const det = div.querySelector('.st-impuls');
-      if(det) det.addEventListener('click', ev => ev.stopPropagation()); // Aufklappen öffnet nicht die Detailansicht
-    });
-  }
-  let box = document.getElementById('st-frei-auswahl');
-  if(!box){
-    box = document.createElement('div');
-    box.id = 'st-frei-auswahl';
-    box.className = 'card';
-    document.getElementById('frei-area').appendChild(box);
-  }
-  box.innerHTML = `<div style="font-weight:600; margin-bottom:4px;">Antworten auswählen</div>
-    <div class="ts" style="font-size:var(--fs-small); margin-bottom:10px;">Tippen Sie auf eine Antwort, um sie als nächste auf die Tafel zu legen. Nochmals tippen nimmt sie wieder weg.</div>` +
-    stAntwortListeHtml(
-      n => { const k = state.slots.frei.indexOf(n); return k > -1 ? `ausgewählt als Nr. ${k+1}` : ''; },
-      n => `stFreiToggle(${JSON.stringify(n).replace(/"/g, '&quot;')})`);
-};
+// Karten-Knöpfe, Impulsidee, Auswahlfenster, Frei-Liste und Umkodieren-Nachzug sind jetzt fest im Tool
+// (index.html) eingebaut. Die Studie hängt sich nur noch über trackEvent() ein und protokolliert sie.
+window.onTrackEvent = (typ, daten) => stLog(typ, daten);
 
 // Anzeigename oben in der Leiste
 const stShowOrig = window.show;
@@ -3783,7 +4168,7 @@ function stRenderStatus(){
        <button class="btn" onclick="stFlush()">Erneut senden</button>`;
 }
 
-// --- Prüfbericht (studie.html?pruefen=1) ---
+// --- Prüfbericht (ausprobieren.html?pruefen=1) ---
 function stPruefbericht(){
   const probleme = [];
   const ids = STUDIE.items.map(i => i.id);
@@ -3942,17 +4327,8 @@ function studieStarten(){
   const stTabSync = () => { empfHilfe.style.display = state.activeTab === 'empfohlen' ? 'block' : 'none'; };
   const stRenderDashOrig = window.renderDashboard;
   window.renderDashboard = function(){ const r = stRenderDashOrig(); stTabSync(); return r; };
-  // "Alle Antworten ansehen" deutlicher als aufklappbar kennzeichnen
-  const summary = document.querySelector('#scr-dashboard .dash-menu-summary');
-  if(summary){
-    const hint = document.createElement('span');
-    hint.className = 'st-aufklapp-hinweis';
-    hint.textContent = 'aufklappen';
-    summary.querySelector('.chevron')?.before(hint);
-    summary.parentElement.addEventListener('toggle', e => { hint.textContent = e.target.open ? 'zuklappen' : 'aufklappen'; });
-  }
   // Elemente, die in der Studie nicht gebraucht werden, im Dashboard ausblenden
-  ["show('tafel')", "endSession()"].forEach(sel =>
+  ["show('tafel')", "oeffneTafelFenster()", "endSession()"].forEach(sel =>
     document.querySelectorAll(`#scr-dashboard [onclick="${sel}"]`).forEach(el => {
       (sel === 'endSession()' ? el.parentElement : el).style.display = 'none';
     }));
@@ -4018,7 +4394,7 @@ function stStandLoeschenFallsTestwechsel(d){
   return d;
 }
 
-// ---- Start: in studie.html immer direkt in den Studienablauf ----
+// ---- Start: in ausprobieren.html immer direkt in den Studienablauf ----
 wendeAufgabeAufUIAn();
 reinitialisiereKinderZustand(false);
 studieStarten();

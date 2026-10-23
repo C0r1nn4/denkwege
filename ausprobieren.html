@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Denkwege ausprobieren</title>
-<meta name="app-version" content="2026-10-22-01">
+<meta name="app-version" content="2026-10-23-03">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
@@ -1096,7 +1096,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_WOnHYkefrIzOY-tigGqPKg_Dvjf73Gc";
 const sb = (window.supabase && window.supabase.createClient) ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 // Version dieser Datei (JJJJ-MM-TT-NN). Bei JEDER Änderung hochzählen und im Änderungsprotokoll des Projektkontexts eintragen.
-const APP_VERSION = "2026-10-22-02"; // Studienseite (ausprobieren.html); gleicher Stand wie die Basis index.html 2026-10-22-02
+const APP_VERSION = "2026-10-23-03"; // Studienseite (ausprobieren.html); gleicher Stand wie die Basis index.html 2026-10-22-02
 (function(){ const el = document.getElementById('app-version'); if(el) el.textContent = 'v' + APP_VERSION; console.info('Denkwege', APP_VERSION); })();
 function getUrlParam(name){ return new URLSearchParams(window.location.search).get(name); }
 
@@ -3439,15 +3439,15 @@ const STUDIE = {
     taxonomie: { kategorien: [
       { kategorie_id:"buendelung_erklaert", bezeichnung:"Bündelung erklärt", kategorietyp:"tragfähige Strategie", praezision:"praezise", gueltig_fuer:"ja",
         kurzdefinition:"Lea hat recht. Die Gleichwertigkeit 10 Zehner = 1 Hunderter (tauschen, genauso viel) wird ausdrücklich genannt.",
-        nachfrage_impuls:"Warum darf man 10 Zehner gegen einen Hunderter tauschen?",
+        nachfrage_impuls:"Warum ist es nötig die 10 Zehner gegen einen Hunderter zu tauschen?",
         referenzbeispiele:["Es sind 12 Zehner, und 10 Zehner kann ich in einen Hunderter tauschen, weil das genauso viel ist."] },
       { kategorie_id:"uebertrag_ohne_begruendung", bezeichnung:"Übertrag ohne Begründung", kategorietyp:"tragfähige Strategie", praezision:"unpraezise", gueltig_fuer:"ja",
         kurzdefinition:"Lea hat recht. Das Verfahren wird beschrieben (die 1 kommt zu den Hundertern), die Gleichwertigkeit 10 Z = 1 H wird nicht genannt.",
-        nachfrage_impuls:"Wie viele Zehner stecken in der 1, die rüberkommt?",
+        nachfrage_impuls:"Was ist denn die 12 und warum darfst du sie so aufteilen?",
         referenzbeispiele:["9 plus 3 ist 12, 2 bleibt stehen, die 1 kommt zum Hunderter."] },
       { kategorie_id:"zahlwert_gerechnet", bezeichnung:"Über den Zahlwert gerechnet", kategorietyp:"tragfähige Strategie", praezision:"praezise", gueltig_fuer:"ja",
         kurzdefinition:"Lea hat recht. Die 3 Zehner werden als 30 gedeutet und addiert; die Stellen werden nicht einzeln betrachtet.",
-        nachfrage_impuls:"Wo siehst du deine 30 in der Zahl 3125?",
+        nachfrage_impuls:"Stelle deine Rechnung in der Stellenwerttafel dar.",
         referenzbeispiele:["Drei Zehner sind dreißig, 3095 plus 30 ist 3125."] },
       { kategorie_id:"zustimmung_ohne_begruendung", bezeichnung:"Zustimmung ohne Begründung", kategorietyp:"tragfähige Strategie", praezision:"unpraezise", gueltig_fuer:"ja",
         kurzdefinition:"Lea hat recht, aber es wird keine inhaltliche Begründung gegeben.",
@@ -3455,34 +3455,34 @@ const STUDIE = {
         referenzbeispiele:["Lea hat recht, weil das so ist."] },
       { kategorie_id:"zehner_als_einer", bezeichnung:"Zehner als Einer", kategorietyp:"Fehler", gueltig_fuer:"nein",
         kurzdefinition:"Die 3 Zehner werden als 3 (Einer) gedeutet, Ergebnis 3098. Positions- und multiplikative Eigenschaft nicht berücksichtigt.",
-        nachfrage_impuls:"Wie viel sind 3 Zehner? Zeig es mit Material.",
+        nachfrage_impuls:"Was kommt ganz genau hinzu?",
         referenzbeispiele:["Tim hat recht, es sind ja nur 3 mehr."] },
       { kategorie_id:"nicht_gebuendelt", bezeichnung:"Nicht gebündelt", kategorietyp:"Fehler", gueltig_fuer:"nein",
         kurzdefinition:"Die Zehner werden richtig an der Zehnerstelle ergänzt, aber die 12 Zehner werden nicht gebündelt (z. B. 30125). Position berücksichtigt, Bündelung nicht.",
-        nachfrage_impuls:"Was kann man mit 10 von den 12 Zehnern machen?",
+        nachfrage_impuls:"Die 12 bei den Zehnern stört ja irgendwie. Was sind denn 12 Zehner als Zahl?",
         referenzbeispiele:["Bei den Zehnern stehen jetzt 12, also 3 0 12 5."] },
       { kategorie_id:"hunderter_vergessen", bezeichnung:"Bündeln begonnen, Hunderter vergessen", kategorietyp:"Fehler", gueltig_fuer:"nein",
         kurzdefinition:"Die 12 Zehner werden zerlegt, der entstehende Hunderter wird aber nicht ergänzt (z. B. 3025).",
-        nachfrage_impuls:"Wo sind die 10 Zehner geblieben?",
+        nachfrage_impuls:"Du hast also 12 Zehner. Wo sind denn die 10 Zehner davon geblieben?",
         referenzbeispiele:["9 plus 3 ist 12, die 2 schreib ich hin, das ist 3025."] },
       { kategorie_id:"ablehnung_ohne_begruendung", bezeichnung:"Ablehnung ohne Begründung", kategorietyp:"Fehler", gueltig_fuer:"nein",
         kurzdefinition:"Lea hat nicht recht, ohne erkennbare inhaltliche Begründung.",
-        nachfrage_impuls:"Wie kommst du darauf?",
+        nachfrage_impuls:"Versuche mal, uns von deiner Meinung zu überzeugen. Warum stimmt das nicht?",
         referenzbeispiele:["Nein, das stimmt nicht."] },
       { kategorie_id:"keine_bearbeitung", bezeichnung:"keine Bearbeitung", kurzdefinition:"Kein Eintrag / keine Antwort vorhanden." },
       { kategorie_id:"unklar", bezeichnung:"unklar", kurzdefinition:"Keiner Kategorie sicher zuordenbar." }
     ]},
     // Text hinter "Warum diese Reihenfolge?" im Dashboard (HTML erlaubt)
     empfehlung_erklaerung: `Das Gespräch führt vom Fehler über das Problem zur Erklärung.<br><br>
-      <b>1. Zehner als Einer:</b> Wer 3 Zehner als 3 Einer deutet, hat noch nicht verstanden, dass der Wert einer Ziffer von ihrer Stelle abhängt. Die Frage, wo die 3 Zehner in der Zahl zu sehen sind, klärt das zuerst, weil alles Weitere darauf aufbaut.<br><br>
-      <b>2. Nicht gebündelt:</b> Hier werden die Zehner schon richtig bei den Zehnern ergänzt, aber es entstehen 12 Zehner. Die Frage, ob bei nur 30 mehr dreißigtausend herauskommen kann, macht sichtbar, dass die 12 Zehner so nicht stehen bleiben können und gebündelt werden müssen.<br><br>
-      <b>3. Bündelung und Übertrag im Vergleich:</b> Beide Antworten kommen auf 3125. Die eine beschreibt nur das Verfahren („die 1 kommt rüber“), die andere erklärt, warum: 10 Zehner sind genauso viel wie 1 Hunderter. Im Vergleich bekommt das bekannte Verfahren seine Bedeutung: Hier wird an die Übertrag-Antwort angeknüpft, und die Bündelungserklärung zeigt, warum die 1 rüberkommt.<br><br>
+      <b>1. Was kommt eigentlich dazu?</b> Zuerst wird geklärt, was in der Aufgabe genau hinzukommt (3 Zehner). Auf dieser Basis lässt sich die vorgeschlagene Lösung einordnen.<br><br>
+      <b>2. Warum muss gebündelt werden?</b> Hier werden die Zehner zwar bei den Zehnern ergänzt, es entstehen aber 12 Zehner. Der Vergleich der vorgeschlagenen Zahl mit der Größe der Veränderung zeigt: So kann das Ergebnis nicht stimmen. Zwölf Zehner dürfen in der Stellenwertschreibweise nicht an einer Stelle stehen bleiben, sie müssen gebündelt werden, 10 Zehner zu 1 Hunderter. Erst die Bündelung macht die Zahl eindeutig und das Ergebnis richtig.<br><br>
+      <b>3. Bündelung und Übertrag im Vergleich:</b> Beide Antworten kommen auf 3125. Hier geht es darum, was die 1 beim Übertrag bedeutet und wo man sie in der anderen Erklärung wiederfindet.<br><br>
       Kommt eine Kategorie in der Klasse nicht vor, entfällt der Schritt automatisch.`,
     fehler_prioritaet: ["zehner_als_einer","nicht_gebuendelt","hunderter_vergessen","ablehnung_ohne_begruendung"],
     tragfaehig_prioritaet: ["buendelung_erklaert","uebertrag_ohne_begruendung","zahlwert_gerechnet","zustimmung_ohne_begruendung"],
     bausteine: [
-      { typ:"isoliert", kategorie_id:"zehner_als_einer", einstiegssatz:"Wo sieht man in dieser Zahl die 3 Zehner, die dazugekommen sind?" },
-      { typ:"isoliert", kategorie_id:"nicht_gebuendelt", einstiegssatz:"Zu 3095 kommen nur 30 dazu. Kann dabei dreißigtausend herauskommen?" },
+      { typ:"isoliert", kategorie_id:"zehner_als_einer", einstiegssatz:"Lasst uns mal schauen, was genau in der Aufgabe steht, was neu hinzukommt." },
+      { typ:"isoliert", kategorie_id:"nicht_gebuendelt", einstiegssatz:"Wie heißt die Zahl, die hier als Lösung vorgeschlagen wird? Wird 3095 wirklich so viel größer, wenn 3 Zehner hinzukommen, und was muss mit den 12 Zehnern passieren?" },
       { typ:"vergleich", kategorie_ids:["buendelung_erklaert","uebertrag_ohne_begruendung"], einstiegssatz:"Beide kommen auf 3125. Was bedeutet die 1, die rüberkommt, und wo findet ihr sie in der anderen Erklärung?" }
     ]
   }},
@@ -3511,11 +3511,10 @@ const STUDIE = {
     { id:"E1", name:"Ben",   wahl:"nein", wahr:"zehner_als_einer", quote:"Tim hat recht. 3095 und 3 dazu, das sind 3098." },
     { id:"E2", name:"Lian",  wahl:"nein", wahr:"zehner_als_einer", quote:"Nein, weil 5 plus 3 ist 8. Also 3098." },
     { id:"N1", name:"Ada",   wahl:"nein", wahr:"nicht_gebuendelt", quote:"Beide falsch. 9 Zehner und 3 Zehner sind 12 Zehner. Dann steht da 3, 0, 12, 5, also 30125." },
-    { id:"N2", name:"Paul",  wahl:"nein", wahr:"nicht_gebuendelt", quote:"Nein. Bei den Zehnern sind dann 12, also schreib ich 3, 0, 12, 5.",
-      hinweis:"Die Zehner werden richtig bei den Zehnern ergänzt, aber nicht gebündelt. Das ist eine andere Fehlvorstellung als Zehner als Einer." },
-    { id:"N3", name:"Mia",   wahl:"nein", wahr:"nicht_gebuendelt", quote:"Nein, da kommt dreißigtausendeinhundertfünfundzwanzig raus, weil bei den Zehnern jetzt 12 stehen.",
-      hinweis:"Die Zehner werden richtig bei den Zehnern ergänzt, aber nicht gebündelt. Das ist eine andere Fehlvorstellung als Zehner als Einer." },
-    { id:"H1", name:"Nora",  wahl:"nein", wahr:"hunderter_vergessen", quote:"Nein. 9 plus 3 ist 12, die 2 kommt zu den Zehnern, also 3025." },
+    { id:"N2", name:"Paul",  wahl:"nein", wahr:"nicht_gebuendelt", quote:"Nein. Bei den Zehnern sind dann 12, also schreib ich 3, 0, 12, 5.", },
+    { id:"N3", name:"Mia",   wahl:"nein", wahr:"nicht_gebuendelt", quote:"Nein, da kommt dreißigtausendeinhundertfünfundzwanzig raus, weil bei den Zehnern jetzt 12 stehen.", },
+    { id:"H1", name:"Nora",  wahl:"nein", wahr:"hunderter_vergessen", quote:"Nein. 9 plus 3 ist 12, die 2 kommt zu den Zehnern, also 3025.",
+      hinweis:"Die 12 Zehner werden zwar aufgeteilt (2 bleiben bei den Zehnern), aber die 1 wird nicht zu den Hundertern gerechnet, der Hunderter geht verloren. Das ist etwas anderes als nicht gebündelt (30125)." },
     { id:"A1", name:"Finn",  wahl:"nein", wahr:"ablehnung_ohne_begruendung", quote:"Nein, Tim hat recht." }
   ],
 
@@ -3529,19 +3528,19 @@ const STUDIE = {
   // Den Prüfbericht (ausprobieren.html?pruefen=1) nach jeder Änderung ansehen!
   versionen: {
     A: {
-      reihenfolge: ["Z1","N2","E1","Zu1","H1","B1","U1","N1","B2","A1","U2","E2","B3","Zu2","N3","U3"],
+      reihenfolge: ["Z1","E1","H1","Zu1","B1","U1","N1","N2","B2","A1","U2","E2","B3","Zu2","N3","U3"],
       ki: {
         Zu1: { kat:"buendelung_erklaert", erkennbarkeit:"offensichtlich" },  // Slot: Vergleich
-        N2:  { kat:"zehner_als_einer",    erkennbarkeit:"fachlich" },        // Slot: Schritt 1
+        H1:  { kat:"nicht_gebuendelt",    erkennbarkeit:"fachlich" },        // Slot: Schritt 2
         B2:  { kat:"zustimmung_ohne_begruendung", erkennbarkeit:"offensichtlich" }, // Pool
         U2:  { kat:"buendelung_erklaert", erkennbarkeit:"fachlich" }         // Pool
       }
     },
     B: {
-      reihenfolge: ["Z1","N3","E1","Zu2","H1","B1","U1","N1","B3","A1","U3","E2","B2","Zu1","N2","U2"],
+      reihenfolge: ["Z1","E1","H1","Zu2","B1","U1","N1","N3","B3","A1","U3","E2","B2","Zu1","N2","U2"],
       ki: {
         Zu2: { kat:"buendelung_erklaert", erkennbarkeit:"offensichtlich" },
-        N3:  { kat:"zehner_als_einer",    erkennbarkeit:"fachlich" },
+        H1:  { kat:"nicht_gebuendelt",    erkennbarkeit:"fachlich" },
         B3:  { kat:"zustimmung_ohne_begruendung", erkennbarkeit:"offensichtlich" },
         U3:  { kat:"buendelung_erklaert", erkennbarkeit:"fachlich" }
       }

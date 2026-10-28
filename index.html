@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Denkwege</title>
-<meta name="app-version" content="2026-10-22-03">
+<meta name="app-version" content="2026-10-22-04">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
@@ -488,6 +488,7 @@
   <div class="topbar">
     <b id="topbar-label" style="margin-right:0;">Demo</b>
     <span id="app-version" class="ts" style="font-size:10px;"></span>
+    <button class="navbtn btn-primary" id="sitzung-zurueck-btn" style="display:none; border:none;" onclick="show('heatmap')" title="Zurück zum Sitzplan mit Antwortübersicht der laufenden Sitzung"><i class="ti ti-arrow-back-up"></i> Zur laufenden Sitzung</button>
     <button class="navbtn" id="tafel-fenster-btn" style="display:none;" onclick="oeffneTafelFenster()" title="Öffnet die Tafelansicht in einem eigenen Fenster, das Sie auf den Beamer oder das Smartboard ziehen können"><i class="ti ti-external-link"></i> Tafel in neuem Fenster</button>
   </div>
   </div>
@@ -942,7 +943,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_WOnHYkefrIzOY-tigGqPKg_Dvjf73Gc";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Version dieser Datei (JJJJ-MM-TT-NN). Bei JEDER Änderung hochzählen und im Änderungsprotokoll des Projektkontexts eintragen.
-const APP_VERSION = "2026-10-22-03";
+const APP_VERSION = "2026-10-22-04";
 (function(){ const el = document.getElementById('app-version'); if(el) el.textContent = 'v' + APP_VERSION; console.info('Denkwege', APP_VERSION); })();
 function getUrlParam(name){ return new URLSearchParams(window.location.search).get(name); }
 
@@ -1700,6 +1701,10 @@ function show(id){
   }[id] || "Demo";
   const tfBtn = document.getElementById('tafel-fenster-btn');
   if(tfBtn) tfBtn.style.display = ['aufgabe','dashboard','heatmap','tafel','sitzplan','verwaltung','pool'].includes(id) ? 'inline-flex' : 'none';
+  // Läuft eine Sitzung, führt dieser Knopf von jedem Verwaltungs-/Vorbereitungs-Bildschirm (z. B. Sitzplan, Verwaltung, Aufgabenpool) zurück zur Antwortübersicht.
+  const sitzungBtn = document.getElementById('sitzung-zurueck-btn');
+  if(sitzungBtn) sitzungBtn.style.display = (state.sessionActive && sitzungscode && !istKindGeraet
+    && !['heatmap','dashboard','tafel','symbolauswahl','aufnahme','code-eingabe','start','lk-login'].includes(id)) ? 'inline-flex' : 'none';
   const role = (id==='symbolauswahl'||id==='aufnahme') ? 'kind' : 'lk';
   roleLastScreen[role] = id;
   document.getElementById('role-lk').classList.toggle('active', role==='lk');

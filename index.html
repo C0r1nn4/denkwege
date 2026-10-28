@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Denkwege</title>
-<meta name="app-version" content="2026-10-22-04">
+<meta name="app-version" content="2026-10-28-01">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
@@ -46,6 +46,15 @@
   .topbar { display:flex; align-items:center; gap:8px; padding: 10px 14px; background: var(--surface-2); border-bottom: 1px solid var(--border); position: sticky; top:0; z-index: 10; flex-wrap: wrap; }
   .topbar b { font-size:var(--fs-small); margin-right: auto; }
   .navbtn { font-size:var(--fs-small); padding: 7px 12px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface-1); cursor: pointer; }
+  /* [NEU 2026-10-28-01] Menüleiste für angemeldete Lehrkräfte (offene Sitzungen + Abmelden) */
+  .lk-leiste { display:none; align-items:center; gap:8px; padding:6px 14px; background:var(--bg-accent); border-bottom:1px solid var(--border-accent); flex-wrap:wrap; }
+  .lk-leiste.sichtbar { display:flex; }
+  .lk-leiste .lk-klasse { font-size:var(--fs-small); font-weight:600; color:var(--text-accent); margin-right:auto; }
+  .lk-leiste .navbtn { background:var(--surface-2); }
+  .lk-badge { display:inline-block; min-width:18px; padding:0 6px; border-radius:999px; background:var(--fill-accent); color:var(--on-accent); font-size:var(--fs-micro); font-weight:700; text-align:center; margin-left:4px; }
+  .lk-badge.leer { background:var(--surface-0); color:var(--text-muted); }
+  .sitzung-zeile { border:1px solid var(--border); border-radius:var(--radius); background:var(--surface-1); padding:10px; margin-bottom:8px; }
+  .sitzung-zeile.aktuell { border-color:var(--border-accent); background:var(--bg-accent); }
   .navbtn.active { background: var(--bg-accent); color: var(--text-accent); border-color: var(--border-accent); }
   /* [NEU] 5g: Segmented Control für den Empfohlen/Frei-Umschalter -- ein zusammenhängender
      Hintergrund statt zwei einzelner Buttons, aktives Segment farbig hervorgehoben. */
@@ -491,6 +500,11 @@
     <button class="navbtn btn-primary" id="sitzung-zurueck-btn" style="display:none; border:none;" onclick="show('heatmap')" title="Zurück zum Sitzplan mit Antwortübersicht der laufenden Sitzung"><i class="ti ti-arrow-back-up"></i> Zur laufenden Sitzung</button>
     <button class="navbtn" id="tafel-fenster-btn" style="display:none;" onclick="oeffneTafelFenster()" title="Öffnet die Tafelansicht in einem eigenen Fenster, das Sie auf den Beamer oder das Smartboard ziehen können"><i class="ti ti-external-link"></i> Tafel in neuem Fenster</button>
   </div>
+  <div class="lk-leiste" id="lk-leiste">
+    <span class="lk-klasse" id="lk-leiste-klasse"><i class="ti ti-chalkboard"></i> </span>
+    <button class="navbtn" onclick="zeigeOffeneSitzungen()" title="Alle noch nicht beendeten Sitzungen Ihres Klassenraums"><i class="ti ti-list-check"></i> Offene Sitzungen<span class="lk-badge leer" id="lk-offene-badge">0</span></button>
+    <button class="navbtn" onclick="lkAbmeldenFrage()"><i class="ti ti-logout"></i> Abmelden</button>
+  </div>
   </div>
 
   <!-- LOGIN / KLASSENRAUM -->
@@ -914,6 +928,23 @@ Neu</textarea>
   </div>
 </div>
 
+<div class="modal-bg" id="sitzungen-modal">
+  <div class="modal" style="max-width:520px;" id="sitzungen-modal-body"></div>
+</div>
+
+<div class="modal-bg" id="abmelden-modal">
+  <div class="modal" style="text-align:center;">
+    <i class="ti ti-logout" style="font-size:var(--fs-kid); color:var(--fill-warning);"></i>
+    <div style="font-size:var(--fs-body); font-weight:500; margin:8px 0;" id="abmelden-titel">Noch offene Sitzungen</div>
+    <div class="ts" style="font-size:var(--fs-small); margin-bottom:14px;" id="abmelden-text"></div>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <button class="btn btn-danger" onclick="abmeldenMitBeenden()">Sitzungen beenden und abmelden</button>
+      <button class="btn" onclick="abmeldenOhneBeenden()">Nur abmelden, Sitzungen laufen weiter</button>
+      <button class="btn" onclick="document.getElementById('abmelden-modal').classList.remove('visible')">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-bg" id="info-modal">
   <div class="modal" id="info-modal-body"></div>
 </div>
@@ -943,7 +974,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_WOnHYkefrIzOY-tigGqPKg_Dvjf73Gc";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Version dieser Datei (JJJJ-MM-TT-NN). Bei JEDER Änderung hochzählen und im Änderungsprotokoll des Projektkontexts eintragen.
-const APP_VERSION = "2026-10-22-04";
+const APP_VERSION = "2026-10-28-01";
 (function(){ const el = document.getElementById('app-version'); if(el) el.textContent = 'v' + APP_VERSION; console.info('Denkwege', APP_VERSION); })();
 function getUrlParam(name){ return new URLSearchParams(window.location.search).get(name); }
 
@@ -965,11 +996,13 @@ let sitzungscode = getUrlParam('code') || null;
 const istKindGeraet = getUrlParam('geraet') === 'kind';
 let codeEingabe = []; // getippte Ziffern (max. 3), bevor gegen Supabase geprüft wird
 
+let antwortKanal = null; // laufendes Realtime-Abo der aktuellen Sitzung (wird bei Wechsel/Abmeldung entfernt)
 async function ladeUndAboniereAntworten(){
   const { data, error } = await sb.from('antworten').select('*').eq('sitzungscode', sitzungscode).order('erstellt_am');
   if(!error && data) data.forEach(uebernehmeAntwort);
   aktualisierenAnsicht();
-  sb.channel('antworten-'+sitzungscode)
+  if(antwortKanal){ try { sb.removeChannel(antwortKanal); } catch(e){} antwortKanal = null; }
+  antwortKanal = sb.channel('antworten-'+sitzungscode)
     .on('postgres_changes',
       { event:'INSERT', schema:'public', table:'antworten', filter:`sitzungscode=eq.${sitzungscode}` },
       (payload) => { uebernehmeAntwort(payload.new); aktualisierenAnsicht(); }
@@ -1462,6 +1495,8 @@ async function uebernehmeLogin(user){
   aktiveKlassenraum = user.app_metadata?.klassenraum || user.user_metadata?.klassenraum || "3b";
   aktiverAnzeigename = user.user_metadata?.anzeige_name || user.email;
   document.getElementById('klassenraum-name-anzeige').textContent = "Klasse " + aktiveKlassenraum;
+  lkEingeloggt = true;
+  document.getElementById('lk-leiste-klasse').innerHTML = '<i class="ti ti-chalkboard"></i> Klasse ' + escapeHtml(aktiveKlassenraum);
   // Admin-Button nur sichtbar mit ?admin in der URL UND echter Admin-Rolle im Account
   // (app_metadata -- vom Client nicht änderbar, nur über das Supabase-Dashboard). Reine
   // UI-Bequemlichkeit: der eigentliche Schutz läuft über die RLS-Policies auf "aufgaben".
@@ -1498,7 +1533,132 @@ async function lkAbmelden(){
   await sb.auth.signOut();
   aktiveKlassenraum = "3b";
   aktiverAnzeigename = null;
+  lkEingeloggt = false;
+  // Lokalen Sitzungszustand aufräumen (die Sitzung selbst bleibt in der Datenbank, sofern nicht beendet).
+  if(antwortKanal){ try { sb.removeChannel(antwortKanal); } catch(e){} antwortKanal = null; }
+  state.sessionActive = false; sitzungscode = null;
+  if(!istKindGeraet) history.replaceState(null, '', window.location.pathname);
   show('start');
+}
+
+// ============================================================
+// [NEU 2026-10-28-01] Menüleiste für Lehrkräfte: offene Sitzungen + immer erreichbares Abmelden
+// ============================================================
+let lkEingeloggt = false;
+const OHNE_LK_LEISTE = ['start','lk-login','symbolauswahl','aufnahme','code-eingabe'];
+function aktualisiereLkLeiste(screenId){
+  const leiste = document.getElementById('lk-leiste');
+  if(!leiste) return;
+  const zeigen = lkEingeloggt && !istKindGeraet && !istTafelFenster && !OHNE_LK_LEISTE.includes(screenId);
+  leiste.classList.toggle('sichtbar', zeigen);
+  if(zeigen) ladeOffeneSitzungen();
+}
+// Holt alle nicht beendeten Sitzungen des eigenen Klassenraums samt Antwortzahl.
+async function ladeOffeneSitzungen(){
+  const { data, error } = await sb.from('sitzungen').select('code, aufgabe_id, aufgabe_konfiguration')
+    .eq('klassenraum', aktiveKlassenraum).is('beendet_am', null);
+  if(error){ console.error('Offene Sitzungen konnten nicht geladen werden:', error.message); return null; }
+  const liste = data || [];
+  if(liste.length){
+    const { data: ant } = await sb.from('antworten').select('sitzungscode').in('sitzungscode', liste.map(x=>x.code));
+    const zaehler = {}; (ant||[]).forEach(a => { zaehler[a.sitzungscode] = (zaehler[a.sitzungscode]||0) + 1; });
+    liste.forEach(x => { x.antworten = zaehler[x.code] || 0; });
+  }
+  const badge = document.getElementById('lk-offene-badge');
+  if(badge){ badge.textContent = liste.length; badge.classList.toggle('leer', liste.length === 0); }
+  return liste;
+}
+function sitzungTitel(x){
+  const a = x.aufgabe_konfiguration && x.aufgabe_konfiguration.aufgabe;
+  return (a && (a.aufgabenformat || a.aufgabentext)) || x.aufgabe_id || 'Aufgabe';
+}
+async function zeigeOffeneSitzungen(){
+  const body = document.getElementById('sitzungen-modal-body');
+  body.innerHTML = '<div class="ts">Lädt…</div>';
+  document.getElementById('sitzungen-modal').classList.add('visible');
+  const liste = await ladeOffeneSitzungen();
+  if(liste === null){ body.innerHTML = '<div class="ts">Sitzungen konnten nicht geladen werden.</div><button class="btn" style="margin-top:12px;" onclick="schliesseSitzungenModal()">Schließen</button>'; return; }
+  const zeilen = liste.length ? liste.map(x => {
+    const aktuell = x.code === sitzungscode && state.sessionActive;
+    return `<div class="sitzung-zeile${aktuell?' aktuell':''}">
+      <div class="row" style="justify-content:space-between; gap:8px;">
+        <span style="font-size:var(--fs-lead); letter-spacing:4px;">${codeAlsSymbole(x.code)}</span>
+        <span class="ts" style="font-size:var(--fs-micro);">${aktuell ? 'gerade geöffnet · ' : ''}${x.antworten} Antwort${x.antworten===1?'':'en'}</span>
+      </div>
+      <div class="ts" style="font-size:var(--fs-small); margin:4px 0 8px;">${escapeHtml(sitzungTitel(x))}</div>
+      <div class="row" style="gap:8px;">
+        <button class="navbtn btn-primary" style="border:none;" onclick="sitzungFortsetzen('${x.code}')"><i class="ti ti-player-play"></i> ${aktuell?'Zur Sitzung':'Fortsetzen'}</button>
+        <button class="navbtn btn-danger-outline" onclick="sitzungBeendenDirekt('${x.code}')"><i class="ti ti-square-x"></i> Beenden</button>
+      </div></div>`;
+  }).join('') : '<div class="ts" style="font-size:var(--fs-small); padding:8px 0;">Keine offene Sitzung.</div>';
+  body.innerHTML = `<div style="font-weight:600; margin-bottom:4px;">Offene Sitzungen — Klasse ${escapeHtml(aktiveKlassenraum)}</div>
+    <div class="ts" style="font-size:var(--fs-micro); margin-bottom:10px;">Kindgeräte können diesen Sitzungen noch beitreten. Eine Sitzung bleibt offen, bis sie hier oder im Dashboard beendet wird.</div>
+    ${zeilen}
+    ${liste.length>1 ? '<button class="btn btn-danger-outline" style="margin-top:6px;" onclick="alleSitzungenBeenden()"><i class="ti ti-square-x"></i> Alle beenden</button>' : ''}
+    <button class="btn" style="margin-top:8px;" onclick="schliesseSitzungenModal()">Schließen</button>`;
+}
+function schliesseSitzungenModal(){ document.getElementById('sitzungen-modal').classList.remove('visible'); }
+// Eine offene Sitzung wieder aufnehmen: Aufgabe aus der Sitzung laden, Antworten neu holen, Antwortübersicht öffnen.
+async function sitzungFortsetzen(code){
+  const { data, error } = await sb.from('sitzungen').select('code, aufgabe_konfiguration, beendet_am').eq('code', code).maybeSingle();
+  if(error || !data || data.beendet_am){ alert('Diese Sitzung ist nicht mehr offen.'); ladeOffeneSitzungen(); zeigeOffeneSitzungen(); return; }
+  schliesseSitzungenModal();
+  if(code !== sitzungscode || !state.sessionActive){
+    if(data.aufgabe_konfiguration && !aktiviereAufgabe(data.aufgabe_konfiguration)) return;
+    sitzungscode = code;
+    state.sessionActive = true;
+    state.pool = []; state.slots = { empfohlen: [], frei: [] };
+    state.empfBloecke = []; state.empfAktivBlock = -1; state.empfAutomatisch = true;
+    SYMBOLS.forEach(s => { state.heatmapStatus[s.id] = null; });
+    history.replaceState(null, '', '?code=' + code);
+    document.getElementById('sitzungscode-anzeige').textContent = codeAlsSymbole(code);
+    await ladeUndAboniereAntworten();
+  }
+  show('heatmap');
+}
+async function sitzungBeendenDirekt(code){
+  if(!confirm('Diese Sitzung beenden? Die Kindgeräte werden deaktiviert.')) return;
+  await beendeSitzungen([code]);
+  zeigeOffeneSitzungen();
+}
+async function alleSitzungenBeenden(){
+  const liste = await ladeOffeneSitzungen();
+  if(!liste || !liste.length) return;
+  if(!confirm(liste.length + ' Sitzungen beenden? Die Kindgeräte werden deaktiviert.')) return;
+  await beendeSitzungen(liste.map(x=>x.code));
+  zeigeOffeneSitzungen();
+}
+async function beendeSitzungen(codes){
+  const { error } = await sb.from('sitzungen').update({ beendet_am: new Date().toISOString() }).in('code', codes);
+  if(error){ alert('Sitzung konnte nicht beendet werden: ' + error.message); return false; }
+  if(codes.includes(sitzungscode)){
+    state.sessionActive = false;
+    if(antwortKanal){ try { sb.removeChannel(antwortKanal); } catch(e){} antwortKanal = null; }
+    sitzungscode = null;
+    history.replaceState(null, '', window.location.pathname);
+    if(document.getElementById('scr-heatmap').classList.contains('visible') || document.getElementById('scr-dashboard').classList.contains('visible') || document.getElementById('scr-tafel').classList.contains('visible')) show('pool');
+  }
+  ladeOffeneSitzungen();
+  return true;
+}
+// Abmelden mit Rückfrage, wenn noch Sitzungen offen sind.
+async function lkAbmeldenFrage(){
+  const liste = await ladeOffeneSitzungen();
+  if(!liste || liste.length === 0){ await lkAbmelden(); return; }
+  document.getElementById('abmelden-text').textContent = liste.length === 1
+    ? 'Es läuft noch 1 Sitzung. Sie können sie beenden oder weiterlaufen lassen und später wieder aufnehmen.'
+    : 'Es laufen noch ' + liste.length + ' Sitzungen. Sie können sie beenden oder weiterlaufen lassen und später wieder aufnehmen.';
+  document.getElementById('abmelden-modal').classList.add('visible');
+}
+async function abmeldenMitBeenden(){
+  const liste = await ladeOffeneSitzungen();
+  if(liste && liste.length){ const ok = await beendeSitzungen(liste.map(x=>x.code)); if(!ok) return; }
+  document.getElementById('abmelden-modal').classList.remove('visible');
+  await lkAbmelden();
+}
+async function abmeldenOhneBeenden(){
+  document.getElementById('abmelden-modal').classList.remove('visible');
+  await lkAbmelden();
 }
 
 // ---- Klarnamen: bewusst NUR lokal auf dem Gerät der Lehrkraft (Datensparsamkeit) ----
@@ -1705,6 +1865,7 @@ function show(id){
   const sitzungBtn = document.getElementById('sitzung-zurueck-btn');
   if(sitzungBtn) sitzungBtn.style.display = (state.sessionActive && sitzungscode && !istKindGeraet
     && !['heatmap','dashboard','tafel','symbolauswahl','aufnahme','code-eingabe','start','lk-login'].includes(id)) ? 'inline-flex' : 'none';
+  aktualisiereLkLeiste(id);
   const role = (id==='symbolauswahl'||id==='aufnahme') ? 'kind' : 'lk';
   roleLastScreen[role] = id;
   document.getElementById('role-lk').classList.toggle('active', role==='lk');

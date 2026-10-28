@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Denkwege</title>
-<meta name="app-version" content="2026-10-28-02">
+<meta name="app-version" content="2026-10-28-03">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
@@ -974,7 +974,7 @@ const SUPABASE_ANON_KEY = "6aa840f8f114337e1d808dc7:Ae7k54A6n8tmFc6ZqZu0sJ6aobcH
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Version dieser Datei (JJJJ-MM-TT-NN). Bei JEDER Änderung hochzählen und im Änderungsprotokoll des Projektkontexts eintragen.
-const APP_VERSION = "2026-10-28-02";
+const APP_VERSION = "2026-10-28-03";
 (function(){ const el = document.getElementById('app-version'); if(el) el.textContent = 'v' + APP_VERSION; console.info('Denkwege', APP_VERSION); })();
 function getUrlParam(name){ return new URLSearchParams(window.location.search).get(name); }
 
@@ -1007,14 +1007,28 @@ async function ladeUndAboniereAntworten(){
       { event:'INSERT', schema:'public', table:'antworten', filter:`sitzungscode=eq.${sitzungscode}` },
       (payload) => { uebernehmeAntwort(payload.new); aktualisierenAnsicht(); }
     )
+    .on('postgres_changes',
+      { event:'UPDATE', schema:'public', table:'antworten', filter:`sitzungscode=eq.${sitzungscode}` },
+      (payload) => {
+        // Umkodierung von einem anderen Gerät derselben Lehrkraft: Kategorie an Ort und Stelle ändern (Reihenfolge im Pool bleibt).
+        const row = payload.new, p = state.pool.find(x => x.id === row.id);
+        const kat = (row.kategorie_lk && CATS[row.kategorie_lk]) ? row.kategorie_lk : row.kategorie;
+        if(!p || p.cat === kat) return;
+        p.cat = kat;
+        if(row.symbol_id) state.heatmapStatus[row.symbol_id] = kat;
+        aktualisierenAnsicht();
+      }
+    )
     .subscribe();
 }
 function uebernehmeAntwort(row){
   const symbolEntry = SYMBOLS.find(s => s.kindId === row.kind_id);
   const name = symbolEntry ? symbolEntry.name : "Unbekannt";
   state.pool = state.pool.filter(p=>p.name!==name);
-  state.pool.push({name, cat: row.kategorie, quote: row.transkript, audioPfad: row.audio_pfad || null, wahl: row.antwort_wahl || null});
-  if(row.symbol_id) state.heatmapStatus[row.symbol_id] = row.kategorie;
+  // [NEU 2026-10-28-03] Gilt die Einordnung der Lehrkraft (kategorie_lk), sonst die der KI (kategorie).
+  const kat = (row.kategorie_lk && CATS[row.kategorie_lk]) ? row.kategorie_lk : row.kategorie;
+  state.pool.push({name, id: row.id, cat: kat, kiCat: row.kategorie, quote: row.transkript, audioPfad: row.audio_pfad || null, wahl: row.antwort_wahl || null});
+  if(row.symbol_id) state.heatmapStatus[row.symbol_id] = kat;
 }
 function aktualisierenAnsicht(){
   aktualisiereEmpfehlung();
@@ -2570,10 +2584,23 @@ function addSlot(){
   if(unused) state.slots.frei.push(unused.name);
   renderDashboard();
 }
-function recode(name, newCat){
+async function recode(name, newCat){
   if(!newCat) return;
   const child = state.pool.find(p=>p.name===name);
+  const alteKat = child ? child.cat : null;
   if(child) child.cat = newCat;
+  // [NEU 2026-10-28-03] Umkodierung dauerhaft speichern (Funktion antwort_umkodieren, protokolliert Person, Zeit, alt/neu).
+  // Demo-Antworten ohne Datenbank-ID bleiben lokal. Schlägt das Speichern fehl, wird die Änderung zurückgenommen.
+  if(child && child.id && sitzungscode){
+    const { error } = await sb.rpc('antwort_umkodieren', { p_antwort_id: String(child.id), p_kategorie: newCat });
+    if(error){
+      alert('Die neue Einordnung konnte nicht gespeichert werden: ' + error.message);
+      child.cat = alteKat;
+      if(child.name && SYMBOLS.find(s => s.name === name)) { const sy = SYMBOLS.find(s => s.name === name); state.heatmapStatus[sy.id] = alteKat; }
+      renderDashboard(); if(document.getElementById('scr-heatmap').classList.contains('visible')) renderHeatmap(); if(detailChild===name) renderDetail();
+      return;
+    }
+  }
   // [NEU 2026-10-28-02] Die Sitzplan-Heatmap färbt nach state.heatmapStatus (Symbol-ID), nicht nach dem Pool -- ohne diese Zeile blieb die Farbe nach dem Umkodieren alt.
   const symbolZuName = SYMBOLS.find(s => s.name === name);
   if(symbolZuName && state.heatmapStatus[symbolZuName.id] && state.heatmapStatus[symbolZuName.id] !== 'laeuft') state.heatmapStatus[symbolZuName.id] = newCat;

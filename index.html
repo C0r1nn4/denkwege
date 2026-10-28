@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Denkwege</title>
-<meta name="app-version" content="2026-10-28-01">
+<meta name="app-version" content="2026-10-28-02">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
@@ -969,12 +969,12 @@ Neu</textarea>
 <script>
 // ==== HIER DEINE WERTE EINTRAGEN ====
 const SUPABASE_URL = "https://iuqyjqcxftcoxwjqpijr.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_WOnHYkefrIzOY-tigGqPKg_Dvjf73Gc";
+const SUPABASE_ANON_KEY = "6aa840f8f114337e1d808dc7:Ae7k54A6n8tmFc6ZqZu0sJ6aobcH9DUAq5/PJ2I+Li0=";
 // =====================================
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Version dieser Datei (JJJJ-MM-TT-NN). Bei JEDER Änderung hochzählen und im Änderungsprotokoll des Projektkontexts eintragen.
-const APP_VERSION = "2026-10-28-01";
+const APP_VERSION = "2026-10-28-02";
 (function(){ const el = document.getElementById('app-version'); if(el) el.textContent = 'v' + APP_VERSION; console.info('Denkwege', APP_VERSION); })();
 function getUrlParam(name){ return new URLSearchParams(window.location.search).get(name); }
 
@@ -2574,6 +2574,9 @@ function recode(name, newCat){
   if(!newCat) return;
   const child = state.pool.find(p=>p.name===name);
   if(child) child.cat = newCat;
+  // [NEU 2026-10-28-02] Die Sitzplan-Heatmap färbt nach state.heatmapStatus (Symbol-ID), nicht nach dem Pool -- ohne diese Zeile blieb die Farbe nach dem Umkodieren alt.
+  const symbolZuName = SYMBOLS.find(s => s.name === name);
+  if(symbolZuName && state.heatmapStatus[symbolZuName.id] && state.heatmapStatus[symbolZuName.id] !== 'laeuft') state.heatmapStatus[symbolZuName.id] = newCat;
   // Hat die Lehrkraft die Empfehlung schon verändert, muss die Kategorie auch in ihren Bausteinen mitziehen
   // (sonst zeigt die Karte die alte Kategorie).
   if(!state.empfAutomatisch){

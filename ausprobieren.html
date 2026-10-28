@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Denkwege ausprobieren</title>
-<meta name="app-version" content="2026-10-23-03">
+<meta name="app-version" content="2026-10-28-01">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
@@ -1096,7 +1096,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_WOnHYkefrIzOY-tigGqPKg_Dvjf73Gc";
 const sb = (window.supabase && window.supabase.createClient) ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 // Version dieser Datei (JJJJ-MM-TT-NN). Bei JEDER Änderung hochzählen und im Änderungsprotokoll des Projektkontexts eintragen.
-const APP_VERSION = "2026-10-23-03"; // Studienseite (ausprobieren.html); gleicher Stand wie die Basis index.html 2026-10-22-02
+const APP_VERSION = "2026-10-28-01"; // Studienseite (ausprobieren.html); Tool-Basis index.html 2026-10-22-02
 (function(){ const el = document.getElementById('app-version'); if(el) el.textContent = 'v' + APP_VERSION; console.info('Denkwege', APP_VERSION); })();
 function getUrlParam(name){ return new URLSearchParams(window.location.search).get(name); }
 
@@ -3744,7 +3744,12 @@ stWrap('openDetail', name => { st.oeffnungen[name] = (st.oeffnungen[name] || 0) 
 stWrap('setPrioritaetsFilter', key => ({ filter: key, ansicht: 'heatmap' }));
 stWrap('toggleRohtextLayer', () => ({ wird_aktiv: !rohtextLayerAktiv }));
 stWrap('closeDetail', () => ({ name: detailChild }));
-stWrap('recode', (name, neu) => ({ name, von: stKatVon(name), nach: neu }));
+// [NEU 2026-10-28-01] Umkodierung genauer protokollieren: ursprüngliche KI-Einordnung (ki), Zustand davor (von),
+// Wahl (nach), ob sich wirklich etwas geändert hat (veraendert) und ob die neue Einordnung der fachlich richtigen entspricht.
+function stKatStart(name){ const p = st.initialSnapshot && st.initialSnapshot.pool && st.initialSnapshot.pool.find(x => x.name === name); return p ? p.kategorie : null; }
+function stWahr(name){ const it = STUDIE.items.find(i => i.name === name); return it ? it.wahr : null; }
+stWrap('recode', (name, neu) => ({ name, ki: stKatStart(name), von: stKatVon(name), nach: neu, veraendert: !!neu && neu !== stKatVon(name),
+  nach_entspricht_wahr: stWahr(name) ? neu === stWahr(name) : null }));
 stWrap('empfKindTauschen', (i, slot, neuerName) => ({ schritt: i, slot, von: state.empfBloecke[i]?.namen[slot], nach: neuerName }));
 stWrap('empfKategorieWechseln', (i, slot, kat) => ({ schritt: i, slot, von_name: state.empfBloecke[i]?.namen[slot], von_kat: state.empfBloecke[i]?.kategorieIds[slot], nach_kat: kat }));
 stWrap('empfSchrittUeberspringen', i => ({ schritt: i, namen: state.empfBloecke[i]?.namen }));
@@ -3962,6 +3967,12 @@ function stAbschlussAbbrechen(){
   document.getElementById('st-abschluss-modal').classList.remove('visible');
   stLog('abschluss_abgebrochen', {});
 }
+function stUmkodiertAlle(){
+  const start = (st.initialSnapshot && st.initialSnapshot.pool) || [];
+  return start.map(a => ({ name: a.name, ki: a.kategorie, final: stKatVon(a.name), wahr: stWahr(a.name) }))
+    .filter(x => x.final && x.final !== x.ki)
+    .map(x => ({ ...x, richtig_umkodiert: x.wahr ? x.final === x.wahr : null, urspruenglich_richtig: x.wahr ? x.ki === x.wahr : null }));
+}
 function stPlanungAbschliessen(){
   document.getElementById('st-abschluss-modal').classList.remove('visible');
   const finalSnap = stSnapshot();
@@ -3974,6 +3985,9 @@ function stPlanungAbschliessen(){
     plan_gleich_empfehlung: JSON.stringify(stPlanNamen()) === JSON.stringify(st.initialSlotNamen) && state.activeTab === 'empfohlen',
     oeffnungen: st.oeffnungen,
     fehler_auswertung: fehler,
+    // [NEU 2026-10-28-01] alle Antworten, deren Einordnung am Ende von der ursprünglichen KI-Einordnung abweicht (auch ursprünglich richtig eingeordnete)
+    umkodiert_alle: stUmkodiertAlle(),
+    anzahl_umkodiert: stUmkodiertAlle().length,
     fehler_korrekt_umkodiert: fehler.filter(f => f.korrekt_umkodiert).length,
     plan_enthaelt_fehlkategorie: fehler.some(f => f.im_plan_mit_falscher_kategorie)
   });

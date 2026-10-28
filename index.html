@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Denkwege</title>
-<meta name="app-version" content="2026-10-28-03">
+<meta name="app-version" content="2026-10-28-04">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
@@ -974,7 +974,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_WOnHYkefrIzOY-tigGqPKg_Dvjf73Gc";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Version dieser Datei (JJJJ-MM-TT-NN). Bei JEDER Änderung hochzählen und im Änderungsprotokoll des Projektkontexts eintragen.
-const APP_VERSION = "2026-10-28-03";
+const APP_VERSION = "2026-10-28-04";
 (function(){ const el = document.getElementById('app-version'); if(el) el.textContent = 'v' + APP_VERSION; console.info('Denkwege', APP_VERSION); })();
 function getUrlParam(name){ return new URLSearchParams(window.location.search).get(name); }
 
@@ -1519,6 +1519,7 @@ async function uebernehmeLogin(user){
   // Echten Kinderliste-Stand aus Supabase holen, statt bei den lokalen Demo-/Alt-Namen zu
   // bleiben -- wichtig VOR jeder Bearbeitung/Sync, s. ladeKinderlisteAusSupabase().
   await ladeKinderlisteAusSupabase();
+  await ladeSitzplan();
 }
 // Holt den TATSÄCHLICHEN Stand der Kinderliste dieses Klassenraums aus Supabase und ersetzt
 // SYMBOLS komplett damit (reines SELECT, kein Upsert). syncKinderMitSupabase() schreibt nur
@@ -1551,6 +1552,7 @@ async function lkAbmelden(){
   // Lokalen Sitzungszustand aufräumen (die Sitzung selbst bleibt in der Datenbank, sofern nicht beendet).
   if(antwortKanal){ try { sb.removeChannel(antwortKanal); } catch(e){} antwortKanal = null; }
   state.sessionActive = false; sitzungscode = null;
+  sitzplanState.placed = {}; sitzplanState.armed = null;
   if(!istKindGeraet) history.replaceState(null, '', window.location.pathname);
   show('start');
 }
@@ -3337,6 +3339,7 @@ async function loescheKindVollstaendig(id){
   SYMBOLS = SYMBOLS.filter(s=>s.id!==id);
   const lokaleNamen = ladeLokaleNamen(); delete lokaleNamen[id]; speichereLokaleNamen(lokaleNamen);
   delete consentState[id]; delete childLanguage[id]; delete state.heatmapStatus[id]; delete sitzplanState.placed[id];
+  speichereSitzplan();
   renderKinderliste();
 }
 async function toggleConsent(id){
@@ -3371,6 +3374,7 @@ async function submitSchnellanlage(){
   const namenMap = {}; SYMBOLS.forEach(s => { namenMap[s.id] = s.name; });
   speichereLokaleNamen(namenMap); // nur lokal, nicht nach Supabase
   reinitialisiereKinderZustand(false);
+  speichereSitzplan(); // neue Kinderliste -> leerer Sitzplan
   await syncKinderMitSupabase(); // Symbole sofort mit Supabase abgleichen (ohne Namen), nicht erst beim Sitzungsstart
   show('sitzplan');
 }
@@ -3392,6 +3396,34 @@ let sitzplanState = {
   placed: {},   // leer zu Beginn – alle Kinder starten unten im Pool
   armed: null
 };
+// [NEU 2026-10-28-04] Sitzplan in Supabase (Tabelle sitzplaene, eine Zeile je Klassenraum).
+// Gespeichert werden NUR Symbol-ID und Position (x/y in Prozent) -- keine Namen.
+let sitzplanFehlerGemeldet = false;
+async function ladeSitzplan(){
+  sitzplanState.placed = {}; sitzplanState.armed = null;
+  try {
+    const { data, error } = await sb.from('sitzplaene').select('positionen').eq('klassenraum', aktiveKlassenraum).maybeSingle();
+    if(error){ console.error('Sitzplan konnte nicht geladen werden:', error.message); return false; }
+    const pos = (data && data.positionen) || {};
+    SYMBOLS.forEach(s => {
+      const p = pos[s.id];
+      if(p && typeof p.x === 'number' && typeof p.y === 'number') sitzplanState.placed[s.id] = { x: p.x, y: p.y };
+    });
+    return true;
+  } catch(e){ console.error('Sitzplan laden:', e); return false; }
+}
+async function speichereSitzplan(){
+  if(!lkEingeloggt || istKindGeraet) return;
+  try {
+    const { error } = await sb.from('sitzplaene').upsert(
+      { klassenraum: aktiveKlassenraum, positionen: sitzplanState.placed, aktualisiert_am: new Date().toISOString() },
+      { onConflict: 'klassenraum' });
+    if(error) throw error;
+  } catch(e){
+    console.error('Sitzplan konnte nicht gespeichert werden:', e.message || e);
+    if(!sitzplanFehlerGemeldet){ sitzplanFehlerGemeldet = true; alert('Der Sitzplan konnte nicht gespeichert werden (' + (e.message || e) + '). Er gilt nur bis zum Neuladen.'); }
+  }
+}
 function renderSitzplan(){
   const canvas = document.getElementById('sitzplan-canvas');
   canvas.innerHTML = "";
@@ -3431,6 +3463,7 @@ function canvasClick(e){
   sitzplanState.placed[sitzplanState.armed] = {x: Math.max(5,Math.min(95,x)), y: Math.max(8,Math.min(92,y))};
   sitzplanState.armed = null;
   renderSitzplan();
+  speichereSitzplan();
 }
 // [FIX] wendeAufgabeAufUIAn() lief bisher NUR nach einem Aufgaben-Upload (aktiviereAufgabe()).
 // Beim allerersten Laden (Demo-Zustand, bevor überhaupt etwas hochgeladen wurde) blieben

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Denkwege</title>
-<meta name="app-version" content="2026-10-28-04">
+<meta name="app-version" content="2026-10-28-05">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
@@ -488,6 +488,29 @@
   #tafel-fenster-leiste:hover, #tafel-fenster-leiste:focus-within { opacity:1; }
   #tafel-fenster-leiste .navbtn { font-size:var(--fs-micro); padding:5px 8px; }
   #tafel-fenster-status { font-size:var(--fs-micro); color:var(--text-muted); }
+
+  /* [NEU 2026-10-28-05] Sitzplan-Blatt (Druckansicht) */
+  #druck-blatt { display:none; position:fixed; inset:0; z-index:5000; overflow:auto; background:#fff; color:#000; padding:16px; font-family:inherit; }
+  #druck-blatt h1 { font-size:18px; margin:8px 0; }
+  #druck-blatt h2 { font-size:15px; margin:18px 0 6px; }
+  #druck-blatt .db-leiste { display:flex; gap:8px; margin-bottom:8px; }
+  #druck-blatt .db-hinweis { font-size:12px; margin:4px 0 10px; }
+  #druck-blatt .db-plan { position:relative; width:100%; height:420px; border:1px solid #000; margin-bottom:8px; }
+  #druck-blatt .db-tafel { position:absolute; top:2px; left:0; right:0; text-align:center; font-size:11px; }
+  #druck-blatt .db-platz { position:absolute; transform:translate(-50%,-50%); text-align:center; }
+  #druck-blatt .db-sym { font-size:26px; line-height:1; }
+  #druck-blatt .db-linie { width:70px; height:16px; border-bottom:1px solid #000; margin-top:2px; }
+  #druck-blatt .db-tab { width:100%; border-collapse:collapse; font-size:13px; }
+  #druck-blatt .db-tab th, #druck-blatt .db-tab td { border:1px solid #000; padding:4px 6px; height:30px; text-align:left; }
+  #druck-blatt .db-tab td.db-s { font-size:22px; width:60px; text-align:center; }
+  #druck-blatt .db-tab td.db-d { width:90px; text-align:center; }
+  #druck-blatt .db-tab tr { page-break-inside:avoid; }
+  @media print {
+    body.druck-aktiv > *:not(#druck-blatt) { display:none !important; }
+    body.druck-aktiv #druck-blatt { position:static; display:block !important; overflow:visible; padding:0; }
+    #druck-blatt .no-print { display:none !important; }
+    #druck-blatt .db-plan { height:110mm; }
+  }
 </style>
 </head>
 <body>
@@ -835,36 +858,23 @@
       <button class="btn" onclick="show('sitzplan')"><i class="ti ti-armchair"></i> Sitzplan</button>
       <button class="btn" onclick="show('lernverlauf')"><i class="ti ti-chart-bar"></i> Verlauf</button>
     </div>
-    <div class="row" style="justify-content:space-between; align-items:center; padding:10px; background:var(--surface-2); border-radius:var(--radius); margin-bottom:12px; border:1px solid var(--border);">
-      <div>
-        <div style="font-size:var(--fs-small); font-weight:500;">Anonym arbeiten</div>
-        <div class="ts" style="font-size:var(--fs-micro);">Nur Symbole digital — Namen kennt nur die Lehrkraft, auf Papier</div>
-      </div>
-      <label class="switch"><input type="checkbox" id="anonym-toggle" onchange="toggleAnonym(this.checked)"><span class="slider"></span></label>
-    </div>
     <div class="ts" style="font-size:var(--fs-small); margin-bottom:4px;" id="kinder-count">Kinder</div>
     <div class="banner" id="kein-zugang-hinweis" style="display:none;">
       <i class="ti ti-info-circle"></i> Kinder ohne Einwilligung nehmen nicht digital am Tool teil. Sie bearbeiten die Aufgabe stattdessen schriftlich auf Papier ("Blatt erzeugen").
     </div>
     <div id="kinderliste"></div>
-    <button class="btn" id="ausfuell-blatt-btn" style="display:none; margin-top:8px;" onclick="showAusfuellBlatt()"><i class="ti ti-printer"></i> Ausfüll-Blatt drucken (Symbol → Name)</button>
-    <button class="btn" style="margin-top:8px;" onclick="show('schnellanlage')"><i class="ti ti-plus"></i> Kinder anlegen</button>
+    <button class="btn" style="margin-top:8px;" onclick="druckeSitzplanBlatt()"><i class="ti ti-printer"></i> Sitzplan-Blatt drucken (Symbole → Namen von Hand)</button>
+    <button class="btn" style="margin-top:8px;" onclick="show('schnellanlage')"><i class="ti ti-plus"></i> Anzahl der Kinder festlegen / Kinder hinzufügen</button>
     <button class="btn btn-primary" style="margin-top:16px;" onclick="show('pool')"><i class="ti ti-arrow-right"></i> Weiter zur Aufgabenauswahl</button>
   </div>
 
   <!-- SCHNELLANLAGE -->
   <div id="scr-schnellanlage" class="screen">
     <button class="navbtn" style="margin-bottom:10px;" onclick="show('verwaltung')"><i class="ti ti-arrow-left"></i> Verwaltung</button>
-    <h2 class="scr-title">Kinder anlegen</h2>
-    <div class="ts" style="font-size:var(--fs-small); margin-bottom:8px;">Ein Name pro Zeile — bis zu 35 Kinder pro Klassenraum</div>
-    <textarea id="schnellanlage-input" rows="6">Mika
-Lian
-Ben
-Nora
-Tom
-Ida
-Ada
-Neu</textarea>
+    <h2 class="scr-title">Anzahl der Kinder</h2>
+    <div class="ts" style="font-size:var(--fs-small); margin-bottom:8px;">Wie viele Kinder hat die Klasse (1 bis 35)? Jedes Kind bekommt ein Symbol. Namen gibt es im Tool nicht; sie notierst du auf dem Sitzplan-Blatt von Hand.</div>
+    <input type="number" id="schnellanlage-anzahl" min="1" max="35" step="1" style="width:100px; font-size:var(--fs-body); padding:8px;">
+    <div class="ts" style="font-size:var(--fs-micro); margin-top:6px;">Eine größere Zahl fügt weitere Kinder hinzu; alles Bestehende (Antworten, Einwilligung, Sitzplan) bleibt unverändert. Zum Verkleinern löschst du einzelne Kinder in der Verwaltung.</div>
     <div id="schnellanlage-warnung" class="banner" style="display:none;"></div>
     <button class="btn btn-primary" style="margin-top:10px;" onclick="submitSchnellanlage()"><i class="ti ti-check"></i> Übernehmen → weiter zum Sitzplan</button>
   </div>
@@ -873,18 +883,20 @@ Neu</textarea>
   <div id="scr-sitzplan" class="screen">
     <h2 class="scr-title">Sitzplan (freie Fläche — bildet jede Raumform ab)</h2>
     <div class="ts" style="font-size:var(--fs-micro); margin-bottom:8px;" id="sitzplan-hint">Kind unten antippen, dann auf die Fläche tippen, um es zu platzieren.</div>
+    <button class="navbtn" id="sitzplan-entfernen-btn" style="display:none; margin-bottom:8px;" onclick="sitzplanVomPlanNehmen()"><i class="ti ti-arrow-back-up"></i> Dieses Kind vom Plan nehmen</button>
     <div class="ts" style="text-align:center; font-size:var(--fs-micro); margin-bottom:4px;"><i class="ti ti-podium"></i> Tafel</div>
     <div id="sitzplan-canvas" style="position:relative; width:100%; height:260px; background:var(--surface-2); border:1px solid var(--border); border-radius:12px; margin-bottom:12px; overflow:hidden;" onclick="canvasClick(event)"></div>
     <div class="ts" style="font-size:var(--fs-small); margin-bottom:6px;">Noch zu platzieren</div>
     <div class="row" id="sitzplan-pool" style="gap:8px; flex-wrap:wrap;"></div>
-    <button class="btn" style="margin-top:16px;" onclick="show('verwaltung')">Fertig → zurück zur Verwaltung</button>
+    <button class="btn" style="margin-top:16px;" onclick="druckeSitzplanBlatt()"><i class="ti ti-printer"></i> Sitzplan-Blatt drucken (Namen von Hand eintragen)</button>
+    <button class="btn" style="margin-top:8px;" onclick="show('verwaltung')">Fertig → zurück zur Verwaltung</button>
     <button class="btn btn-primary" style="margin-top:8px;" onclick="show('pool')"><i class="ti ti-arrow-right"></i> Weiter zur Aufgabenauswahl</button>
   </div>
 
   <!-- LERNVERLAUF -->
   <div id="scr-lernverlauf" class="screen">
     <div class="row" style="margin-bottom:14px;">
-      <div class="icon-circle c-teal">🐻</div><span style="font-size:var(--fs-body); font-weight:500;">Mika</span>
+      <div class="icon-circle c-teal">🐻</div><span style="font-size:var(--fs-body); font-weight:500;">🐻</span>
     </div>
     <div class="ts" style="font-size:var(--fs-small); margin-bottom:6px;">Zahlen bündeln und entbündeln</div>
     <div class="pool-item"><span class="ts" style="font-size:var(--fs-micro); width:56px;">12.09.</span><span style="font-size:var(--fs-small); flex:1;">6 T 2 H 42 Z 5 E</span><span class="tag c-teal">richtig, begründet</span></div>
@@ -974,7 +986,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_WOnHYkefrIzOY-tigGqPKg_Dvjf73Gc";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Version dieser Datei (JJJJ-MM-TT-NN). Bei JEDER Änderung hochzählen und im Änderungsprotokoll des Projektkontexts eintragen.
-const APP_VERSION = "2026-10-28-04";
+const APP_VERSION = "2026-10-28-05";
 (function(){ const el = document.getElementById('app-version'); if(el) el.textContent = 'v' + APP_VERSION; console.info('Denkwege', APP_VERSION); })();
 function getUrlParam(name){ return new URLSearchParams(window.location.search).get(name); }
 
@@ -1079,8 +1091,9 @@ const MAX_KINDER = 35; // Obergrenze pro Klassenraum
 // SYMBOLS ist bewusst 'let', nicht 'const' -- submitSchnellanlage() ersetzt die komplette
 // Liste durch die tatsächliche Klassenliste (bis zu MAX_KINDER Einträge), die Demo-Werte
 // hier sind nur der Anfangszustand, bevor eine echte Kinderliste angelegt wurde.
-let SYMBOLS = ["Mika","Lian","Ben","Nora","Tom","Ida","Ada","Neu"].map((name,i) => ({
-  id: "kind"+i, icon: SYMBOLS_POOL[i], name
+// [NEU 2026-10-28-05] Keine Klarnamen mehr: "name" ist immer das Symbol selbst.
+let SYMBOLS = [0,1,2,3,4,5,6,7].map(i => ({
+  id: "kind"+i, icon: SYMBOLS_POOL[i], name: SYMBOLS_POOL[i]
 }));
 // -- Pseudonymisierung: jedes Kind bekommt bei syncKinderMitSupabase() eine feste,
 // über alle Sitzungen hinweg stabile Supabase-ID (SYMBOLS[i].kindId). Nur diese ID,
@@ -1518,6 +1531,7 @@ async function uebernehmeLogin(user){
   document.getElementById('aufgaben-admin-btn').style.display = istAdmin ? '' : 'none';
   // Echten Kinderliste-Stand aus Supabase holen, statt bei den lokalen Demo-/Alt-Namen zu
   // bleiben -- wichtig VOR jeder Bearbeitung/Sync, s. ladeKinderlisteAusSupabase().
+  loescheAlteLokaleNamen();
   await ladeKinderlisteAusSupabase();
   await ladeSitzplan();
 }
@@ -1536,8 +1550,7 @@ async function ladeKinderlisteAusSupabase(){
     return false;
   }
   data.sort((a,b) => (parseInt(a.symbol_id.replace(/\D/g,''),10)||0) - (parseInt(b.symbol_id.replace(/\D/g,''),10)||0));
-  const lokaleNamen = ladeLokaleNamen();
-  SYMBOLS = data.map((row,i) => ({ id: row.symbol_id, icon: row.icon, name: lokaleNamen[row.symbol_id] || platzhalterName(row.symbol_id, i), kindId: row.id }));
+  SYMBOLS = data.map(row => ({ id: row.symbol_id, icon: row.icon, name: row.icon, kindId: row.id }));
   data.forEach(row => { consentState[row.symbol_id] = row.einwilligung; });
   if(document.getElementById('kinderliste')) renderKinderliste();
   const anzahlAnzeige = document.getElementById('klassenraum-anzahl-anzeige');
@@ -1677,24 +1690,17 @@ async function abmeldenOhneBeenden(){
   await lkAbmelden();
 }
 
-// ---- Klarnamen: bewusst NUR lokal auf dem Gerät der Lehrkraft (Datensparsamkeit) ----
-// In Supabase landen nur Symbol-ID + Symbol (pseudonym). Die Zuordnung Symbol -> Name liegt im
-// localStorage dieses Browsers; auf einem anderen Gerät/Browser zeigt die LK-Ansicht dann
-// "Kind 1, Kind 2 ..." plus Symbol, bis die Namen dort neu eingetragen werden ("Kinder anlegen").
-function namenSchluessel(){ return 'denkwege_namen_' + aktiveKlassenraum; }
-function ladeLokaleNamen(){
-  try { return JSON.parse(localStorage.getItem(namenSchluessel()) || '{}') || {}; } catch(e){ return {}; }
-}
-function speichereLokaleNamen(map){
-  try { localStorage.setItem(namenSchluessel(), JSON.stringify(map)); } catch(e){ /* z.B. privates Fenster */ }
-}
-function platzhalterName(symbolId, index){
-  const n = parseInt(String(symbolId).replace(/\D/g,''), 10);
-  return 'Kind ' + (Number.isNaN(n) ? index + 1 : n + 1);
+// ---- [NEU 2026-10-28-05] Keine Klarnamen im Tool ----
+// Kinder sind ausschließlich ihr Symbol. Die Zuordnung Symbol -> Name führt die Lehrkraft auf Papier
+// (Sitzplan-Blatt, siehe druckeSitzplanBlatt()). Alte, früher lokal gespeicherte Namen werden beim Login entfernt.
+function loescheAlteLokaleNamen(){
+  try {
+    Object.keys(localStorage).filter(k => k.indexOf('denkwege_namen_') === 0).forEach(k => localStorage.removeItem(k));
+  } catch(e){ /* z.B. privates Fenster */ }
 }
 
 async function syncKinderMitSupabase(){
-  // Bewusst KEIN name-Feld: Klarnamen verlassen das LK-Gerät nicht.
+  // Es gibt keine Namen im Tool, nur Symbole.
   const rows = SYMBOLS.map(s => ({ klassenraum: aktiveKlassenraum, symbol_id: s.id, icon: s.icon }));
   const { data, error } = await sb.from('kinder')
     .upsert(rows, { onConflict: 'klassenraum,symbol_id' })
@@ -1738,13 +1744,13 @@ async function ladeAufgabeFuerSitzung(code){
 
 let state = {
   pool: [
-    {name:"Mika", cat:"korrekt_begruendet", quote:"10 Zehner sind ein Hunderter, also sind 42 Zehner 4 Hunderter und 2 Zehner übrig. Mit den 6 Tausendern, 2 Hundertern und 5 Einern macht das 6625."},
-    {name:"Tom", cat:"korrekt_begruendet", quote:"Ich hab 42 mal 10 gerechnet, das sind 420. Plus 6000, 200 und 5 macht 6625."},
-    {name:"Ida", cat:"korrekt_unbegruendet", quote:"6625, weil ich das so eingetragen habe."},
-    {name:"Lian", cat:"fehler_mit_buendelungsversuch", quote:"6000+200+40+7=6247, weil die Zehner zu Hundertern werden."},
-    {name:"Ada", cat:"fehler_unbundled", quote:"6 Tausender, 2 Hunderter, 42 Zehner, 5 Einer -- also 62425."},
-    {name:"Ben", cat:"fehler_stellenwert_ignoriert", quote:"Ich hab die 2 von der 42 zur 5 von den Einern gerechnet."},
-    {name:"Nora", cat:"fehler_ohne_erklaerung", quote:"42 + 5 = 47."}
+    {name:"🐻", cat:"korrekt_begruendet", quote:"10 Zehner sind ein Hunderter, also sind 42 Zehner 4 Hunderter und 2 Zehner übrig. Mit den 6 Tausendern, 2 Hundertern und 5 Einern macht das 6625."},
+    {name:"🐝", cat:"korrekt_begruendet", quote:"Ich hab 42 mal 10 gerechnet, das sind 420. Plus 6000, 200 und 5 macht 6625."},
+    {name:"🐬", cat:"korrekt_unbegruendet", quote:"6625, weil ich das so eingetragen habe."},
+    {name:"🦊", cat:"fehler_mit_buendelungsversuch", quote:"6000+200+40+7=6247, weil die Zehner zu Hundertern werden."},
+    {name:"🐙", cat:"fehler_unbundled", quote:"6 Tausender, 2 Hunderter, 42 Zehner, 5 Einer -- also 62425."},
+    {name:"🐸", cat:"fehler_stellenwert_ignoriert", quote:"Ich hab die 2 von der 42 zur 5 von den Einern gerechnet."},
+    {name:"🐢", cat:"fehler_ohne_erklaerung", quote:"42 + 5 = 47."}
   ],
   slots: {
     empfohlen: [],
@@ -1893,6 +1899,7 @@ function show(id){
   if(id==='heatmap') renderHeatmap();
   if(id==='verwaltung'){ renderKinderliste(); ladeKinderlisteAusSupabase(); }
   if(id==='sitzplan') renderSitzplan();
+  if(id==='schnellanlage'){ const inp = document.getElementById('schnellanlage-anzahl'); if(inp) inp.value = SYMBOLS.length || ''; document.getElementById('schnellanlage-warnung').style.display = 'none'; }
   if(id==='pool') ladeAufgabenPool();
   if(id==='aufgaben-admin'){
     if(!istAdmin){ show('login'); return; }
@@ -3227,7 +3234,6 @@ function renderAntwortenliste(){
 }
 let consentState = {};
 let childLanguage = {};
-let anonymMode = false;
 // Baut consentState/childLanguage/heatmapStatus/Sitzplan-Platzierungen für die aktuelle
 // SYMBOLS-Liste neu auf. zeigeDemoBeispiele=true setzt ein paar Beispielwerte (ein Kind
 // ohne Einwilligung, zwei mit anderer Erstsprache), damit die Demo-Ansicht ohne eigene
@@ -3273,21 +3279,6 @@ function uebersetzungFuerSprache(lang){
   const eintrag = AUFGABE_UEBERSETZUNGEN.find(u=>u.sprache===lang);
   return eintrag ? eintrag.text : null;
 }
-function toggleAnonym(checked){
-  anonymMode = checked;
-  document.getElementById('anonym-toggle').checked = anonymMode;
-  document.getElementById('ausfuell-blatt-btn').style.display = anonymMode ? 'block' : 'none';
-  renderKinderliste();
-}
-function showAusfuellBlatt(){
-  const rows = SYMBOLS.map(s=>`<div class="row" style="gap:10px; padding:6px 0; border-bottom:1px solid var(--border);"><span style="font-size:var(--fs-lead);">${s.icon}</span><span style="flex:1; border-bottom:1px solid var(--border-strong); height:18px;"></span></div>`).join('');
-  document.getElementById('info-modal-body').innerHTML = `
-    <div style="font-size:var(--fs-body); font-weight:500; margin-bottom:4px;">Ausfüll-Blatt</div>
-    <div class="ts" style="font-size:var(--fs-micro); margin-bottom:10px;">Zum Ausdrucken — von Hand ausfüllen, nicht digital speichern.</div>
-    ${rows}
-    <button class="btn btn-primary" style="margin-top:14px;" onclick="document.getElementById('info-modal').classList.remove('visible')">Schließen</button>`;
-  document.getElementById('info-modal').classList.add('visible');
-}
 function setChildLanguage(id, lang){ childLanguage[id] = lang; }
 function renderKinderliste(){
   const el = document.getElementById('kinderliste');
@@ -3300,9 +3291,7 @@ function renderKinderliste(){
     const div = document.createElement('div');
     div.className = 'pool-item';
     div.style.flexWrap = 'wrap';
-    const nameSpan = anonymMode
-      ? `<span class="ts" style="flex:1; font-size:var(--fs-small);">(anonym)</span>`
-      : `<span style="flex:1; font-size:var(--fs-small);">${s.name}</span>`;
+    const nameSpan = `<span style="flex:1;"></span>`; // Kinder haben keinen Namen im Tool, nur das Symbol (Kreis links)
     const verfuegbareSprachen = ['de', ...AUFGABE_UEBERSETZUNGEN.map(u=>u.sprache)];
     const langSelect = `<select onchange="setChildLanguage('${s.id}', this.value)" style="font-size:var(--fs-micro); padding:2px 4px; border-radius:6px; border:1px solid var(--border);">
         ${verfuegbareSprachen.map(k=>`<option value="${k}" ${childLanguage[s.id]===k?'selected':''}>${(SPRACH_META[k]||{flag:'🌐'}).flag} ${(SPRACH_META[k]||{label:k}).label}</option>`).join('')}
@@ -3327,7 +3316,7 @@ async function loescheKindVollstaendig(id){
   const kind = SYMBOLS.find(s=>s.id===id);
   if(!kind) return;
   if(!kind.kindId){ alert('Dieses Kind ist noch nicht mit Supabase synchronisiert -- kann daher lokal einfach entfernt werden.'); }
-  else if(!confirm(`${kind.name} wirklich unwiderruflich löschen -- inklusive aller bisherigen Antworten? Das kann nicht rückgängig gemacht werden.`)){
+  else if(!confirm(`Das Kind mit dem Symbol ${kind.icon} wirklich unwiderruflich löschen -- inklusive aller bisherigen Antworten? Das kann nicht rückgängig gemacht werden.`)){
     return;
   }
   if(kind.kindId){
@@ -3337,7 +3326,6 @@ async function loescheKindVollstaendig(id){
     if(e2){ alert('Löschen des Kindes fehlgeschlagen: ' + e2.message); return; }
   }
   SYMBOLS = SYMBOLS.filter(s=>s.id!==id);
-  const lokaleNamen = ladeLokaleNamen(); delete lokaleNamen[id]; speichereLokaleNamen(lokaleNamen);
   delete consentState[id]; delete childLanguage[id]; delete state.heatmapStatus[id]; delete sitzplanState.placed[id];
   speichereSitzplan();
   renderKinderliste();
@@ -3358,24 +3346,28 @@ async function toggleConsent(id){
   }
 }
 async function submitSchnellanlage(){
-  let lines = document.getElementById('schnellanlage-input').value
-    .split("\n").map(s=>s.trim()).filter(s=>s.length>0);
+  // [GEÄNDERT 2026-10-28-05] Statt einer Namensliste nur noch die Anzahl. Es wird nur HINZUGEFÜGT
+  // (nächste freie Symbole); Bestehendes, Sitzplan und Antworten bleiben unangetastet.
   const warnung = document.getElementById('schnellanlage-warnung');
-  if(lines.length > MAX_KINDER){
-    warnung.textContent = `Es sind maximal ${MAX_KINDER} Kinder pro Klassenraum möglich -- nur die ersten ${MAX_KINDER} Namen wurden übernommen.`;
-    warnung.style.display = 'block';
-    lines = lines.slice(0, MAX_KINDER);
-  } else {
-    warnung.style.display = 'none';
+  const zeigeWarnung = (t) => { warnung.textContent = t; warnung.style.display = 'block'; };
+  const ziel = parseInt(document.getElementById('schnellanlage-anzahl').value, 10);
+  if(!Number.isFinite(ziel) || ziel < 1){ zeigeWarnung('Bitte eine Zahl von 1 bis ' + MAX_KINDER + ' eingeben.'); return; }
+  if(ziel > MAX_KINDER){ zeigeWarnung('Es sind maximal ' + MAX_KINDER + ' Kinder pro Klassenraum möglich.'); return; }
+  if(ziel < SYMBOLS.length){ zeigeWarnung('Es sind schon ' + SYMBOLS.length + ' Kinder angelegt. Zum Verkleinern bitte einzelne Kinder in der Verwaltung löschen (das löscht auch ihre Antworten).'); return; }
+  warnung.style.display = 'none';
+  const belegt = new Set(SYMBOLS.map(s => s.id));
+  let i = 0;
+  while(SYMBOLS.length < ziel && i < MAX_KINDER){
+    const id = 'kind' + i;
+    if(!belegt.has(id)){
+      SYMBOLS.push({ id, icon: SYMBOLS_POOL[i], name: SYMBOLS_POOL[i] });
+      consentState[id] = true; childLanguage[id] = 'de'; state.heatmapStatus[id] = null;
+      belegt.add(id);
+    }
+    i++;
   }
-  // Komplette Liste neu aufbauen (nicht nur vorhandene Einträge umbenennen), damit
-  // auch mehr Kinder als zuvor angelegt werden können, bis MAX_KINDER.
-  SYMBOLS = lines.map((name,i) => ({ id: "kind"+i, icon: SYMBOLS_POOL[i % SYMBOLS_POOL.length], name }));
-  const namenMap = {}; SYMBOLS.forEach(s => { namenMap[s.id] = s.name; });
-  speichereLokaleNamen(namenMap); // nur lokal, nicht nach Supabase
-  reinitialisiereKinderZustand(false);
-  speichereSitzplan(); // neue Kinderliste -> leerer Sitzplan
-  await syncKinderMitSupabase(); // Symbole sofort mit Supabase abgleichen (ohne Namen), nicht erst beim Sitzungsstart
+  SYMBOLS.sort((a,b) => (parseInt(a.id.replace(/\D/g,''),10)||0) - (parseInt(b.id.replace(/\D/g,''),10)||0));
+  await syncKinderMitSupabase(); // neue Symbole sofort in Supabase anlegen (vergibt auch die kindId)
   show('sitzplan');
 }
 
@@ -3435,7 +3427,7 @@ function renderSitzplan(){
       el.onclick = (e)=>{ e.stopPropagation(); sitzplanState.armed = s.id; renderSitzplan(); };
       const border = sitzplanState.armed===s.id ? '2px solid var(--border-accent)' : '1px solid var(--border-strong)';
       el.innerHTML = `<div style="width:40px; height:40px; border-radius:50%; background:var(--surface-1); border:${border}; display:flex; align-items:center; justify-content:center; font-size:var(--fs-title);">${s.icon}</div>
-        <div style="font-size:var(--fs-micro); color:var(--text-secondary); margin-top:2px; white-space:nowrap;">${s.name}</div>`;
+        `;
       canvas.appendChild(el);
     }
   });
@@ -3447,13 +3439,57 @@ function renderSitzplan(){
     b.className='navbtn';
     b.style.cssText = "display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 8px; min-width:48px;";
     if(sitzplanState.armed===s.id) b.classList.add('active');
-    b.innerHTML = `<span style="font-size:var(--fs-lead);">${s.icon}</span><span style="font-size:var(--fs-micro);">${s.name}</span>`;
+    b.innerHTML = `<span style="font-size:var(--fs-lead);">${s.icon}</span>`;
     b.onclick = ()=>{ sitzplanState.armed = (sitzplanState.armed===s.id) ? null : s.id; renderSitzplan(); };
     pool.appendChild(b);
   });
   document.getElementById('sitzplan-hint').textContent = sitzplanState.armed
-    ? "Jetzt auf die Fläche tippen, um " + SYMBOLS.find(s=>s.id===sitzplanState.armed).name + " zu platzieren."
-    : "Kind unten antippen, dann auf die Fläche tippen, um es zu platzieren.";
+    ? "Jetzt auf die Fläche tippen, um " + SYMBOLS.find(s=>s.id===sitzplanState.armed).icon + " zu platzieren."
+    : "Kind unten antippen, dann auf die Fläche tippen, um es zu platzieren. Ein schon platziertes Kind antippen, um es zu verschieben oder vom Plan zu nehmen.";
+  const entf = document.getElementById('sitzplan-entfernen-btn');
+  if(entf) entf.style.display = (sitzplanState.armed && sitzplanState.placed[sitzplanState.armed]) ? 'inline-flex' : 'none';
+}
+function sitzplanVomPlanNehmen(){
+  if(!sitzplanState.armed) return;
+  delete sitzplanState.placed[sitzplanState.armed];
+  sitzplanState.armed = null;
+  renderSitzplan();
+  speichereSitzplan();
+}
+
+// [NEU 2026-10-28-05] Sitzplan-Blatt zum Ausdrucken (oder per Druckdialog "Als PDF speichern").
+// Enthält nur Symbole; die Namen trägt die Lehrkraft von Hand ein. Es wird nichts gespeichert.
+function druckeSitzplanBlatt(){
+  const esc = (t) => String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  const platziert = SYMBOLS.filter(k => sitzplanState.placed[k.id]);
+  const plan = platziert.map(k => {
+    const pos = sitzplanState.placed[k.id];
+    return `<div class="db-platz" style="left:${pos.x}%; top:${pos.y}%;"><div class="db-sym">${k.icon}</div><div class="db-linie"></div></div>`;
+  }).join('');
+  const zeilen = SYMBOLS.map(k => {
+    const digital = consentState[k.id] !== false;
+    return `<tr><td class="db-s">${k.icon}</td><td></td><td></td><td class="db-d">${digital ? 'ja' : '<b>nein</b>'}</td></tr>`;
+  }).join('');
+  const datum = new Date().toLocaleDateString('de-DE');
+  const planBlock = platziert.length
+    ? `<div class="db-plan"><div class="db-tafel">Tafel</div>${plan}</div>`
+    : `<p><i>Noch kein Sitzplan gelegt. Unten steht die Liste der Symbole.</i></p>`;
+  document.getElementById('druck-blatt').innerHTML = `
+    <div class="no-print db-leiste">
+      <button class="btn btn-primary" onclick="window.print()"><i class="ti ti-printer"></i> Drucken / als PDF speichern</button>
+      <button class="btn" onclick="schliesseSitzplanBlatt()">Schließen</button>
+    </div>
+    <h1>Sitzplan-Blatt · Klasse ${esc(aktiveKlassenraum)} · ${datum}</h1>
+    <p class="db-hinweis">Vertraulich: Hier stehen die Namen der Kinder. Bitte nur auf Papier ausfüllen und sicher aufbewahren, am besten eine Kopie anfertigen. Im Tool gibt es keine Namen, diese Zuordnung lässt sich nicht wiederherstellen.</p>
+    ${planBlock}
+    <h2>Symbole, Namen und Einwilligung</h2>
+    <table class="db-tab"><thead><tr><th>Symbol</th><th>Name</th><th>Einwilligung liegt vor am</th><th>digital im Tool</th></tr></thead><tbody>${zeilen}</tbody></table>`;
+  document.getElementById('druck-blatt').style.display = 'block';
+  document.body.classList.add('druck-aktiv');
+}
+function schliesseSitzplanBlatt(){
+  document.getElementById('druck-blatt').style.display = 'none';
+  document.body.classList.remove('druck-aktiv');
 }
 function canvasClick(e){
   if(!sitzplanState.armed) return;
@@ -3501,5 +3537,6 @@ if(istTafelFenster){
   });
 }
 </script>
+<div id="druck-blatt"></div>
 </body>
 </html>

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Denkwege</title>
-<meta name="app-version" content="2026-10-28-05">
+<meta name="app-version" content="2026-11-03-01">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
@@ -986,7 +986,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_WOnHYkefrIzOY-tigGqPKg_Dvjf73Gc";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Version dieser Datei (JJJJ-MM-TT-NN). Bei JEDER Änderung hochzählen und im Änderungsprotokoll des Projektkontexts eintragen.
-const APP_VERSION = "2026-10-28-05";
+const APP_VERSION = "2026-11-03-01";
 (function(){ const el = document.getElementById('app-version'); if(el) el.textContent = 'v' + APP_VERSION; console.info('Denkwege', APP_VERSION); })();
 function getUrlParam(name){ return new URLSearchParams(window.location.search).get(name); }
 
@@ -1033,13 +1033,19 @@ async function ladeUndAboniereAntworten(){
     )
     .subscribe();
 }
+// [NEU 2026-11-03-01] Deutsche Übersetzung einer fremdsprachigen Antwort (maschinell) unter dem Originalzitat; nur für die Lehrkraft, nicht auf der Tafel.
+function uebersetzungHtml(p){
+  if(!p || !p.quoteDe) return '';
+  const meta = SPRACH_META[p.sprache] || { flag: '🌐', label: p.sprache || '' };
+  return `<div class="ts" style="font-style:normal; font-size:var(--fs-micro); margin-top:4px;">${meta.flag} Deutsch (maschinelle Übersetzung, ohne Gewähr): „${escapeHtml(p.quoteDe)}“</div>`;
+}
 function uebernehmeAntwort(row){
   const symbolEntry = SYMBOLS.find(s => s.kindId === row.kind_id);
   const name = symbolEntry ? symbolEntry.name : "Unbekannt";
   state.pool = state.pool.filter(p=>p.name!==name);
   // [NEU 2026-10-28-03] Gilt die Einordnung der Lehrkraft (kategorie_lk), sonst die der KI (kategorie).
   const kat = (row.kategorie_lk && CATS[row.kategorie_lk]) ? row.kategorie_lk : row.kategorie;
-  state.pool.push({name, id: row.id, cat: kat, kiCat: row.kategorie, quote: row.transkript, audioPfad: row.audio_pfad || null, wahl: row.antwort_wahl || null});
+  state.pool.push({name, id: row.id, cat: kat, kiCat: row.kategorie, quote: row.transkript, quoteDe: row.transkript_de || null, sprache: row.transkript_sprache || 'de', audioPfad: row.audio_pfad || null, wahl: row.antwort_wahl || null});
   if(row.symbol_id) state.heatmapStatus[row.symbol_id] = kat;
 }
 function aktualisierenAnsicht(){
@@ -1542,16 +1548,20 @@ async function uebernehmeLogin(user){
 // längst gelöschtes Kind konnte beim nächsten Speichern per Upsert wieder auftauchen. Wird
 // beim Login (uebernehmeLogin) und bei jedem Öffnen der Verwaltung aufgerufen.
 async function ladeKinderlisteAusSupabase(){
-  const { data, error } = await sb.from('kinder')
-    .select('id, symbol_id, icon, einwilligung')
+  let { data, error } = await sb.from('kinder')
+    .select('id, symbol_id, icon, einwilligung, sprache')
     .eq('klassenraum', aktiveKlassenraum);
+  if(error){
+    // Spalte "sprache" fehlt noch (Kindsprache_speichern.sql nicht ausgeführt) -> ohne Sprache laden
+    ({ data, error } = await sb.from('kinder').select('id, symbol_id, icon, einwilligung').eq('klassenraum', aktiveKlassenraum));
+  }
   if(error){
     console.error('Kinderliste konnte nicht aus Supabase geladen werden:', error.message);
     return false;
   }
   data.sort((a,b) => (parseInt(a.symbol_id.replace(/\D/g,''),10)||0) - (parseInt(b.symbol_id.replace(/\D/g,''),10)||0));
   SYMBOLS = data.map(row => ({ id: row.symbol_id, icon: row.icon, name: row.icon, kindId: row.id }));
-  data.forEach(row => { consentState[row.symbol_id] = row.einwilligung; });
+  data.forEach(row => { consentState[row.symbol_id] = row.einwilligung; childLanguage[row.symbol_id] = row.sprache || 'de'; });
   if(document.getElementById('kinderliste')) renderKinderliste();
   const anzahlAnzeige = document.getElementById('klassenraum-anzahl-anzeige');
   if(anzahlAnzeige) anzahlAnzeige.textContent = SYMBOLS.length + " Kinder";
@@ -1728,6 +1738,11 @@ async function ladeKinderlisteFuerSitzung(code){
   // Name wird bewusst ignoriert (Kindgerät kennt nur Symbole); icon dient als Anzeigename.
   SYMBOLS = data.map(row => ({ id: row.symbol_id, icon: row.icon, name: row.icon, kindId: row.id }));
   reinitialisiereKinderZustand(false);
+  // [NEU 2026-11-03-01] Sprache je Kind (über eigene Funktion; schlägt sie fehl, bleibt es bei Deutsch)
+  try {
+    const { data: sp, error: spErr } = await sb.rpc('hole_kindsprachen_fuer_code', { p_code: code });
+    if(!spErr && sp) sp.forEach(r => { childLanguage[r.symbol_id] = r.sprache || 'de'; });
+  } catch(e){ /* ignorieren */ }
   return true;
 }
 
@@ -2037,6 +2052,8 @@ let mediaRecorder = null;
 let audioChunks = [];
 let aufnahmeMimeType = 'audio/webm';
 let letzterAudioPfad = null; // wird nach der Transkription gesetzt, s. finishAnswer()
+let letzteSprache = null;    // [NEU 2026-11-03-01] von der Spracherkennung erkannte Sprache (Code), s. finishAnswer()
+function kindSprache(){ return (state.selectedSymbol && childLanguage[state.selectedSymbol.id]) || 'de'; }
 
 async function toggleRecord(){
   const btn = document.getElementById('record-btn');
@@ -2075,13 +2092,15 @@ async function toggleRecord(){
     mediaRecorder.onstop = async () => {
       const audioBlob = new Blob(audioChunks, { type: aufnahmeMimeType });
       let text = "";
-      letzterAudioPfad = null;
+      letzterAudioPfad = null; letzteSprache = null;
       try {
         // sitzungscode mitschicken, damit die Edge Function das Audio serverseitig
         // (kein zusätzlicher Datenverkehr im Schulnetz) fürs spätere Prüfen der
         // Transkriptionsqualität in Storage ablegen kann -- nur bei echter Sitzung.
-        const url = SUPABASE_URL + '/functions/v1/transkribieren'
-          + (sitzungscode ? '?sitzungscode=' + encodeURIComponent(sitzungscode) : '');
+        const urlParams = [];
+        if(sitzungscode) urlParams.push('sitzungscode=' + encodeURIComponent(sitzungscode));
+        if(kindSprache() !== 'de') urlParams.push('sprache=' + encodeURIComponent(kindSprache())); // Kandidatensprachen: Deutsch + Sprache des Kindes
+        const url = SUPABASE_URL + '/functions/v1/transkribieren' + (urlParams.length ? '?' + urlParams.join('&') : '');
         const antwort = await fetch(url, {
           method: 'POST',
           headers: {
@@ -2095,6 +2114,7 @@ async function toggleRecord(){
         else if(daten.error) text = "(Fehler von der Spracherkennung: " + daten.error + ")";
         else text = "(Spracherkennung hat nichts erkannt -- bitte nochmal versuchen oder tippen)";
         letzterAudioPfad = daten.audio_pfad || null;
+        letzteSprache = daten.sprache || null;
       } catch(e){
         text = "(Spracherkennung fehlgeschlagen -- bitte nochmal versuchen oder tippen)";
       }
@@ -2112,6 +2132,7 @@ function rerecord(){
   document.getElementById('record-label').textContent='Aufnehmen';
   state.isRecording=false;
   letzterAudioPfad = null; // neue Aufnahme -- alter Pfad gehört nicht mehr zur finalen Antwort
+  letzteSprache = null;
   if(state.mode==='type'){ document.getElementById('review-area').style.display='block'; document.getElementById('transcript-edit').value=''; }
 }
 async function finishAnswer(){
@@ -2139,10 +2160,15 @@ async function finishAnswer(){
     : KLASSIFIKATIONS_PROMPT;
 
   let cat = "unklar";
+  // [NEU 2026-11-03-01] Sprachhinweis: erkannte Sprache der Aufnahme, sonst (Tippen) die Sprache des Kindes.
+  // Die Funktion übersetzt bei Bedarf ins Deutsche (nur zur Anzeige für die Lehrkraft); die Kategorisierung bleibt davon unberührt.
+  const sprachHinweis = letzteSprache || kindSprache();
+  let textDe = null, textSprache = 'de';
   try {
     const { data, error } = await sb.functions.invoke('kategorisieren', {
-      body: { transkript: text, aufgabe_id: AUFGABE_ID, wahl, prompt: promptFuerAnfrage, kategorien: kategorienFuerPrompt }
+      body: { transkript: text, aufgabe_id: AUFGABE_ID, wahl, prompt: promptFuerAnfrage, kategorien: kategorienFuerPrompt, sprache: sprachHinweis }
     });
+    if(!error && data){ textDe = data.transkript_de || null; textSprache = data.sprache || 'de'; }
     if(!error && data && data.kategorie && CATS[data.kategorie]) cat = data.kategorie;
     else cat = heuristischeKategorie(text);
   } catch(e) {
@@ -2152,7 +2178,7 @@ async function finishAnswer(){
   if(sitzungscode){
     // Echte Sitzung: an Supabase senden, LK-Gerät sieht es live.
     // Bewusst KEIN Klarname hier -- nur die pseudonyme kind_id (Kap. 4.4/2.13 Nutzerfluss-Dokument).
-    const { error } = await sb.from('antworten').insert({
+    const zeile = {
       sitzungscode: sitzungscode,
       kind_id: state.selectedSymbol ? state.selectedSymbol.kindId : null,
       symbol_id: state.selectedSymbol ? state.selectedSymbol.id : null,
@@ -2160,15 +2186,18 @@ async function finishAnswer(){
       kategorie: cat,
       antwort_wahl: wahl,
       audio_pfad: letzterAudioPfad
-    });
+    };
+    let { error } = await sb.from('antworten').insert({ ...zeile, transkript_sprache: textSprache, transkript_de: textDe });
+    // Fehlen die neuen Spalten noch (Kindsprache_speichern.sql nicht ausgeführt), Antwort ohne sie speichern, damit nichts verloren geht.
+    if(error && /transkript_(sprache|de)/.test(error.message || '')) ({ error } = await sb.from('antworten').insert(zeile));
     if(error) alert('Antwort konnte nicht gespeichert werden: ' + error.message + '\n(Sitzungscode: ' + sitzungscode + ')');
   } else {
     // Kein Sitzungscode vorhanden (Demo-Vorführung ohne echte Sitzung): nur lokal
     state.pool = state.pool.filter(p=>p.name!==name);
-    state.pool.push({name, cat, quote:text, audioPfad: null, wahl});
+    state.pool.push({name, cat, quote:text, quoteDe: textDe, sprache: textSprache, audioPfad: null, wahl});
     if(state.selectedSymbol) state.heatmapStatus[state.selectedSymbol.id] = cat;
   }
-  letzterAudioPfad = null;
+  letzterAudioPfad = null; letzteSprache = null;
   document.getElementById('review-area').style.display='none';
   document.getElementById('done-area').style.display='block';
   document.getElementById('done-name').textContent = name;
@@ -2266,7 +2295,7 @@ function renderEmpfSlotKarte(blockIndex, slotIdx, kategorieIds, namen, pools, on
       </div>`;
   return `<div>
     ${header}
-    <div class="quote-plain quote-slot">"${child.quote}"</div>
+    <div class="quote-plain quote-slot">"${child.quote}"${uebersetzungHtml(child)}</div>
     ${impulsHtml(child.name, cat.nachfrage)}
     <div class="karten-knoepfe">
       <button type="button" class="navbtn" onclick="oeffnePicker(${blockIndex},${slotIdx})"><i class="ti ti-replace"></i> Andere Antwort einsetzen</button>
@@ -2405,7 +2434,7 @@ function renderFrei(){
             <div style="flex:1; padding:6px 8px; background:var(--surface-1);">${headerInner}</div>
           </div>`;
       div.innerHTML = `${header}
-        <div class="quote-plain quote-slot">"${child.quote}"</div>
+        <div class="quote-plain quote-slot">"${child.quote}"${uebersetzungHtml(child)}</div>
         <div style="margin-top:6px; display:flex; gap:16px; flex-wrap:wrap;">
           <span class="ts" style="font-size:var(--fs-micro); text-decoration:underline; cursor:pointer;" onclick="event.stopPropagation(); openDetail(${JSON.stringify(child.name).replace(/"/g,'&quot;')})"><i class="ti ti-pencil"></i> Antwort öffnen und Einordnung ändern</span>
           <span class="ts" style="font-size:var(--fs-micro); text-decoration:underline; cursor:pointer;" onclick="event.stopPropagation(); freiToggle(${JSON.stringify(child.name).replace(/"/g,'&quot;')})"><i class="ti ti-x"></i> von der Tafel nehmen</span>
@@ -2761,7 +2790,7 @@ function renderPool(){
     const fn = didaktischeFunktion(p.cat);
     const fnIcon = fn ? DIDAKTISCHE_FUNKTION_META[fn].icon+' ' : '';
     div.innerHTML = `<div class="row" style="justify-content:space-between;"><b style="font-size:var(--fs-small);">${p.name}${inSlot?' <i class="ti ti-check" style="font-size:var(--fs-micro);"></i>':''}</b><span style="font-size:var(--fs-micro);">${fnIcon}${cat.label}</span></div>
-      <div class="ts" style="font-size:var(--fs-micro); margin-top:2px;">"${p.quote}"</div>`;
+      <div class="ts" style="font-size:var(--fs-micro); margin-top:2px;">"${p.quote}"${uebersetzungHtml(p)}</div>`;
     area.appendChild(div);
   });
 }
@@ -2789,7 +2818,7 @@ function renderDetail(){
         <span class="tag ${cat.color}">${cat.typ==='Fehler'?'⚠ ':''}${cat.label}</span>
       </span>
     </div>
-    <div class="quote-box">"${child.quote}"</div>
+    <div class="quote-box">"${child.quote}"${uebersetzungHtml(child)}</div>
     ${cat.nachfrage ? `<div class="live-frage-box" style="margin-top:8px;">
       <div class="live-frage-label"><i class="ti ti-message-circle"></i> direkt stellbar</div>
       <div class="live-frage-text">${cat.nachfrage}</div>
@@ -3118,7 +3147,7 @@ function renderHeatmap(){
         card.className = cat.color;
         card.style.cursor = 'pointer';
         card.onclick = ()=> openDetail(s.name);
-        card.innerHTML = `<b>${s.name}</b><div style="margin-top:2px;">${eintrag.quote}</div>`;
+        card.innerHTML = `<b>${s.name}</b><div style="margin-top:2px;">${eintrag.quote}${uebersetzungHtml(eintrag)}</div>`;
       } else {
         card.style.background = 'var(--surface-1)'; card.style.border = '1px dashed var(--border-strong)'; card.style.color = 'var(--text-muted)';
         card.innerHTML = `<b>${s.name}</b><div style="margin-top:2px;">noch keine Antwort</div>`;
@@ -3227,7 +3256,7 @@ function renderAntwortenliste(){
           <b style="font-size:var(--fs-small);">${e.symbol.name} · ${cat.label}</b>
           ${fnMeta ? `<span class="ts" style="font-size:var(--fs-micro); white-space:nowrap;" title="${fnMeta.lang}">${fnMeta.icon} ${fnMeta.kurz}</span>` : ''}
         </div>
-        <div style="font-size:var(--fs-small); margin-top:2px;">${e.antwort.quote}</div>
+        <div style="font-size:var(--fs-small); margin-top:2px;">${e.antwort.quote}${uebersetzungHtml(e.antwort)}</div>
       </div>
     </div>`;
   }).join('');
@@ -3262,7 +3291,16 @@ const SPRACH_META = {
   uk: { flag: '🇺🇦', label: 'Ukrainisch' },
   en: { flag: '🇬🇧', label: 'Englisch' },
   ru: { flag: '🇷🇺', label: 'Russisch' },
-  ar: { flag: '🇸🇦', label: 'Arabisch' }
+  ar: { flag: '🇸🇦', label: 'Arabisch' },
+  pl: { flag: '🇵🇱', label: 'Polnisch' },
+  ro: { flag: '🇷🇴', label: 'Rumänisch' },
+  bg: { flag: '🇧🇬', label: 'Bulgarisch' },
+  fa: { flag: '🇮🇷', label: 'Persisch' },
+  sq: { flag: '🇦🇱', label: 'Albanisch' },
+  el: { flag: '🇬🇷', label: 'Griechisch' },
+  es: { flag: '🇪🇸', label: 'Spanisch' },
+  fr: { flag: '🇫🇷', label: 'Französisch' },
+  it: { flag: '🇮🇹', label: 'Italienisch' }
 };
 // Übersetzungen aus der "uebersetzungen"-Liste der Aufgaben-YAML 1:1 übernommen. ACHTUNG
 // (steht auch so in der YAML): die Stellenwert-Kürzel (T/H/Z/E in der jeweiligen Sprache)
@@ -3279,7 +3317,16 @@ function uebersetzungFuerSprache(lang){
   const eintrag = AUFGABE_UEBERSETZUNGEN.find(u=>u.sprache===lang);
   return eintrag ? eintrag.text : null;
 }
-function setChildLanguage(id, lang){ childLanguage[id] = lang; }
+// [GEÄNDERT 2026-11-03-01] Die Sprache eines Kindes wird in Supabase gespeichert (kinder.sprache), damit sie
+// auf dem Kindgerät ankommt und nach Neuladen erhalten bleibt. Sie steuert (a) die Übersetzung der Aufgabenstellung
+// und (b) die Kandidatensprachen der Spracherkennung (Deutsch + Sprache des Kindes).
+async function setChildLanguage(id, lang){
+  childLanguage[id] = lang;
+  const kind = SYMBOLS.find(s => s.id === id);
+  if(!kind || !kind.kindId) return;
+  const { error } = await sb.from('kinder').update({ sprache: lang }).eq('id', kind.kindId);
+  if(error) alert('Die Sprache konnte nicht gespeichert werden: ' + error.message + '\n(Wurde Kindsprache_speichern.sql ausgeführt?)');
+}
 function renderKinderliste(){
   const el = document.getElementById('kinderliste');
   el.innerHTML = "";
@@ -3292,9 +3339,9 @@ function renderKinderliste(){
     div.className = 'pool-item';
     div.style.flexWrap = 'wrap';
     const nameSpan = `<span style="flex:1;"></span>`; // Kinder haben keinen Namen im Tool, nur das Symbol (Kreis links)
-    const verfuegbareSprachen = ['de', ...AUFGABE_UEBERSETZUNGEN.map(u=>u.sprache)];
+    const verfuegbareSprachen = ['de', ...Object.keys(SPRACH_META).filter(k => k !== 'de')];
     const langSelect = `<select onchange="setChildLanguage('${s.id}', this.value)" style="font-size:var(--fs-micro); padding:2px 4px; border-radius:6px; border:1px solid var(--border);">
-        ${verfuegbareSprachen.map(k=>`<option value="${k}" ${childLanguage[s.id]===k?'selected':''}>${(SPRACH_META[k]||{flag:'🌐'}).flag} ${(SPRACH_META[k]||{label:k}).label}</option>`).join('')}
+        ${verfuegbareSprachen.map(k=>`<option value="${k}" ${childLanguage[s.id]===k?'selected':''}>${(SPRACH_META[k]||{flag:'🌐'}).flag} ${(SPRACH_META[k]||{label:k}).label}${(k !== 'de' && !uebersetzungFuerSprache(k)) ? ' (Aufgabe nicht übersetzt)' : ''}</option>`).join('')}
       </select>`;
     const loeschButton = `<button class="navbtn btn-danger-outline" onclick="loescheKindVollstaendig('${s.id}')" style="font-size:var(--fs-micro);"><i class="ti ti-trash"></i> Löschen</button>`;
     if(hasConsent){

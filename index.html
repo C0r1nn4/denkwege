@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Denkwege</title>
-<meta name="app-version" content="2026-11-03-01">
+<meta name="app-version" content="2026-11-03-02">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
@@ -140,6 +140,15 @@
   .kid-symbol-btn .emoji { font-size: 44px; }
   .kid-symbol-btn .name { font-size:var(--fs-body); font-weight: 600; color: var(--text-secondary); }
   .kid-big-icon-btn { width: 92px; height: 92px; border-radius: 50%; display:flex; align-items:center; justify-content:center; }
+  /* Aufnahme-Knopf: bereit = blau mit Mikrofon, Aufnahme läuft = rot, pulsierend, mit Stopp-Quadrat und Hinweis "Aufnahme läuft" */
+  .rec-bereit { background: var(--fill-accent); color: var(--on-accent); border: none; }
+  .rec-laeuft { background: var(--fill-danger); color: var(--on-danger); border: none; animation: rec-puls 1.2s ease-in-out infinite; }
+  .rec-wartet { background: var(--text-muted); color: var(--surface-1); border: none; }
+  @keyframes rec-puls { 0%,100% { box-shadow: 0 0 0 0 rgba(200,40,40,.55); } 50% { box-shadow: 0 0 0 22px rgba(200,40,40,0); } }
+  #rec-anzeige { margin-top:10px; font-size:var(--fs-title); font-weight:700; color:var(--fill-danger); }
+  .rec-punkt { display:inline-block; width:14px; height:14px; border-radius:50%; background:var(--fill-danger); margin-right:6px; vertical-align:middle; animation: rec-blink 1s steps(2,start) infinite; }
+  @keyframes rec-blink { to { visibility:hidden; } }
+  @media (prefers-reduced-motion: reduce) { .rec-laeuft, .rec-punkt { animation: none; } }
   .kid-record-btn { width: 220px; height: 220px; border-radius: 50%; box-shadow: var(--shadow-md); }
   .kid-mode-btn { width: 92px; height: 92px; border-radius: 50%; }
   .sticky-header { position: sticky; top: 0; z-index: 10; }
@@ -657,7 +666,6 @@
   <div id="scr-aufnahme" class="screen" style="text-align:center;">
     <div class="card c-blue">
       <div id="aufnahme-anweisung" class="t" style="font-size:var(--fs-lead); font-weight:600; line-height:1.35; margin-bottom:10px;">Wie würdest du die Zahl 6 T 2 H 42 Z 5 E in die Stellenwerttafel und als Zahl schreiben? Erkläre.</div>
-      <div style="width:100%; height:80px; background:var(--surface-2); border-radius:16px; display:flex; align-items:center; justify-content:center; color:var(--text-muted);"><i class="ti ti-photo" style="font-size:var(--fs-kid);"></i></div>
       <div class="row" style="justify-content:center; gap:10px; margin-top:10px;">
         <div id="sprachauswahl" class="row" style="justify-content:center; gap:10px; flex-wrap:wrap;"></div>
       </div>
@@ -683,12 +691,14 @@
       </div>
     </div>
     <div id="record-area" style="text-align:center;">
-      <button id="record-btn" class="kid-record-btn btn-danger" style="border:6px solid var(--surface-2);" onclick="toggleRecord()"><i id="record-icon" class="ti ti-microphone" style="font-size:76px;"></i></button>
-      <div class="ts" id="record-label" style="font-size:var(--fs-title); font-weight:600; margin-top:14px;">Aufnehmen</div>
+      <button id="record-btn" class="kid-record-btn rec-bereit" style="border:6px solid var(--surface-2);" onclick="toggleRecord()"><i id="record-icon" class="ti ti-microphone" style="font-size:76px;"></i></button>
+      <div class="ts" id="record-label" style="font-size:var(--fs-title); font-weight:600; margin-top:14px;">Tippe zum Aufnehmen</div>
+      <div id="rec-anzeige" style="display:none;"><span class="rec-punkt"></span> Aufnahme läuft</div>
     </div>
     <div id="review-area" style="display:none; border-top:2px dashed var(--border); padding-top:18px; margin-top:20px; text-align:left;">
       <div class="ts" style="font-size:var(--fs-title); margin-bottom:10px; text-align:center;">So haben wir dich verstanden — du kannst es auch verbessern</div>
       <textarea id="transcript-edit" rows="4" style="font-size:var(--fs-lead); padding:14px; min-height:130px;"></textarea>
+      <div id="review-de" style="display:none; margin-top:12px; padding:12px 14px; border-radius:14px; background:var(--surface-2); border:1px solid var(--border); font-size:var(--fs-body);"><div class="ts" style="font-size:var(--fs-small); margin-bottom:4px;">🇩🇪 Auf Deutsch (Übersetzung, kann Fehler haben)</div><div id="review-de-text"></div></div>
       <div class="row" style="justify-content:center; gap:32px; margin-top:16px;">
         <div style="text-align:center;">
           <button class="kid-mode-btn" style="border:1px solid var(--border-strong);" onclick="rerecord()"><i class="ti ti-refresh" style="font-size:var(--fs-kid);"></i></button>
@@ -986,7 +996,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_WOnHYkefrIzOY-tigGqPKg_Dvjf73Gc";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Version dieser Datei (JJJJ-MM-TT-NN). Bei JEDER Änderung hochzählen und im Änderungsprotokoll des Projektkontexts eintragen.
-const APP_VERSION = "2026-11-03-01";
+const APP_VERSION = "2026-11-03-02";
 (function(){ const el = document.getElementById('app-version'); if(el) el.textContent = 'v' + APP_VERSION; console.info('Denkwege', APP_VERSION); })();
 function getUrlParam(name){ return new URLSearchParams(window.location.search).get(name); }
 
@@ -1552,7 +1562,7 @@ async function ladeKinderlisteAusSupabase(){
     .select('id, symbol_id, icon, einwilligung, sprache')
     .eq('klassenraum', aktiveKlassenraum);
   if(error){
-    // Spalte "sprache" fehlt noch (Kindsprache_speichern.sql nicht ausgeführt) -> ohne Sprache laden
+    // Spalte "sprache" fehlt noch (Sprachen_speichern.sql nicht ausgeführt) -> ohne Sprache laden
     ({ data, error } = await sb.from('kinder').select('id, symbol_id, icon, einwilligung').eq('klassenraum', aktiveKlassenraum));
   }
   if(error){
@@ -2008,9 +2018,9 @@ function confirmSymbol(){
   document.getElementById('record-area').style.display='block';
   document.getElementById('review-area').style.display='none';
   document.getElementById('done-area').style.display='none';
-  document.getElementById('record-btn').style.background='var(--fill-danger)';
+  document.getElementById('record-btn').className='kid-record-btn rec-bereit'; document.getElementById('rec-anzeige').style.display='none';
   document.getElementById('record-icon').className='ti ti-microphone';
-  document.getElementById('record-label').textContent='Aufnehmen';
+  document.getElementById('record-label').textContent='Tippe zum Aufnehmen';
   state.isRecording=false;
   state.aktuelleWahl = null;
   document.getElementById('wahl-ja').classList.remove('btn-primary');
@@ -2023,7 +2033,7 @@ function confirmSymbol(){
     document.getElementById('begruendung-bereich').style.display = 'block';
   }
   renderSprachauswahl();
-  setSprache('de');
+  setSprache('de'); kidSprachWahl = null; // Anzeige zuerst Deutsch; Erkennungssprache bleibt die der Lehrkraft, bis das Kind selbst wählt
   if(state.selectedSymbol) state.heatmapStatus[state.selectedSymbol.id] = 'laeuft';
 }
 function waehleJaNein(wahl){
@@ -2053,7 +2063,7 @@ let audioChunks = [];
 let aufnahmeMimeType = 'audio/webm';
 let letzterAudioPfad = null; // wird nach der Transkription gesetzt, s. finishAnswer()
 let letzteSprache = null;    // [NEU 2026-11-03-01] von der Spracherkennung erkannte Sprache (Code), s. finishAnswer()
-function kindSprache(){ return (state.selectedSymbol && childLanguage[state.selectedSymbol.id]) || 'de'; }
+function kindSprache(){ return kidSprachWahl || (state.selectedSymbol && childLanguage[state.selectedSymbol.id]) || 'de'; }
 
 async function toggleRecord(){
   const btn = document.getElementById('record-btn');
@@ -2064,6 +2074,7 @@ async function toggleRecord(){
     // Sofortiges Feedback, noch bevor das Mikrofon bereit ist (Berechtigung/Initialisierung kann kurz dauern)
     label.textContent = 'Bereite Mikrofon vor...';
     icon.className = 'ti ti-loader-2';
+    btn.className = 'kid-record-btn rec-wartet';
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       audioChunks = [];
@@ -2075,10 +2086,14 @@ async function toggleRecord(){
       mediaRecorder.ondataavailable = (e) => { if(e.data.size > 0) audioChunks.push(e.data); };
       mediaRecorder.start();
       state.isRecording = true;
-      btn.style.background = 'var(--text-muted)';
+      btn.className = 'kid-record-btn rec-laeuft';
       icon.className = 'ti ti-player-stop';
-      label.textContent = 'Stopp';
+      label.textContent = 'Tippe zum Beenden';
+      document.getElementById('rec-anzeige').style.display = 'block';
     } catch(e){
+      btn.className = 'kid-record-btn rec-bereit';
+      icon.className = 'ti ti-microphone';
+      label.textContent = 'Tippe zum Aufnehmen';
       alert('Mikrofon konnte nicht gestartet werden: ' + e.message + '\n\nDu kannst stattdessen auf die Tastatur (⌨) wechseln und tippen.');
     }
   } else {
@@ -2086,6 +2101,8 @@ async function toggleRecord(){
     state.isRecording = false;
     label.textContent = 'Wird erkannt...';
     icon.className = 'ti ti-loader-2';
+    btn.className = 'kid-record-btn rec-wartet';
+    document.getElementById('rec-anzeige').style.display = 'none';
     mediaRecorder.stop();
     mediaRecorder.stream.getTracks().forEach(t => t.stop());
 
@@ -2121,15 +2138,32 @@ async function toggleRecord(){
       document.getElementById('record-area').style.display='none';
       document.getElementById('review-area').style.display='block';
       document.getElementById('transcript-edit').value = text;
+      zeigeUebersetzungImReview(text);
     };
   }
 }
+// [NEU 2026-11-03-02] Zeigt unter dem Originaltext die deutsche Übersetzung (nur wenn eine andere Sprache erkannt/gewählt wurde).
+let reviewUebersetzungsId = 0;
+async function zeigeUebersetzungImReview(text){
+  const box = document.getElementById('review-de'), out = document.getElementById('review-de-text');
+  box.style.display = 'none'; out.textContent = '';
+  const sp = letzteSprache || kindSprache();
+  if(!sp || sp === 'de' || !text || /^\(/.test(text)) return;
+  const id = ++reviewUebersetzungsId;
+  try {
+    const { data, error } = await sb.functions.invoke('kategorisieren', { body: { transkript: text, sprache: sp, nur_uebersetzen: true } });
+    if(id !== reviewUebersetzungsId || error || !data || !data.transkript_de) return;
+    out.textContent = data.transkript_de;
+    box.style.display = 'block';
+  } catch(_e){ /* Übersetzung ist nur eine Zusatzhilfe */ }
+}
 function rerecord(){
+  document.getElementById('review-de').style.display = 'none'; reviewUebersetzungsId++;
   document.getElementById('review-area').style.display='none';
   document.getElementById('record-area').style.display= state.mode==='speak' ? 'block' : 'none';
-  document.getElementById('record-btn').style.background='var(--fill-danger)';
+  document.getElementById('record-btn').className='kid-record-btn rec-bereit'; document.getElementById('rec-anzeige').style.display='none';
   document.getElementById('record-icon').className='ti ti-microphone';
-  document.getElementById('record-label').textContent='Aufnehmen';
+  document.getElementById('record-label').textContent='Tippe zum Aufnehmen';
   state.isRecording=false;
   letzterAudioPfad = null; // neue Aufnahme -- alter Pfad gehört nicht mehr zur finalen Antwort
   letzteSprache = null;
@@ -2509,30 +2543,40 @@ function moveSlot(i, dir){
   [arr[i], arr[j]] = [arr[j], arr[i]];
   renderDashboard();
 }
+// [NEU 2026-11-03-02] Sprachwahl am Kindgerät: Deutsch + alle Sprachen, in die die Aufgabe übersetzt ist
+// + die von der Lehrkraft für dieses Kind gesetzte Sprache. Die Wahl bestimmt die Anzeige der Aufgabenstellung
+// UND die Kandidatensprache der Spracherkennung (kindSprache()).
+let kidSprachWahl = null;
+function sprachenFuerKind(){
+  const liste = ['de'];
+  (AUFGABE_UEBERSETZUNGEN || []).forEach(u => { if(!liste.includes(u.sprache)) liste.push(u.sprache); });
+  const lk = state.selectedSymbol ? childLanguage[state.selectedSymbol.id] : null;
+  if(lk && !liste.includes(lk)) liste.push(lk);
+  return liste;
+}
 function renderSprachauswahl(){
   const el = document.getElementById('sprachauswahl');
   el.innerHTML = "";
-  const kindLang = state.selectedSymbol ? childLanguage[state.selectedSymbol.id] : 'de';
-  if(kindLang === 'de' || !uebersetzungFuerSprache(kindLang)){
-    el.style.display = 'none';
-    return; // kein Umschalter nötig, wenn nur Deutsch zugeordnet ist (oder keine Übersetzung vorliegt)
-  }
+  kidSprachWahl = null;
+  const liste = sprachenFuerKind();
+  if(liste.length < 2){ el.style.display = 'none'; return; }
   el.style.display = 'flex';
-  ['de', kindLang].forEach(lang=>{
+  liste.forEach(lang=>{
     const meta = SPRACH_META[lang] || { flag: '🌐', label: lang };
     const b = document.createElement('button');
     b.className = 'navbtn';
     b.id = 'sprache-'+lang;
     b.style.fontSize = '18px';
-    b.textContent = meta.flag;
+    b.innerHTML = meta.flag + ' <span style="font-size:14px;">' + meta.label + '</span>';
     b.title = meta.label;
     b.onclick = ()=>setSprache(lang);
     el.appendChild(b);
   });
 }
 function setSprache(lang){
+  kidSprachWahl = lang;
   document.getElementById('aufnahme-anweisung').textContent = uebersetzungFuerSprache(lang) || AUFGABE_TEXT;
-  ['de', lang].forEach(k=>{
+  sprachenFuerKind().forEach(k=>{
     const btn = document.getElementById('sprache-'+k);
     if(btn) btn.classList.toggle('active', k===lang);
   });
@@ -3325,7 +3369,7 @@ async function setChildLanguage(id, lang){
   const kind = SYMBOLS.find(s => s.id === id);
   if(!kind || !kind.kindId) return;
   const { error } = await sb.from('kinder').update({ sprache: lang }).eq('id', kind.kindId);
-  if(error) alert('Die Sprache konnte nicht gespeichert werden: ' + error.message + '\n(Wurde Kindsprache_speichern.sql ausgeführt?)');
+  if(error) alert('Die Sprache konnte nicht gespeichert werden: ' + error.message + '\n(Wurde Sprachen_speichern.sql ausgeführt?)');
 }
 function renderKinderliste(){
   const el = document.getElementById('kinderliste');

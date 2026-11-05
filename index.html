@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Denkwege</title>
-<meta name="app-version" content="2026-11-03-03">
+<meta name="app-version" content="2026-11-03-04">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
@@ -670,6 +670,7 @@
         <div id="sprachauswahl" class="row" style="justify-content:center; gap:10px; flex-wrap:wrap;"></div>
       </div>
     </div>
+    <div id="kid-debug" style="font-size:13px; margin:10px 0; padding:8px 10px; text-align:left; border:1px dashed var(--border-strong); border-radius:10px; color:var(--text-secondary); white-space:pre-wrap; word-break:break-word;"></div>
     <!-- Nur bei Aufgaben mit vorgeschobener Ja/Nein-Frage sichtbar (HAT_WAHL) -- das
          Kind muss erst wählen, bevor es begründen/aufnehmen kann. -->
     <div id="wahl-bereich" style="display:none; margin: 22px 0;">
@@ -679,7 +680,6 @@
         <button id="wahl-nein" class="btn" style="width:130px; padding:20px; font-size:var(--fs-lead); font-weight:600;" onclick="waehleJaNein('nein')">Nein</button>
       </div>
     </div>
-    <div id="kid-debug" class="ts" style="font-size:12px; margin-top:18px; text-align:left; color:var(--text-muted); white-space:pre-wrap;"></div>
     <div id="begruendung-bereich">
     <div class="row" style="justify-content:center; gap:32px; margin: 22px 0;">
       <div style="text-align:center;">
@@ -997,7 +997,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_WOnHYkefrIzOY-tigGqPKg_Dvjf73Gc";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Version dieser Datei (JJJJ-MM-TT-NN). Bei JEDER Änderung hochzählen und im Änderungsprotokoll des Projektkontexts eintragen.
-const APP_VERSION = "2026-11-03-03";
+const APP_VERSION = "2026-11-03-04";
 (function(){ const el = document.getElementById('app-version'); if(el) el.textContent = 'v' + APP_VERSION; console.info('Denkwege', APP_VERSION); })();
 function getUrlParam(name){ return new URLSearchParams(window.location.search).get(name); }
 
@@ -1899,6 +1899,7 @@ function empfKategorieWechseln(i, slotIdx, neueKategorieId){
 }
 
 function show(id){
+  try{ if(typeof aktualisiereKidDebug==='function') setTimeout(aktualisiereKidDebug,0); }catch(_e){}
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('visible'));
   document.getElementById('scr-'+id).classList.add('visible');
   document.getElementById('topbar-label').textContent = {

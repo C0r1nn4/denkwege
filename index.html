@@ -1009,7 +1009,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_WOnHYkefrIzOY-tigGqPKg_Dvjf73Gc";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Version dieser Datei (JJJJ-MM-TT-NN). Bei JEDER Änderung hochzählen und im Änderungsprotokoll des Projektkontexts eintragen.
-const APP_VERSION = "2026-11-05-03";
+const APP_VERSION = "2026-11-05-06";
 (function(){ const el = document.getElementById('app-version'); if(el) el.textContent = 'v' + APP_VERSION; console.info('Denkwege', APP_VERSION); })();
 function getUrlParam(name){ return new URLSearchParams(window.location.search).get(name); }
 
@@ -2190,13 +2190,27 @@ function aktualisiereKidDebug(){
 }
 let reviewUebersetzungsId = 0;
 let reviewUebersetzung = null; // { text, de, sprache } -- wird in finishAnswer() als Rückfall mitgespeichert
-async function zeigeUebersetzungImReview(text){
-  const box = document.getElementById('review-de'), out = document.getElementById('review-de-text');
-  box.style.display = 'none'; out.textContent = ''; reviewUebersetzung = null;
+// [NEU 2026-11-05-06] Wird der Text in der Überprüfungsansicht verbessert, wird die Übersetzung nach kurzer Pause neu geholt
+// (Sprechen – Erkennen – Verbessern – Übersetzen – Abschicken). Bis dahin bleibt die alte Übersetzung sichtbar, grau und als „wird aktualisiert“ markiert.
+let reviewTimer = null;
+document.getElementById('transcript-edit').addEventListener('input', function(){
+  clearTimeout(reviewTimer);
+  const box = document.getElementById('review-de');
   const sp = letzteSprache || kindSprache();
-  if(!sp || sp === 'de' || !text || /^\(/.test(text)) return;
+  if(!sp || sp === 'de') return;
+  if(box.style.display !== 'none'){ box.style.opacity = '.5'; document.getElementById('review-de-text').setAttribute('data-alt', '1'); }
+  reviewUebersetzung = null; // alte Übersetzung gehört nicht mehr zum Text
+  reviewTimer = setTimeout(() => zeigeUebersetzungImReview(document.getElementById('transcript-edit').value, true), 900);
+});
+async function zeigeUebersetzungImReview(text, istBearbeitung){
+  const box = document.getElementById('review-de'), out = document.getElementById('review-de-text');
+  box.style.opacity = '1'; out.removeAttribute('data-alt');
+  if(!istBearbeitung){ box.style.display = 'none'; out.textContent = ''; }
+  reviewUebersetzung = null;
+  const sp = letzteSprache || kindSprache();
+  if(!sp || sp === 'de' || !text || /^\(/.test(text)){ box.style.display = 'none'; return; }
   const id = ++reviewUebersetzungsId;
-  box.style.display = 'block'; out.textContent = 'Übersetzung wird geladen …';
+  box.style.display = 'block'; out.textContent = istBearbeitung ? 'Übersetzung wird aktualisiert …' : 'Übersetzung wird geladen …';
   try {
     const { data, error } = await sb.functions.invoke('kategorisieren', { body: { transkript: text, sprache: sp, nur_uebersetzen: true } });
     if(id !== reviewUebersetzungsId) return;
@@ -2223,6 +2237,7 @@ async function zeigeUebersetzungImReview(text){
   }
 }
 function rerecord(){
+  clearTimeout(reviewTimer);
   document.getElementById('review-de').style.display = 'none'; reviewUebersetzungsId++; reviewUebersetzung = null;
   document.getElementById('review-area').style.display='none';
   document.getElementById('record-area').style.display= state.mode==='speak' ? 'block' : 'none';

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Denkwege</title>
-<meta name="app-version" content="2026-11-03-04">
+<meta name="app-version" content="2026-11-05-01">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
@@ -53,6 +53,24 @@
   .lk-leiste .navbtn { background:var(--surface-2); }
   .lk-badge { display:inline-block; min-width:18px; padding:0 6px; border-radius:999px; background:var(--fill-accent); color:var(--on-accent); font-size:var(--fs-micro); font-weight:700; text-align:center; margin-left:4px; }
   .lk-badge.leer { background:var(--surface-0); color:var(--text-muted); }
+  /* [NEU 2026-11-05-01] Sitzungsstreifen, Ablaufleiste und Tafel-Schalter (UX Paket 1) */
+  .sitzungs-streifen { display:none; align-items:center; gap:8px; flex-wrap:wrap; padding:6px 14px; background:var(--bg-success); color:var(--text-success); border-bottom:1px solid var(--border); font-size:var(--fs-small); }
+  .sitzungs-streifen.sichtbar { display:flex; }
+  .sitzungs-streifen .ss-text { flex:1; min-width:0; font-weight:600; }
+  .sitzungs-streifen .navbtn { background:var(--surface-2); }
+  .ablauf-leiste { display:none; background:var(--surface-1); border-bottom:1px solid var(--border); padding:6px 10px; gap:6px; }
+  .ablauf-leiste.sichtbar { display:flex; }
+  .ablauf-leiste button { flex:1; min-width:0; border:1px solid var(--border); background:var(--surface-2); color:var(--text-secondary); border-radius:999px; padding:8px 6px; font-size:var(--fs-small); cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; min-height:44px; }
+  .ablauf-leiste button .nr { display:inline-flex; width:22px; height:22px; border-radius:50%; background:var(--surface-0); align-items:center; justify-content:center; font-weight:700; font-size:var(--fs-micro); flex-shrink:0; }
+  .ablauf-leiste button.aktiv { background:var(--fill-accent); color:var(--on-accent); border-color:var(--fill-accent); font-weight:600; }
+  .ablauf-leiste button.aktiv .nr { background:var(--surface-2); color:var(--text-primary); }
+  .tafel-status { font-size:var(--fs-small); margin-bottom:6px; color:var(--text-secondary); }
+  .tafel-status b { color:var(--text-primary); }
+  .tafel-schalter { display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-bottom:8px; }
+  .tafel-schalter .ts-label { font-size:var(--fs-micro); color:var(--text-muted); margin-right:2px; }
+  .pill { border:1px solid var(--border-strong); background:var(--surface-2); color:var(--text-secondary); border-radius:999px; padding:8px 12px; min-height:40px; font-size:var(--fs-small); cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
+  .pill.on { background:var(--bg-accent); color:var(--text-accent); border-color:var(--border-accent); font-weight:600; }
+  .pill[disabled] { opacity:.45; cursor:default; }
   .sitzung-zeile { border:1px solid var(--border); border-radius:var(--radius); background:var(--surface-1); padding:10px; margin-bottom:8px; }
   .sitzung-zeile.aktuell { border-color:var(--border-accent); background:var(--bg-accent); }
   .navbtn.active { background: var(--bg-accent); color: var(--text-accent); border-color: var(--border-accent); }
@@ -423,12 +441,6 @@
     -webkit-backdrop-filter: blur(12px);
     backdrop-filter: blur(12px);
   }
-  #scr-dashboard #dashboard-sticky-footer > div:first-child {
-    max-width: 560px;
-    padding: 7px 12px !important;
-    border: 1px solid rgba(198,113,57,.17);
-    background: #fbe7d8 !important;
-  }
   #scr-dashboard #dashboard-step-nav { max-width: 760px; }
   #scr-dashboard #dashboard-step-nav .row { gap: 10px !important; }
   #scr-dashboard #dashboard-step-nav .btn { min-height: 48px; padding: 12px 14px; font-size: 14px; }
@@ -484,7 +496,7 @@
 
   /* ===== Tafelansicht im eigenen Fenster (?ansicht=tafel): reine Projektionsansicht ===== */
   body.tafel-fenster .sticky-header, body.tafel-fenster .role-switch-mini, body.tafel-fenster #scr-tafel > .banner,
-  body.tafel-fenster #scr-tafel > .row, body.tafel-fenster #tafel-schritt-steuerung { display:none !important; }
+  body.tafel-fenster #scr-tafel > .row, body.tafel-fenster #tafel-schritt-steuerung, body.tafel-fenster .tafel-bereich { display:none !important; }
   body.tafel-fenster .app { max-width: none; }
   body.tafel-fenster .app > div[style*="padding:22px 16px 8px"] { display:none; }
   body.tafel-fenster #scr-tafel { padding: 28px 32px; }
@@ -529,13 +541,21 @@
   <div class="topbar">
     <b id="topbar-label" style="margin-right:0;">Demo</b>
     <span id="app-version" class="ts" style="font-size:10px;"></span>
-    <button class="navbtn btn-primary" id="sitzung-zurueck-btn" style="display:none; border:none;" onclick="show('heatmap')" title="Zurück zum Sitzplan mit Antwortübersicht der laufenden Sitzung"><i class="ti ti-arrow-back-up"></i> Zur laufenden Sitzung</button>
-    <button class="navbtn" id="tafel-fenster-btn" style="display:none;" onclick="oeffneTafelFenster()" title="Öffnet die Tafelansicht in einem eigenen Fenster, das Sie auf den Beamer oder das Smartboard ziehen können"><i class="ti ti-external-link"></i> Tafel in neuem Fenster</button>
   </div>
   <div class="lk-leiste" id="lk-leiste">
     <span class="lk-klasse" id="lk-leiste-klasse"><i class="ti ti-chalkboard"></i> </span>
     <button class="navbtn" onclick="zeigeOffeneSitzungen()" title="Alle noch nicht beendeten Sitzungen Ihres Klassenraums"><i class="ti ti-list-check"></i> Offene Sitzungen<span class="lk-badge leer" id="lk-offene-badge">0</span></button>
     <button class="navbtn" onclick="lkAbmeldenFrage()"><i class="ti ti-logout"></i> Abmelden</button>
+  </div>
+  <div class="sitzungs-streifen" id="sitzungs-streifen">
+    <span class="ss-text" id="ss-text"></span>
+    <button class="navbtn" id="ss-zur-sitzung" style="display:none;" onclick="show('heatmap')"><i class="ti ti-arrow-back-up"></i> Zur Sitzung</button>
+    <button class="navbtn btn-danger-outline" onclick="endSession()"><i class="ti ti-square-x"></i> Sitzung beenden</button>
+  </div>
+  <div class="ablauf-leiste" id="ablauf-leiste">
+    <button data-schritt="heatmap" onclick="show('heatmap')"><span class="nr">1</span> Antworten sammeln</button>
+    <button data-schritt="dashboard" onclick="show('dashboard')"><span class="nr">2</span> Gespräch vorbereiten</button>
+    <button data-schritt="tafel" onclick="show('tafel')"><span class="nr">3</span> Tafel ansehen</button>
   </div>
   </div>
 
@@ -625,7 +645,7 @@
       <div class="ts" id="aufgabe-kinder-status" style="font-size:var(--fs-small);">— Kinder: aufnahmefähig</div>
     </div>
     <div id="aufgabe-sitzplan-warning" class="banner" style="display:none;">
-      <i class="ti ti-alert-triangle"></i> Sitzplan noch nicht eingerichtet — die Sitzplatz-Heatmap kann während der Erarbeitung dann nichts anzeigen.
+      <i class="ti ti-alert-triangle"></i> Sitzplan noch nicht eingerichtet — die Antwortübersicht kann während der Erarbeitung dann nichts im Sitzplan anzeigen.
       <button class="navbtn" style="margin-top:6px;" onclick="show('sitzplan')">Zurück zum Sitzplan →</button>
     </div>
     <button class="btn btn-primary" onclick="startSitzung()"><i class="ti ti-player-play"></i> Sitzung starten</button>
@@ -729,8 +749,18 @@
       <i class="ti ti-info-circle" style="font-size:var(--fs-title); color:var(--text-accent); cursor:pointer;" onclick="zeigeHintergrundInfo()"></i>
     </div>
     <div class="banner" style="background:var(--bg-success); color:var(--text-success); margin-bottom:10px;">
-      Hier bereiten Sie das Plenumsgespräch vor: die empfohlene Abfolge übernehmen (und bei Bedarf Schritte tauschen/überspringen), oder die Tafel komplett frei gestalten.
-      <br><b>Hinweis:</b> In der Tafelansicht, die Sie den Lernenden zeigen, ist jeweils nur die Antwort der Lernenden zu sehen.
+      Hier bereiten Sie das Klassengespräch vor und führen es: Folgen Sie der empfohlenen Reihenfolge (Schritte lassen sich überspringen) oder wählen Sie die Antworten für die Tafel frei aus.
+      <br><b>Hinweis:</b> Auf der Tafel sehen die Kinder nur die Antworten, ohne Namen und ohne Einordnung.
+    </div>
+    <div class="card tafel-bereich" style="margin-bottom:12px;">
+      <div class="row" style="justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+        <div style="flex:1; min-width:200px;">
+          <div style="font-weight:600;">Tafel</div>
+          <div class="ts" style="font-size:var(--fs-micro);">Öffnet die Tafel in einem eigenen Fenster, das Sie auf Beamer oder Smartboard ziehen. Was die Klasse sieht, schalten Sie unten ein.</div>
+        </div>
+        <button class="btn btn-primary" style="width:auto;" onclick="zeigeAufTafel()"><i class="ti ti-presentation"></i> Auf Tafel zeigen</button>
+      </div>
+      <div style="margin-top:6px;"><span class="ts" style="font-size:var(--fs-micro); text-decoration:underline; cursor:pointer;" onclick="show('tafel')">Kein zweiter Bildschirm? Tafel auf diesem Gerät zeigen</span></div>
     </div>
 
     <!-- [NEU] "Alle Antworten ansehen" jetzt ganz oben, als eigenständiger,
@@ -772,36 +802,21 @@
       </div>
     </div>
 
-    <button class="btn btn-primary" style="margin-top:8px;" onclick="show('tafel')"><i class="ti ti-presentation"></i> Tafelansicht anzeigen (Erweitern-Modus)</button>
-    <button class="btn" style="margin-top:8px;" onclick="oeffneTafelFenster()"><i class="ti ti-external-link"></i> Tafelansicht in neuem Fenster öffnen</button>
-    <button class="btn" style="margin-top:8px;" onclick="show('heatmap')"><i class="ti ti-map-2"></i> Zurück zum Sitzplan mit Antwortübersicht</button>
-    <div style="margin-top:22px; padding-top:14px; border-top:1px dashed var(--border-strong);">
-      <button class="btn btn-danger-outline" onclick="endSession()"><i class="ti ti-square-x"></i> Sitzung beenden</button>
-    </div>
 
     <!-- [NEU] 5d/5e: Master-Schalter + Schritt-Navigation als sticky Footer -- bleiben beim
          Scrollen durch die Schritt-Karten immer erreichbar, statt in der Liste unterzugehen.
          Ein gemeinsamer Container für beide Tabs (nur der jeweils aktive Tab befüllt ihn). -->
     <div id="dashboard-sticky-footer" style="position:sticky; bottom:0; margin:18px -20px 0; padding:10px 20px calc(10px + env(safe-area-inset-bottom, 0px)); background:var(--surface-1); border-top:1px solid var(--border-strong); box-shadow:0 -4px 12px rgba(46,43,37,0.12);">
-      <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:var(--bg-accent); border-radius:var(--radius); margin-bottom:8px;">
-        <span style="font-size:var(--fs-small); color:var(--text-accent); font-weight:600;">Antworten auf der Tafel zeigen</span>
-        <label class="switch"><input type="checkbox" id="antworten-toggle" onchange="toggleAntwortenSichtbar(this.checked)"><span class="slider"></span></label>
-      </div>
+      <div class="tafel-status"></div>
+      <div class="tafel-schalter"></div>
       <div id="dashboard-step-nav"></div>
     </div>
   </div>
 
   <!-- TAFELANSICHT -->
   <div id="scr-tafel" class="screen">
-    <div class="banner"><i class="ti ti-projector"></i> Projektions-Ansicht. Über „Tafel in neuem Fenster“ (oben rechts) öffnen Sie sie in einem eigenen Fenster, das parallel zum Dashboard auf Beamer oder Smartboard läuft.</div>
-    <div class="row" style="justify-content:space-between; align-items:center; padding:8px 10px; background:var(--surface-2); border-radius:var(--radius); border:1px solid var(--border); margin-bottom:12px;">
-      <span style="font-size:var(--fs-small);">Antworten auf der Tafel zeigen</span>
-      <label class="switch"><input type="checkbox" id="antworten-toggle-tafel" onchange="toggleAntwortenSichtbar(this.checked)"><span class="slider"></span></label>
-    </div>
-    <div class="row" style="justify-content:space-between; align-items:center; padding:8px 10px; background:var(--surface-2); border-radius:var(--radius); border:1px solid var(--border); margin-bottom:12px;">
-      <span style="font-size:var(--fs-small);">Aufgabentext auf der Tafel zeigen</span>
-      <label class="switch"><input type="checkbox" id="aufgabe-toggle" onchange="toggleTafelAufgabe(this.checked)"><span class="slider"></span></label>
-    </div>
+    <div class="banner"><i class="ti ti-projector"></i> So sieht die Klasse die Tafel. Für Beamer oder Smartboard wählen Sie im Schritt „Gespräch vorbereiten“ die Taste „Auf Tafel zeigen“; dann läuft sie in einem eigenen Fenster.</div>
+    <div class="tafel-bereich" style="margin-bottom:12px;"><div class="tafel-status"></div><div class="tafel-schalter"></div></div>
     <div id="tafel-qr-section" style="display:none; text-align:center; background:var(--surface-2); border-radius:12px; padding:16px; margin-bottom:12px;">
       <div id="tafel-qr-hinweis" class="ts" style="font-size:var(--fs-small); margin-bottom:10px;">Mit dem Tablet: QR-Code scannen</div>
       <div id="tafel-qr-box" style="display:flex; justify-content:center; margin-bottom:10px;"></div>
@@ -815,21 +830,19 @@
     <div id="tafel-aufgabe" class="t" style="text-align:center; font-size:var(--fs-lead); font-weight:600; margin-bottom:12px; padding:10px; background:var(--surface-2); border-radius:12px; display:none;">6 T 2 H 42 Z 5 E</div>
     <div id="tafel-slots"></div>
     <div id="tafel-schritt-steuerung" class="row" style="justify-content:center; align-items:center; gap:10px; margin-top:14px; padding:10px; background:var(--surface-2); border-radius:var(--radius); border:1px solid var(--border);"></div>
-    <div class="row" style="justify-content:center; gap:8px; margin-top:14px;">
-      <button class="navbtn" onclick="show('heatmap')"><i class="ti ti-map-2"></i> zum Sitzplan mit Antwortübersicht</button>
-    </div>
   </div>
 
   <!-- HEATMAP -->
   <div id="scr-heatmap" class="screen">
-    <h2 class="scr-title">Sitzplan mit Antwortübersicht — Kinder arbeiten gerade</h2>
+    <h2 class="scr-title">Sitzplan: Wer hat geantwortet?</h2>
     <div class="card" style="text-align:center; background:var(--bg-accent);">
-      <div class="ts" style="font-size:var(--fs-micro);">Sitzungscode für die Kindgeräte</div>
+      <div class="ts" style="font-size:var(--fs-micro);">So treten Kinder bei: diese drei Bilder auf dem Kindgerät tippen</div>
       <div id="sitzungscode-anzeige" style="font-size:var(--fs-kid); font-weight:600; letter-spacing:6px; color:var(--text-accent);">⭐⭐⭐</div>
+      <button class="navbtn" id="qr-toggle-btn" style="margin-top:6px;" onclick="schalteTafelBeitritt()"><i class="ti ti-qrcode"></i> Beitritt auf Tafel zeigen</button>
     </div>
     <div id="heatmap-sitzplan-warning" class="banner" style="display:none;">
-      <i class="ti ti-alert-triangle"></i> Es ist noch kein Sitzplan eingerichtet — ohne Sitzplan kann die Heatmap Kinder nicht anzeigen.
-      <button class="navbtn" style="margin-top:6px;" onclick="show('sitzplan')">Zurück zum Sitzplan →</button>
+      <i class="ti ti-alert-triangle"></i> Es ist noch kein Sitzplan eingerichtet — ohne Sitzplan kann die Antwortübersicht die Kinder nicht anzeigen.
+      <button class="navbtn" style="margin-top:6px;" onclick="show('sitzplan')">Sitzplan einrichten →</button>
     </div>
     <div id="heatmap-missing-notice" class="banner" style="display:none;"></div>
 
@@ -856,9 +869,8 @@
     </div>
     <div id="antworten-liste" style="margin-bottom:12px;"></div>
 
-    <button class="btn" id="qr-toggle-btn" style="margin-bottom:8px;" onclick="toggleTafelQR()"><i class="ti ti-qrcode"></i> QR-Code auf Tafel anzeigen</button>
-    <button class="btn btn-primary" onclick="show('dashboard')">Weiter zum Dashboard (Plenum vorbereiten) →</button>
-    <div class="ts" style="font-size:var(--fs-micro); text-align:center; margin-top:6px;">Du musst nicht warten, bis alle fertig sind — schon wenige Antworten reichen für einen guten Einstieg.</div>
+    <button class="btn btn-primary" onclick="show('dashboard')">Weiter: Gespräch vorbereiten →</button>
+    <div class="ts" style="font-size:var(--fs-micro); text-align:center; margin-top:6px;">Sie müssen nicht warten, bis alle fertig sind — schon wenige Antworten reichen für einen guten Einstieg.</div>
   </div>
 
   <!-- VERWALTUNG -->
@@ -883,9 +895,9 @@
   <div id="scr-schnellanlage" class="screen">
     <button class="navbtn" style="margin-bottom:10px;" onclick="show('verwaltung')"><i class="ti ti-arrow-left"></i> Verwaltung</button>
     <h2 class="scr-title">Anzahl der Kinder</h2>
-    <div class="ts" style="font-size:var(--fs-small); margin-bottom:8px;">Wie viele Kinder hat die Klasse (1 bis 35)? Jedes Kind bekommt ein Symbol. Namen gibt es im Tool nicht; sie notierst du auf dem Sitzplan-Blatt von Hand.</div>
+    <div class="ts" style="font-size:var(--fs-small); margin-bottom:8px;">Wie viele Kinder hat die Klasse (1 bis 35)? Jedes Kind bekommt ein Symbol. Namen gibt es im Tool nicht; Sie notieren sie auf dem Sitzplan-Blatt von Hand.</div>
     <input type="number" id="schnellanlage-anzahl" min="1" max="35" step="1" style="width:100px; font-size:var(--fs-body); padding:8px;">
-    <div class="ts" style="font-size:var(--fs-micro); margin-top:6px;">Eine größere Zahl fügt weitere Kinder hinzu; alles Bestehende (Antworten, Einwilligung, Sitzplan) bleibt unverändert. Zum Verkleinern löschst du einzelne Kinder in der Verwaltung.</div>
+    <div class="ts" style="font-size:var(--fs-micro); margin-top:6px;">Eine größere Zahl fügt weitere Kinder hinzu; alles Bestehende (Antworten, Einwilligung, Sitzplan) bleibt unverändert. Zum Verkleinern löschen Sie einzelne Kinder in der Verwaltung.</div>
     <div id="schnellanlage-warnung" class="banner" style="display:none;"></div>
     <button class="btn btn-primary" style="margin-top:10px;" onclick="submitSchnellanlage()"><i class="ti ti-check"></i> Übernehmen → weiter zum Sitzplan</button>
   </div>
@@ -997,7 +1009,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_WOnHYkefrIzOY-tigGqPKg_Dvjf73Gc";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Version dieser Datei (JJJJ-MM-TT-NN). Bei JEDER Änderung hochzählen und im Änderungsprotokoll des Projektkontexts eintragen.
-const APP_VERSION = "2026-11-03-04";
+const APP_VERSION = "2026-11-05-01";
 (function(){ const el = document.getElementById('app-version'); if(el) el.textContent = 'v' + APP_VERSION; console.info('Denkwege', APP_VERSION); })();
 function getUrlParam(name){ return new URLSearchParams(window.location.search).get(name); }
 
@@ -1060,6 +1072,7 @@ function uebernehmeAntwort(row){
   if(row.symbol_id) state.heatmapStatus[row.symbol_id] = kat;
 }
 function aktualisierenAnsicht(){
+  aktualisiereSitzungsElemente();
   aktualisiereEmpfehlung();
   if(document.getElementById('scr-dashboard').classList.contains('visible')) renderDashboard();
   if(document.getElementById('scr-heatmap').classList.contains('visible')) renderHeatmap();
@@ -1904,17 +1917,12 @@ function show(id){
   document.getElementById('scr-'+id).classList.add('visible');
   document.getElementById('topbar-label').textContent = {
     start:"Start", "lk-login":"Anmelden", login:"Login", pool:"Aufgabenpool", aufgabe:"Aufgabe", symbolauswahl:"Kind: wer bist du?",
-    aufnahme:"Kind: Aufnahme", dashboard:"LK-Dashboard", tafel:"Tafelansicht", heatmap:"Sitzplan mit Antwortübersicht",
+    aufnahme:"Kind: Aufnahme", dashboard:"Gespräch vorbereiten", tafel:"Tafel auf diesem Gerät", heatmap:"Antworten sammeln",
     verwaltung:"Verwaltung", schnellanlage:"Kinder anlegen", sitzplan:"Sitzplan", lernverlauf:"Lernverlauf",
     "aufgaben-admin":"Aufgaben-Verwaltung"
   }[id] || "Demo";
-  const tfBtn = document.getElementById('tafel-fenster-btn');
-  if(tfBtn) tfBtn.style.display = ['aufgabe','dashboard','heatmap','tafel','sitzplan','verwaltung','pool'].includes(id) ? 'inline-flex' : 'none';
-  // Läuft eine Sitzung, führt dieser Knopf von jedem Verwaltungs-/Vorbereitungs-Bildschirm (z. B. Sitzplan, Verwaltung, Aufgabenpool) zurück zur Antwortübersicht.
-  const sitzungBtn = document.getElementById('sitzung-zurueck-btn');
-  if(sitzungBtn) sitzungBtn.style.display = (state.sessionActive && sitzungscode && !istKindGeraet
-    && !['heatmap','dashboard','tafel','symbolauswahl','aufnahme','code-eingabe','start','lk-login'].includes(id)) ? 'inline-flex' : 'none';
   aktualisiereLkLeiste(id);
+  aktualisiereSitzungsElemente(id);
   const role = (id==='symbolauswahl'||id==='aufnahme') ? 'kind' : 'lk';
   roleLastScreen[role] = id;
   document.getElementById('role-lk').classList.toggle('active', role==='lk');
@@ -2425,7 +2433,7 @@ function renderEmpfohlen(){
         </div>
       </div>`;
     }).join('');
-    const aktivLabel = state.empfAktivBlock < 0 ? 'noch kein Schritt auf der Tafel' : `Schritt ${state.empfAktivBlock+1} von ${sichtbar.length} auf der Tafel`;
+    const aktivLabel = state.empfAktivBlock < 0 ? `Noch kein Schritt auf der Tafel (${sichtbar.length} Schritte)` : `Schritt ${state.empfAktivBlock+1} von ${sichtbar.length}`;
     // [NEU] 8: "nächsten/vorherigen Schritt zeigen" ausgrauen, sobald es keinen weiteren
     // Schritt in diese Richtung gibt -- vorher blieb der Button aktiv aussehend, obwohl er
     // ohne neue Antworten wirkungslos war.
@@ -2433,8 +2441,8 @@ function renderEmpfohlen(){
     const keinNaechster = state.empfAktivBlock >= sichtbar.length - 1;
     stepNav.innerHTML = `<div class="ts" style="font-size:var(--fs-micro); margin-bottom:6px;">${aktivLabel}</div>
       <div class="row" style="gap:8px;">
-        <button class="btn" ${keinVorheriger?'disabled':''} onclick="seqStep(-1)"><i class="ti ti-eye-off"></i> vorherigen Schritt zeigen</button>
-        <button class="btn btn-primary" ${keinNaechster?'disabled':''} onclick="seqStep(1)"><i class="ti ti-eye"></i> nächsten Schritt zeigen</button>
+        <button class="btn" ${keinVorheriger?'disabled':''} onclick="seqStep(-1)"><i class="ti ti-chevron-left"></i> Zurück</button>
+        <button class="btn btn-primary" ${keinNaechster?'disabled':''} onclick="seqStep(1)">Nächster Schritt <i class="ti ti-chevron-right"></i></button>
       </div>`;
   }
   const begrHtml = sichtbar.length
@@ -2519,10 +2527,10 @@ function renderFrei(){
   const keinVorheriger = state.visibleCount.frei <= 0;
   const keinNaechster = state.visibleCount.frei >= slotIds.length;
   stepNav.innerHTML = `
-    <div class="ts" style="font-size:var(--fs-micro); margin-bottom:6px;">${state.visibleCount.frei} von ${slotIds.length} auf der Tafel sichtbar</div>
+    <div class="ts" style="font-size:var(--fs-micro); margin-bottom:6px;">${state.visibleCount.frei} von ${slotIds.length} ausgewählten Antworten sichtbar</div>
     <div class="row" style="gap:8px;">
-      <button class="btn" ${keinVorheriger?'disabled':''} onclick="seqStep(-1)"><i class="ti ti-eye-off"></i> vorherige verbergen</button>
-      <button class="btn btn-primary" ${keinNaechster?'disabled':''} onclick="seqStep(1)"><i class="ti ti-eye"></i> nächste zuschalten</button>
+      <button class="btn" ${keinVorheriger?'disabled':''} onclick="seqStep(-1)"><i class="ti ti-chevron-left"></i> Antwort zurücknehmen</button>
+      <button class="btn btn-primary" ${keinNaechster?'disabled':''} onclick="seqStep(1)">Nächste Antwort zeigen <i class="ti ti-chevron-right"></i></button>
     </div>`;
 }
 function renderDashboard(){
@@ -2540,11 +2548,11 @@ function renderDashboard(){
   renderPool();
   renderTafel();
   renderLegende('kategorie-legende', false, true);
-  document.getElementById('antworten-toggle').checked = state.answersVisibleOnTafel;
-  const tafelBtn = document.getElementById('antworten-toggle-tafel');
-  if(tafelBtn) tafelBtn.checked = state.answersVisibleOnTafel;
+  aktualisiereSitzungsElemente();
 }
 function seqStep(dir){
+  // Wer „Nächster Schritt“ wählt, will etwas sehen: Antworten einschalten und Beitritts-Anzeige beenden.
+  if(dir > 0 && (!state.answersVisibleOnTafel || qrAufTafel)){ state.answersVisibleOnTafel = true; qrAufTafel = false; }
   if(state.activeTab === 'empfohlen'){
     const max = state.empfBloecke.filter(b=>!b.uebersprungen).length;
     state.empfAktivBlock = Math.max(-1, Math.min(max-1, state.empfAktivBlock + dir));
@@ -2673,10 +2681,68 @@ function showRechtliches(art){
 let qrAufTafel = false;
 function toggleTafelQR(){
   qrAufTafel = !qrAufTafel;
-  document.getElementById('qr-toggle-btn').innerHTML = qrAufTafel
-    ? '<i class="ti ti-qrcode-off"></i> QR-Code auf Tafel ausblenden'
-    : '<i class="ti ti-qrcode"></i> QR-Code auf Tafel anzeigen';
-  show('tafel');
+  renderTafel();
+}
+// [NEU 2026-11-05-01] Schalter, Status und „Auf Tafel zeigen“ (UX Paket 1). Alle Tafel-Schalter stehen an EINER Stelle
+// (Dashboard-Fuß und Tafel-Bildschirm), die Anzeige „Beitritt“ (QR-Code) hat Vorrang vor Aufgabe und Antworten.
+function zeigeAufTafel(){
+  if(tafelKanal) oeffneTafelFenster(); else show('tafel');
+}
+function schalteTafelAufgabe(){ toggleTafelAufgabe(!tafelAufgabeSichtbar); }
+function schalteTafelAntworten(){ toggleAntwortenSichtbar(!state.answersVisibleOnTafel); }
+function schalteTafelBeitritt(){
+  const an = !qrAufTafel;
+  qrAufTafel = an;
+  if(an) zeigeAufTafel(); // Beitritt wird auf der Tafel gezeigt: Fenster öffnen bzw. in den Vordergrund holen
+  renderTafel();
+}
+function tafelStatusHtml(){
+  if(qrAufTafel) return 'Die Tafel zeigt: <b>Beitritt</b> (QR-Code und drei Bilder)';
+  const teile = [];
+  if(tafelAufgabeSichtbar) teile.push('<b>Aufgabe</b>');
+  if(!state.answersVisibleOnTafel) teile.push('Antworten ausgeblendet');
+  else if(state.activeTab === 'empfohlen'){
+    const n = state.empfBloecke.filter(b=>!b.uebersprungen).length;
+    teile.push(state.empfAktivBlock < 0 ? 'noch kein Schritt' : `<b>Schritt ${state.empfAktivBlock+1} von ${n}</b>`);
+  } else {
+    teile.push(`<b>${state.visibleCount.frei} von ${state.slots.frei.length}</b> Antworten`);
+  }
+  return 'Die Tafel zeigt: ' + teile.join(' · ');
+}
+function tafelSchalterRender(){
+  const pill = (an, icon, text, fn, aus) => `<button class="pill ${an?'on':''}" ${aus?'disabled':''} aria-pressed="${an}" onclick="${fn}"><i class="ti ${an?'ti-check':icon}"></i> ${text}</button>`;
+  const html = '<span class="ts-label">Auf der Tafel zeigen:</span>' +
+    pill(tafelAufgabeSichtbar && !qrAufTafel, 'ti-file-text', 'Aufgabe', 'schalteTafelAufgabe()', false) +
+    pill(state.answersVisibleOnTafel && !qrAufTafel, 'ti-messages', 'Antworten', 'schalteTafelAntworten()', false) +
+    pill(qrAufTafel, 'ti-qrcode', 'Beitritt (QR-Code)', 'schalteTafelBeitritt()', false);
+  document.querySelectorAll('.tafel-schalter').forEach(el => { el.innerHTML = html; });
+  const st = tafelStatusHtml();
+  document.querySelectorAll('.tafel-status').forEach(el => { el.innerHTML = st; });
+  const qb = document.getElementById('qr-toggle-btn');
+  if(qb) qb.innerHTML = qrAufTafel ? '<i class="ti ti-qrcode-off"></i> Beitritt auf Tafel ausblenden' : '<i class="ti ti-qrcode"></i> Beitritt auf Tafel zeigen';
+}
+// Sitzungsstreifen (Code, Fortschritt, Beenden) und Ablaufleiste (1 Antworten – 2 Gespräch – 3 Tafel)
+function aktualisiereSitzungsElemente(id){
+  if(!id){ const v = document.querySelector('.screen.visible'); id = v ? v.id.replace(/^scr-/,'') : ''; }
+  const laeuft = state.sessionActive && sitzungscode && !istKindGeraet && !istTafelFenster;
+  const ablauf = ['heatmap','dashboard','tafel'];
+  const streifen = document.getElementById('sitzungs-streifen');
+  if(streifen){
+    const zeigen = laeuft && !['start','lk-login','symbolauswahl','aufnahme','code-eingabe'].includes(id);
+    streifen.classList.toggle('sichtbar', !!zeigen);
+    if(zeigen){
+      const teiln = SYMBOLS.filter(k => consentState[k.id] !== false);
+      const fertig = teiln.filter(k => { const st = state.heatmapStatus[k.id]; return st && st !== 'laeuft'; }).length;
+      document.getElementById('ss-text').textContent = `Sitzung läuft · ${codeAlsSymbole(sitzungscode)} · ${fertig} von ${teiln.length} Kindern haben geantwortet`;
+      document.getElementById('ss-zur-sitzung').style.display = ablauf.includes(id) ? 'none' : 'inline-flex';
+    }
+  }
+  const leiste = document.getElementById('ablauf-leiste');
+  if(leiste){
+    const zeigen = laeuft && ablauf.includes(id);
+    leiste.classList.toggle('sichtbar', !!zeigen);
+    leiste.querySelectorAll('button').forEach(b => b.classList.toggle('aktiv', b.dataset.schritt === id));
+  }
 }
 // (renderTafelQR ist in tafelZeichnen() aufgegangen -- s. Block "Tafelansicht im eigenen Fenster")
 function addSlot(){
@@ -2907,10 +2973,7 @@ function toggleSlotFromDetail(){
 }
 function toggleAntwortenSichtbar(checked){
   state.answersVisibleOnTafel = checked;
-  const btn1 = document.getElementById('antworten-toggle');
-  const btn2 = document.getElementById('antworten-toggle-tafel');
-  if(btn1) btn1.checked = checked;
-  if(btn2) btn2.checked = checked;
+  if(checked) qrAufTafel = false; // Antworten einschalten beendet die Beitritts-Anzeige
   renderTafel();
 }
 // =====================================================================
@@ -3012,6 +3075,8 @@ function tafelZeichnen(m){
 function renderTafel(){
   if(istTafelFenster) return; // das Tafel-Fenster zeichnet nur, was ihm das Dashboard-Fenster schickt
   renderTafelSteuerung();
+  tafelSchalterRender();
+  aktualisiereSitzungsElemente();
   tafelZeichnen(tafelModell());
   tafelSenden();
 }
@@ -3034,7 +3099,7 @@ function initTafelFenster(){
   document.body.classList.add('tafel-fenster');
   document.title = 'Denkwege – Tafel';
   show('tafel');
-  document.getElementById('tafel-slots').innerHTML = '<div class="ts" style="text-align:center; padding:24px;">Warte auf das Dashboard-Fenster …</div>';
+  document.getElementById('tafel-slots').innerHTML = '<div class="ts" style="text-align:center; padding:24px;">Warte auf das Fenster „Gespräch vorbereiten“ …</div>';
   const leiste = document.createElement('div');
   leiste.id = 'tafel-fenster-leiste';
   leiste.innerHTML = '<span id="tafel-fenster-status"></span><button class="navbtn" id="tafel-vollbild-btn"><i class="ti ti-maximize"></i> Vollbild</button>';
@@ -3057,7 +3122,7 @@ function initTafelFenster(){
   hallo();
   const takt = setInterval(() => {
     if(empfangen){ clearInterval(takt); return; }
-    document.getElementById('tafel-fenster-status').textContent = 'Dashboard-Fenster nicht gefunden – bitte dort „Tafel in neuem Fenster“ tippen.';
+    document.getElementById('tafel-fenster-status').textContent = 'Dashboard-Fenster nicht gefunden – bitte dort „Auf Tafel zeigen“ tippen.';
     hallo();
   }, 2000);
 }
@@ -3079,18 +3144,13 @@ function renderTafelSteuerung(){
     text = `${state.visibleCount.frei} von ${state.slots.frei.length} sichtbar`;
   }
   el.innerHTML = `
-    <button class="btn" style="flex:1;" onclick="seqStep(-1)"><i class="ti ti-chevron-left"></i> vorheriger Schritt</button>
+    <button class="btn" style="flex:1;" onclick="seqStep(-1)"><i class="ti ti-chevron-left"></i> Zurück</button>
     <span class="ts" style="font-size:var(--fs-small); white-space:nowrap;">${text}</span>
-    <button class="btn btn-primary" style="flex:1;" onclick="seqStep(1)">nächster Schritt <i class="ti ti-chevron-right"></i></button>`;
+    <button class="btn btn-primary" style="flex:1;" onclick="seqStep(1)">Nächster Schritt <i class="ti ti-chevron-right"></i></button>`;
 }
 function toggleTafelAufgabe(checked){
-  if(qrAufTafel){
-    qrAufTafel = false;
-    document.getElementById('qr-toggle-btn').innerHTML = '<i class="ti ti-qrcode"></i> QR-Code auf Tafel anzeigen';
-  }
+  if(checked) qrAufTafel = false; // Aufgabe einschalten beendet die Beitritts-Anzeige
   tafelAufgabeSichtbar = checked;
-  const toggle = document.getElementById('aufgabe-toggle');
-  if(toggle) toggle.checked = checked;
   renderTafel();
 }
 // [NEU] Verteilung der drei didaktischen Funktionen über alle bisher eingegangenen

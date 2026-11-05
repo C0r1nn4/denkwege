@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Denkwege</title>
-<meta name="app-version" content="2026-11-03-02">
+<meta name="app-version" content="2026-11-03-03">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
@@ -679,6 +679,7 @@
         <button id="wahl-nein" class="btn" style="width:130px; padding:20px; font-size:var(--fs-lead); font-weight:600;" onclick="waehleJaNein('nein')">Nein</button>
       </div>
     </div>
+    <div id="kid-debug" class="ts" style="font-size:12px; margin-top:18px; text-align:left; color:var(--text-muted); white-space:pre-wrap;"></div>
     <div id="begruendung-bereich">
     <div class="row" style="justify-content:center; gap:32px; margin: 22px 0;">
       <div style="text-align:center;">
@@ -996,7 +997,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_WOnHYkefrIzOY-tigGqPKg_Dvjf73Gc";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Version dieser Datei (JJJJ-MM-TT-NN). Bei JEDER Änderung hochzählen und im Änderungsprotokoll des Projektkontexts eintragen.
-const APP_VERSION = "2026-11-03-02";
+const APP_VERSION = "2026-11-03-03";
 (function(){ const el = document.getElementById('app-version'); if(el) el.textContent = 'v' + APP_VERSION; console.info('Denkwege', APP_VERSION); })();
 function getUrlParam(name){ return new URLSearchParams(window.location.search).get(name); }
 
@@ -2033,7 +2034,7 @@ function confirmSymbol(){
     document.getElementById('begruendung-bereich').style.display = 'block';
   }
   renderSprachauswahl();
-  setSprache('de'); kidSprachWahl = null; // Anzeige zuerst Deutsch; Erkennungssprache bleibt die der Lehrkraft, bis das Kind selbst wählt
+  setSprache('de'); kidSprachWahl = null; aktualisiereKidDebug(); // Anzeige zuerst Deutsch; Erkennungssprache bleibt die der Lehrkraft, bis das Kind selbst wählt
   if(state.selectedSymbol) state.heatmapStatus[state.selectedSymbol.id] = 'laeuft';
 }
 function waehleJaNein(wahl){
@@ -2132,6 +2133,7 @@ async function toggleRecord(){
         else text = "(Spracherkennung hat nichts erkannt -- bitte nochmal versuchen oder tippen)";
         letzterAudioPfad = daten.audio_pfad || null;
         letzteSprache = daten.sprache || null;
+        letzterRohtext = text;
       } catch(e){
         text = "(Spracherkennung fehlgeschlagen -- bitte nochmal versuchen oder tippen)";
       }
@@ -2139,10 +2141,25 @@ async function toggleRecord(){
       document.getElementById('review-area').style.display='block';
       document.getElementById('transcript-edit').value = text;
       zeigeUebersetzungImReview(text);
+      aktualisiereKidDebug();
     };
   }
 }
 // [NEU 2026-11-03-02] Zeigt unter dem Originaltext die deutsche Übersetzung (nur wenn eine andere Sprache erkannt/gewählt wurde).
+const DEBUG_KIND = /[?&]debug=1/.test(location.search);
+let letzterRohtext = '';
+function aktualisiereKidDebug(){
+  const el = document.getElementById('kid-debug'); if(!el) return;
+  let t = 'Version ' + APP_VERSION;
+  if(DEBUG_KIND){
+    t += '\nSprache laut Lehrkraft: ' + ((state.selectedSymbol && childLanguage[state.selectedSymbol.id]) || '-')
+      + ' | am Gerät gewählt: ' + (kidSprachWahl || '-') + ' | an Erkennung gesendet: ' + kindSprache()
+      + '\nÜbersetzungen der Aufgabe: ' + ((AUFGABE_UEBERSETZUNGEN || []).map(u=>u.sprache).join(', ') || 'keine')
+      + ' | Aufgabe: ' + AUFGABE_ID
+      + '\nErkannte Sprache der Aufnahme: ' + (letzteSprache || '-') + ' | Rohtext der Erkennung: ' + (letzterRohtext || '-');
+  }
+  el.textContent = t;
+}
 let reviewUebersetzungsId = 0;
 async function zeigeUebersetzungImReview(text){
   const box = document.getElementById('review-de'), out = document.getElementById('review-de-text');
@@ -2574,7 +2591,7 @@ function renderSprachauswahl(){
   });
 }
 function setSprache(lang){
-  kidSprachWahl = lang;
+  kidSprachWahl = lang; aktualisiereKidDebug();
   document.getElementById('aufnahme-anweisung').textContent = uebersetzungFuerSprache(lang) || AUFGABE_TEXT;
   sprachenFuerKind().forEach(k=>{
     const btn = document.getElementById('sprache-'+k);

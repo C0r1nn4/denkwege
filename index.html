@@ -250,6 +250,12 @@
     outline-offset: 3px;
   }
   .kid-symbol-btn .emoji { font-size: clamp(34px, 8vw, 46px); line-height: 1.15; }
+  /* [NEU 2026-11-05-07] Symbolzustände: frei / arbeitet gerade (Schloss) / hat geantwortet (Haken). Ausgegraut, aber antippbar (mit Rückfrage). */
+  .kid-symbol-btn { position: relative; }
+  .kid-symbol-btn.ist-belegt, .kid-symbol-btn.ist-fertig { filter: grayscale(1); opacity: .5; box-shadow: none; }
+  .kid-symbol-btn .zustand-badge { display:none; position:absolute; right:6px; bottom:6px; width:26px; height:26px; border-radius:50%; align-items:center; justify-content:center; font-size:15px; line-height:1; background: var(--surface-1, #fff); border:1.5px solid var(--border-strong, var(--border)); filter:none; }
+  .kid-symbol-btn.ist-belegt .zustand-badge.b-belegt, .kid-symbol-btn.ist-fertig .zustand-badge.b-fertig { display:flex; }
+  #symbol-legende { display:none; margin-top:4px; font-size:var(--fs-small); }
   .kid-symbol-btn .name { font-size: clamp(12px, 3.4vw, 15px); overflow-wrap: anywhere; }
   #scr-aufnahme > .card {
     text-align: left;
@@ -660,6 +666,7 @@
       <div class="ts" style="font-size:var(--fs-small); margin-top:8px;">Gerade läuft keine Aufgabe. Warte, bis deine Lehrkraft startet.</div>
     </div>
     <div class="grid4" id="symbol-grid" style="margin-bottom:16px;"></div>
+    <div id="symbol-legende" class="ts">🔒 jemand ist gerade dran · ✓ schon fertig. Graue Bilder kannst du trotzdem antippen.</div>
   </div>
 
   <!-- [NEU] "Bist du das?" jetzt als echtes Pop-up statt als Karte unterhalb der
@@ -668,7 +675,7 @@
   <div class="modal-bg" id="symbol-confirm">
     <div class="modal" style="text-align:center;">
       <div id="symbol-confirm-icon" style="font-size:88px; margin-bottom:10px;"></div>
-      <div style="font-size:var(--fs-lead); font-weight:600; margin-bottom:18px;">Bist du das?</div>
+      <div id="symbol-confirm-text" style="font-size:var(--fs-lead); font-weight:600; margin-bottom:18px;">Bist du das?</div>
       <div class="row" style="justify-content:center; gap:40px;">
         <div style="text-align:center;">
           <button class="kid-big-icon-btn" style="border:2px solid var(--border-strong); background:var(--surface-2);" onclick="cancelSymbol()"><i class="ti ti-x" style="font-size:36px;"></i></button>
@@ -1009,7 +1016,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_WOnHYkefrIzOY-tigGqPKg_Dvjf73Gc";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Version dieser Datei (JJJJ-MM-TT-NN). Bei JEDER Änderung hochzählen und im Änderungsprotokoll des Projektkontexts eintragen.
-const APP_VERSION = "2026-11-05-06";
+const APP_VERSION = "2026-11-05-07";
 (function(){ const el = document.getElementById('app-version'); if(el) el.textContent = 'v' + APP_VERSION; console.info('Denkwege', APP_VERSION); })();
 function getUrlParam(name){ return new URLSearchParams(window.location.search).get(name); }
 
@@ -1617,6 +1624,7 @@ async function lkAbmelden(){
   lkEingeloggt = false;
   // Lokalen Sitzungszustand aufräumen (die Sitzung selbst bleibt in der Datenbank, sofern nicht beendet).
   if(antwortKanal){ try { sb.removeChannel(antwortKanal); } catch(e){} antwortKanal = null; }
+  stoppeSymbolKanal();
   state.sessionActive = false; sitzungscode = null;
   sitzplanState.placed = {}; sitzplanState.armed = null;
   if(!istKindGeraet) history.replaceState(null, '', window.location.pathname);
@@ -1714,7 +1722,7 @@ async function beendeSitzungen(codes){
   const { error } = await sb.from('sitzungen').update({ beendet_am: new Date().toISOString() }).in('code', codes);
   if(error){ alert('Sitzung konnte nicht beendet werden: ' + error.message); return false; }
   if(codes.includes(sitzungscode)){
-    state.sessionActive = false;
+    state.sessionActive = false; stoppeSymbolKanal();
     if(antwortKanal){ try { sb.removeChannel(antwortKanal); } catch(e){} antwortKanal = null; }
     sitzungscode = null;
     history.replaceState(null, '', window.location.pathname);
@@ -1947,6 +1955,8 @@ function show(id){
   document.getElementById('role-lk').classList.toggle('active', role==='lk');
   document.getElementById('role-kind').classList.toggle('active', role==='kind');
   if(id==='code-eingabe'){ codeEingabe = []; renderCodeEingabe(); }
+  // [NEU -07] Symbol melden, solange das Kind in der Aufnahme ist; beim Verlassen freigeben
+  if(id==='aufnahme' && state.selectedSymbol && sitzungscode) meldeSymbol(state.selectedSymbol.id); else if(id!=='aufnahme' && meinSymbolId) meldeSymbol(null);
   if(id==='symbolauswahl') renderSymbols();
   if(id==='dashboard'){ aktualisiereEmpfehlung(); renderDashboard(); }
   if(id==='tafel') renderTafel();
@@ -2029,17 +2039,122 @@ function renderSymbols(){
   SYMBOLS.forEach(s=>{
     const b = document.createElement('button');
     b.className='kid-symbol-btn';
-    b.innerHTML = `<span class="emoji">${s.icon}</span>`;
+    b.setAttribute('data-sid', s.id);
+    b.innerHTML = `<span class="emoji">${s.icon}</span><span class="zustand-badge b-belegt" aria-hidden="true">🔒</span><span class="zustand-badge b-fertig" aria-hidden="true">✓</span>`;
     b.onclick = ()=>selectSymbol(s);
     g.appendChild(b);
   });
   document.getElementById('symbol-confirm').classList.remove('visible');
+  aktualisiereSymbolZustand();
+  starteSymbolKanal();          // [NEU -07] nur mit echtem Sitzungscode
+  ladeBeantworteteSymbole();
 }
 function selectSymbol(s){
   state.selectedSymbol = s;
   document.getElementById('symbol-confirm').classList.add('visible');
   document.getElementById('symbol-confirm-icon').textContent = s.icon;
+  // [NEU -07] Ausgegraute Symbole bleiben wählbar, aber mit Rückfrage (Kind hat das Gerät gewechselt, Gerät hing, falsch angetippt ...)
+  const t = document.getElementById('symbol-confirm-text');
+  const z = symbolZustandVon(s.id);
+  t.textContent = z === 'fertig' ? 'Dieses Bild hat schon geantwortet. Bist du das trotzdem?'
+               : z === 'belegt' ? 'Jemand ist gerade mit diesem Bild dran. Bist du das trotzdem?'
+               : 'Bist du das?';
 }
+// ===== [NEU 2026-11-05-07] UX Paket 2: Symbolzustände auf Kindgeräten =====
+// frei | belegt ("arbeitet gerade", über Realtime-Presence, läuft nach ~2,5 Min ohne Aktivität von selbst ab) | fertig (hat in dieser Sitzung geantwortet).
+// Nichts davon wird gespeichert, außer den Antworten selbst. Fällt Realtime oder die SQL-Funktion aus, sind alle Symbole einfach wie bisher frei.
+const SYMBOL_BELEGT_MS = 150000, SYMBOL_HERZSCHLAG_MS = 15000, SYMBOL_AKTIV_MS = 120000;
+const meineGeraeteId = 'g' + Math.random().toString(36).slice(2, 10);
+let symbolKanal = null, symbolKanalCode = null, symbolKanalBereit = false;
+let meinSymbolId = null, letzteAktivitaet = Date.now();
+const symbolBelegtVon = {};            // gesehen[geraeteId+'|'+symbolId] = { zuletzt, lokal }
+let symbolBelegt = {};                 // symbolId -> true
+const symbolBeantwortet = new Set();
+['pointerdown','keydown','input'].forEach(ev => document.addEventListener(ev, () => { letzteAktivitaet = Date.now(); }, true));
+function symbolFertigMelden(id){
+  symbolBeantwortet.add(id); meldeSymbol(null); aktualisiereSymbolZustand();
+  if(symbolKanal && symbolKanalBereit){ try { symbolKanal.send({ type: 'broadcast', event: 'fertig', payload: { symbol_id: id } }); } catch(e){} }
+}
+function symbolZustandVon(id){ return symbolBeantwortet.has(id) ? 'fertig' : (symbolBelegt[id] ? 'belegt' : 'frei'); }
+function aktualisiereSymbolZustand(){
+  const g = document.getElementById('symbol-grid'); if(!g) return;
+  let irgendeins = false;
+  g.querySelectorAll('[data-sid]').forEach(b => {
+    const id = b.getAttribute('data-sid'), z = symbolZustandVon(id);
+    b.classList.toggle('ist-fertig', z === 'fertig');
+    b.classList.toggle('ist-belegt', z === 'belegt');
+    if(z !== 'frei') irgendeins = true;
+    const sym = SYMBOLS.find(x => x.id === id);
+    b.setAttribute('aria-label', (sym ? sym.icon + ' ' : '') + (z === 'fertig' ? '– hat schon geantwortet' : z === 'belegt' ? '– jemand ist gerade dran' : ''));
+  });
+  const l = document.getElementById('symbol-legende'); if(l) l.style.display = irgendeins ? 'block' : 'none';
+}
+function berechneBelegt(){
+  const jetzt = Date.now(); const neu = {};
+  Object.values(symbolBelegtVon).forEach(e => { if(jetzt - e.lokal < SYMBOL_BELEGT_MS) neu[e.symbol] = true; });
+  symbolBelegt = neu; aktualisiereSymbolZustand();
+}
+function starteSymbolKanal(){
+  if(!sitzungscode || !state.sessionActive) return;
+  if(symbolKanal && symbolKanalCode === sitzungscode) return;
+  stoppeSymbolKanal();
+  try {
+    symbolKanalCode = sitzungscode;
+    symbolKanal = sb.channel('symbole-' + sitzungscode, { config: { presence: { key: meineGeraeteId }, broadcast: { self: false } } });
+    symbolKanal
+      .on('presence', { event: 'sync' }, () => {
+        const st = symbolKanal.presenceState(), jetzt = Date.now(), aktuell = {};
+        Object.entries(st).forEach(([key, metas]) => {
+          if(key === meineGeraeteId) return;
+          (metas || []).forEach(m => {
+            if(!m || !m.symbol_id) return;
+            const k = key + '|' + m.symbol_id; aktuell[k] = true;
+            const alt = symbolBelegtVon[k];
+            // Uhren verschiedener Geräte weichen ab: maßgeblich ist, wann DIESES Gerät die letzte Meldung gesehen hat.
+            if(!alt) symbolBelegtVon[k] = { symbol: m.symbol_id, zuletzt: m.zuletzt, lokal: jetzt };
+            else if(alt.zuletzt !== m.zuletzt){ alt.zuletzt = m.zuletzt; alt.lokal = jetzt; }
+          });
+        });
+        Object.keys(symbolBelegtVon).forEach(k => { if(!aktuell[k]) delete symbolBelegtVon[k]; });   // Gerät hat sich abgemeldet / Verbindung weg
+        berechneBelegt();
+      })
+      .on('broadcast', { event: 'fertig' }, ({ payload }) => {
+        if(payload && payload.symbol_id){ symbolBeantwortet.add(payload.symbol_id); aktualisiereSymbolZustand(); }
+      })
+      .subscribe(status => {
+        if(status === 'SUBSCRIBED'){ symbolKanalBereit = true; meldeSymbol(meinSymbolId); }
+      });
+  } catch(e){ symbolKanal = null; symbolKanalBereit = false; }
+}
+function stoppeSymbolKanal(){
+  if(symbolKanal){ try { sb.removeChannel(symbolKanal); } catch(e){} }
+  symbolKanal = null; symbolKanalCode = null; symbolKanalBereit = false; meinSymbolId = null;
+  Object.keys(symbolBelegtVon).forEach(k => delete symbolBelegtVon[k]); symbolBelegt = {}; symbolBeantwortet.clear();
+}
+// Eigenes Symbol melden (id) bzw. freigeben (null).
+function meldeSymbol(id){
+  meinSymbolId = id || null;
+  if(!symbolKanal || !symbolKanalBereit) return;
+  try {
+    if(meinSymbolId) symbolKanal.track({ symbol_id: meinSymbolId, zuletzt: Date.now() });
+    else symbolKanal.untrack();
+  } catch(e){ /* ignorieren */ }
+}
+async function ladeBeantworteteSymbole(){
+  if(!sitzungscode || !state.sessionActive) return;
+  try {
+    const { data, error } = await sb.rpc('hole_beantwortete_symbole_fuer_code', { p_code: sitzungscode });
+    if(error || !data) return;   // SQL-Funktion fehlt (Symbolzustand.sql nicht ausgeführt): alles bleibt frei
+    data.forEach(r => symbolBeantwortet.add(r.symbol_id));
+    aktualisiereSymbolZustand();
+  } catch(e){ /* ignorieren */ }
+}
+// Herzschlag: solange das Kind in der Aufnahme aktiv ist, wird "arbeitet gerade" erneuert; wer 2 Minuten nichts tut, gibt das Symbol still frei.
+setInterval(() => {
+  if(meinSymbolId && Date.now() - letzteAktivitaet < SYMBOL_AKTIV_MS) meldeSymbol(meinSymbolId);
+  if(symbolKanal) berechneBelegt();
+  if(sitzungscode && document.getElementById('scr-symbolauswahl') && document.getElementById('scr-symbolauswahl').classList.contains('visible')) ladeBeantworteteSymbole();
+}, SYMBOL_HERZSCHLAG_MS);
 function cancelSymbol(){ document.getElementById('symbol-confirm').classList.remove('visible'); }
 function confirmSymbol(){
   document.getElementById('symbol-confirm').classList.remove('visible');
@@ -2307,6 +2422,7 @@ async function finishAnswer(){
     // Fehlen die neuen Spalten noch (Kindsprache_speichern.sql nicht ausgeführt), Antwort ohne sie speichern, damit nichts verloren geht.
     if(error && /transkript_(sprache|de)/.test(error.message || '')) ({ error } = await sb.from('antworten').insert(zeile));
     if(error) alert('Antwort konnte nicht gespeichert werden: ' + error.message + '\n(Sitzungscode: ' + sitzungscode + ')');
+    else if(state.selectedSymbol) symbolFertigMelden(state.selectedSymbol.id);   // [NEU -07] Symbol auf allen Kindgeräten ausgrauen
   } else {
     // Kein Sitzungscode vorhanden (Demo-Vorführung ohne echte Sitzung): nur lokal
     state.pool = state.pool.filter(p=>p.name!==name);

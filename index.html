@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Denkwege</title>
-<meta name="app-version" content="2026-11-05-01">
+<meta name="app-version" content="2026-11-05-02">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
@@ -1009,7 +1009,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_WOnHYkefrIzOY-tigGqPKg_Dvjf73Gc";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Version dieser Datei (JJJJ-MM-TT-NN). Bei JEDER Änderung hochzählen und im Änderungsprotokoll des Projektkontexts eintragen.
-const APP_VERSION = "2026-11-05-01";
+const APP_VERSION = "2026-11-05-02";
 (function(){ const el = document.getElementById('app-version'); if(el) el.textContent = 'v' + APP_VERSION; console.info('Denkwege', APP_VERSION); })();
 function getUrlParam(name){ return new URLSearchParams(window.location.search).get(name); }
 
@@ -1070,6 +1070,25 @@ function uebernehmeAntwort(row){
   const kat = (row.kategorie_lk && CATS[row.kategorie_lk]) ? row.kategorie_lk : row.kategorie;
   state.pool.push({name, id: row.id, cat: kat, kiCat: row.kategorie, quote: row.transkript, quoteDe: row.transkript_de || null, sprache: row.transkript_sprache || 'de', audioPfad: row.audio_pfad || null, wahl: row.antwort_wahl || null});
   if(row.symbol_id) state.heatmapStatus[row.symbol_id] = kat;
+  // Fehlt die Übersetzung (Spalten fehlen, Übersetzung ausgefallen, Antwort älter), wird sie auf dem Lehrkraft-Gerät nachgeholt.
+  const neu = state.pool[state.pool.length - 1];
+  if(neu && !neu.quoteDe){
+    const kindSp = symbolEntry ? childLanguage[symbolEntry.id] : null;
+    const hinweis = (neu.sprache && neu.sprache !== 'de') ? neu.sprache : ((kindSp && kindSp !== 'de') ? kindSp : null);
+    if(hinweis) uebersetzeFuerLehrkraft(neu, hinweis);
+  }
+}
+async function uebersetzeFuerLehrkraft(p, hinweis){
+  if(!p || p.uebersetzungVersucht || !p.quote || /^\(/.test(p.quote)) return;
+  p.uebersetzungVersucht = true;
+  try {
+    const { data, error } = await sb.functions.invoke('kategorisieren', { body: { transkript: p.quote, sprache: hinweis, nur_uebersetzen: true } });
+    if(!error && data && data.transkript_de){
+      p.quoteDe = data.transkript_de; p.sprache = hinweis;
+      aktualisierenAnsicht();
+      if(typeof detailChild !== 'undefined' && detailChild === p.name && document.getElementById('detail-modal')?.classList.contains('visible')) renderDetail();
+    }
+  } catch(_e){ /* Übersetzung ist nur eine Zusatzhilfe */ }
 }
 function aktualisierenAnsicht(){
   aktualisiereSitzungsElemente();
@@ -2170,21 +2189,33 @@ function aktualisiereKidDebug(){
   el.textContent = t;
 }
 let reviewUebersetzungsId = 0;
+let reviewUebersetzung = null; // { text, de, sprache } -- wird in finishAnswer() als Rückfall mitgespeichert
 async function zeigeUebersetzungImReview(text){
   const box = document.getElementById('review-de'), out = document.getElementById('review-de-text');
-  box.style.display = 'none'; out.textContent = '';
+  box.style.display = 'none'; out.textContent = ''; reviewUebersetzung = null;
   const sp = letzteSprache || kindSprache();
   if(!sp || sp === 'de' || !text || /^\(/.test(text)) return;
   const id = ++reviewUebersetzungsId;
+  box.style.display = 'block'; out.textContent = 'Übersetzung wird geladen …';
   try {
     const { data, error } = await sb.functions.invoke('kategorisieren', { body: { transkript: text, sprache: sp, nur_uebersetzen: true } });
-    if(id !== reviewUebersetzungsId || error || !data || !data.transkript_de) return;
+    if(id !== reviewUebersetzungsId) return;
+    if(error || !data || data.error){
+      out.textContent = 'Übersetzung gerade nicht verfügbar.';
+      if(DEBUG_KIND) out.textContent += ' (' + ((error && error.message) || (data && data.error) || 'keine Antwort') + ')';
+      return;
+    }
+    if(!data.transkript_de){ box.style.display = 'none'; return; } // Text ist bereits Deutsch
     out.textContent = data.transkript_de;
-    box.style.display = 'block';
-  } catch(_e){ /* Übersetzung ist nur eine Zusatzhilfe */ }
+    reviewUebersetzung = { text, de: data.transkript_de, sprache: sp };
+  } catch(e){
+    if(id !== reviewUebersetzungsId) return;
+    out.textContent = 'Übersetzung gerade nicht verfügbar.';
+    if(DEBUG_KIND) out.textContent += ' (' + e.message + ')';
+  }
 }
 function rerecord(){
-  document.getElementById('review-de').style.display = 'none'; reviewUebersetzungsId++;
+  document.getElementById('review-de').style.display = 'none'; reviewUebersetzungsId++; reviewUebersetzung = null;
   document.getElementById('review-area').style.display='none';
   document.getElementById('record-area').style.display= state.mode==='speak' ? 'block' : 'none';
   document.getElementById('record-btn').className='kid-record-btn rec-bereit'; document.getElementById('rec-anzeige').style.display='none';
@@ -2229,6 +2260,8 @@ async function finishAnswer(){
       body: { transkript: text, aufgabe_id: AUFGABE_ID, wahl, prompt: promptFuerAnfrage, kategorien: kategorienFuerPrompt, sprache: sprachHinweis }
     });
     if(!error && data){ textDe = data.transkript_de || null; textSprache = data.sprache || 'de'; }
+    // Rückfall: Übersetzung aus der Überprüfungsansicht, falls die Funktion hier keine geliefert hat und der Text unverändert ist
+    if(!textDe && reviewUebersetzung && reviewUebersetzung.text === text){ textDe = reviewUebersetzung.de; textSprache = reviewUebersetzung.sprache || textSprache; }
     if(!error && data && data.kategorie && CATS[data.kategorie]) cat = data.kategorie;
     else cat = heuristischeKategorie(text);
   } catch(e) {

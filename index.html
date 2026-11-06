@@ -338,6 +338,39 @@
   }
 
 
+  /* [NEU 2026-11-05-08] Breite nutzen: auf Tablets/Rechnern nicht mehr alles in 680 px.
+     Kindbildschirme bis 980 px (Symbole füllen die Breite), Lehrkraft-Arbeitsbildschirme bis 1240 px, Formulare bis 980 px.
+     Start, Anmeldung und Code-Eingabe bleiben schmal. */
+  .app:has(#scr-symbolauswahl.visible), .app:has(#scr-aufnahme.visible) { max-width: 980px; }
+  .app:has(#scr-heatmap.visible), .app:has(#scr-sitzplan.visible), .app:has(#scr-tafel.visible) { max-width: 1240px; }
+  .app:has(#scr-verwaltung.visible), .app:has(#scr-pool.visible), .app:has(#scr-aufgabe.visible),
+  .app:has(#scr-lernverlauf.visible), .app:has(#scr-aufgaben-admin.visible), .app:has(#scr-schnellanlage.visible) { max-width: 980px; }
+  #scr-symbolauswahl .grid4 { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); }
+  @media (max-width: 420px) { #scr-symbolauswahl .grid4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  /* Aufnahme auf breiten Geräten (Tablet quer): links Aufgabe, rechts Antwort – alles ohne Scrollen erreichbar */
+  @media (min-width: 900px) {
+    #aufnahme-raster { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+    #aufnahme-links { position: sticky; top: 64px; }
+    #aufnahme-rechts > #wahl-bereich { margin-top: 0; }
+  }
+  @media (min-width: 900px) {
+    #antworten-liste { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 18px; align-items: start; }
+    #scr-aufnahme > .card { padding: 26px 32px; }
+    #aufnahme-anweisung { font-size: clamp(28px, 3.2vw, 36px) !important; }
+  }
+  /* [NEU -08] Aufnahme begleiten: Pegel, Hinweis, Fortschritt der Erkennung, Vorlesen */
+  #pegel { display:none; align-items:flex-end; justify-content:center; gap:6px; height:64px; margin-top:14px; }
+  #pegel span { width:10px; height:6px; border-radius:5px; background: var(--fill-danger); transition: height .08s linear; }
+  #pegel-hinweis { min-height:1.4em; margin-top:6px; font-size:var(--fs-body); color: var(--text-secondary); }
+  #erkennung-status { display:none; margin-top:10px; font-size:var(--fs-body); color: var(--text-secondary); }
+  #erkennung-status .punkte span { display:inline-block; animation: punkt-huepf 1.2s infinite ease-in-out; }
+  #erkennung-status .punkte span:nth-child(2) { animation-delay: .2s; }
+  #erkennung-status .punkte span:nth-child(3) { animation-delay: .4s; }
+  @keyframes punkt-huepf { 0%, 80%, 100% { opacity:.25; } 40% { opacity:1; } }
+  @media (prefers-reduced-motion: reduce) { #erkennung-status .punkte span { animation: none; } #pegel span { transition: none; } }
+  .vorlesen-btn { display:none; font-size:var(--fs-body); padding:10px 16px; border-radius:14px; min-height:46px; }
+  .vorlesen-btn.liest { background: var(--bg-accent); border-color: var(--border-accent); }
+
   /* Lehrkraft-Dashboard: eigenständige Arbeitsfläche statt schmaler Mobilansicht */
   .app:has(#scr-dashboard.visible) {
     max-width: 1240px;
@@ -691,13 +724,16 @@
 
   <!-- KIND: AUFNAHME -->
   <div id="scr-aufnahme" class="screen" style="text-align:center;">
+   <div id="aufnahme-raster"><div id="aufnahme-links">
     <div class="card c-blue">
       <div id="aufnahme-anweisung" class="t" style="font-size:var(--fs-lead); font-weight:600; line-height:1.35; margin-bottom:10px;">Wie würdest du die Zahl 6 T 2 H 42 Z 5 E in die Stellenwerttafel und als Zahl schreiben? Erkläre.</div>
       <div class="row" style="justify-content:center; gap:10px; margin-top:10px;">
         <div id="sprachauswahl" class="row" style="justify-content:center; gap:10px; flex-wrap:wrap;"></div>
       </div>
+      <div style="margin-top:12px; text-align:center;"><button id="vorlesen-aufgabe" class="navbtn vorlesen-btn" onclick="liesAufgabeVor()"><i class="ti ti-volume"></i> Vorlesen</button></div>
     </div>
     <div id="kid-debug" style="font-size:13px; margin:10px 0; padding:8px 10px; text-align:left; border:1px dashed var(--border-strong); border-radius:10px; color:var(--text-secondary); white-space:pre-wrap; word-break:break-word;"></div>
+   </div><div id="aufnahme-rechts">
     <!-- Nur bei Aufgaben mit vorgeschobener Ja/Nein-Frage sichtbar (HAT_WAHL) -- das
          Kind muss erst wählen, bevor es begründen/aufnehmen kann. -->
     <div id="wahl-bereich" style="display:none; margin: 22px 0;">
@@ -722,10 +758,14 @@
       <button id="record-btn" class="kid-record-btn rec-bereit" style="border:6px solid var(--surface-2);" onclick="toggleRecord()"><i id="record-icon" class="ti ti-microphone" style="font-size:76px;"></i></button>
       <div class="ts" id="record-label" style="font-size:var(--fs-title); font-weight:600; margin-top:14px;">Tippe zum Aufnehmen</div>
       <div id="rec-anzeige" style="display:none;"><span class="rec-punkt"></span> Aufnahme läuft</div>
+      <div id="pegel" aria-hidden="true"></div>
+      <div id="pegel-hinweis" role="status"></div>
+      <div id="erkennung-status" role="status"></div>
     </div>
     <div id="review-area" style="display:none; border-top:2px dashed var(--border); padding-top:18px; margin-top:20px; text-align:left;">
       <div class="ts" style="font-size:var(--fs-title); margin-bottom:10px; text-align:center;">So haben wir dich verstanden — du kannst es auch verbessern</div>
       <textarea id="transcript-edit" rows="4" style="font-size:var(--fs-lead); padding:14px; min-height:130px;"></textarea>
+      <div style="text-align:center; margin-top:10px;"><button id="vorlesen-antwort" class="navbtn vorlesen-btn" onclick="liesAntwortVor()"><i class="ti ti-volume"></i> Anhören</button></div>
       <div id="review-de" style="display:none; margin-top:12px; padding:12px 14px; border-radius:14px; background:var(--surface-2); border:1px solid var(--border); font-size:var(--fs-body);"><div class="ts" style="font-size:var(--fs-small); margin-bottom:4px;">🇩🇪 Auf Deutsch (Übersetzung, kann Fehler haben)</div><div id="review-de-text"></div></div>
       <div class="row" style="justify-content:center; gap:32px; margin-top:16px;">
         <div style="text-align:center;">
@@ -743,6 +783,7 @@
       <div class="card" style="text-align:center; background:var(--bg-success); border-color:var(--fill-success);"><i class="ti ti-check" style="font-size:40px; color:var(--text-success);"></i><div style="font-size:var(--fs-title); margin-top:8px; color:var(--text-success);">Aufgenommen — <span id="done-name"></span> ist fertig.</div></div>
       <button class="btn btn-primary" style="margin-top:14px; padding:18px;" onclick="show('symbolauswahl')">Nächstes Kind</button>
     </div>
+   </div></div>
   </div>
 
   <!-- LK DASHBOARD -->
@@ -1016,7 +1057,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_WOnHYkefrIzOY-tigGqPKg_Dvjf73Gc";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Version dieser Datei (JJJJ-MM-TT-NN). Bei JEDER Änderung hochzählen und im Änderungsprotokoll des Projektkontexts eintragen.
-const APP_VERSION = "2026-11-05-07";
+const APP_VERSION = "2026-11-05-08";
 (function(){ const el = document.getElementById('app-version'); if(el) el.textContent = 'v' + APP_VERSION; console.info('Denkwege', APP_VERSION); })();
 function getUrlParam(name){ return new URLSearchParams(window.location.search).get(name); }
 
@@ -1043,6 +1084,7 @@ async function ladeUndAboniereAntworten(){
   const { data, error } = await sb.from('antworten').select('*').eq('sitzungscode', sitzungscode).order('erstellt_am');
   if(!error && data) data.forEach(uebernehmeAntwort);
   aktualisierenAnsicht();
+  starteSymbolKanal();   // [NEU -08] nur zuhören: „arbeitet gerade“ im Sitzplan
   if(antwortKanal){ try { sb.removeChannel(antwortKanal); } catch(e){} antwortKanal = null; }
   antwortKanal = sb.channel('antworten-'+sitzungscode)
     .on('postgres_changes',
@@ -1955,6 +1997,7 @@ function show(id){
   document.getElementById('role-lk').classList.toggle('active', role==='lk');
   document.getElementById('role-kind').classList.toggle('active', role==='kind');
   if(id==='code-eingabe'){ codeEingabe = []; renderCodeEingabe(); }
+  if(id!=='aufnahme') stoppeVorlesen();
   // [NEU -07] Symbol melden, solange das Kind in der Aufnahme ist; beim Verlassen freigeben
   if(id==='aufnahme' && state.selectedSymbol && sitzungscode) meldeSymbol(state.selectedSymbol.id); else if(id!=='aufnahme' && meinSymbolId) meldeSymbol(null);
   if(id==='symbolauswahl') renderSymbols();
@@ -2091,8 +2134,37 @@ function aktualisiereSymbolZustand(){
 }
 function berechneBelegt(){
   const jetzt = Date.now(); const neu = {};
-  Object.values(symbolBelegtVon).forEach(e => { if(jetzt - e.lokal < SYMBOL_BELEGT_MS) neu[e.symbol] = true; });
+  Object.values(symbolBelegtVon).forEach(e => {
+    if(jetzt - e.lokal >= SYMBOL_BELEGT_MS) return;
+    if(symbolFreigegeben[e.symbol] && e.lokal <= symbolFreigegeben[e.symbol]) return;   // von der Lehrkraft freigegeben (gilt, bis das Gerät sich neu meldet)
+    neu[e.symbol] = true;
+  });
   symbolBelegt = neu; aktualisiereSymbolZustand();
+  // [NEU -08] Lehrkraft-Gerät: „arbeitet gerade“ im Sitzplan zeigen (nur für Kinder ohne Antwort)
+  if(!istKindGeraet && lkEingeloggt){
+    let geaendert = false;
+    SYMBOLS.forEach(s => {
+      const st = state.heatmapStatus[s.id];
+      if(symbolBelegt[s.id] && !st){ state.heatmapStatus[s.id] = 'laeuft'; geaendert = true; }
+      else if(!symbolBelegt[s.id] && st === 'laeuft'){ state.heatmapStatus[s.id] = null; geaendert = true; }
+    });
+    if(geaendert) aktualisierenAnsicht();
+  }
+}
+const symbolFreigegeben = {};   // symbolId -> Zeitpunkt der Freigabe durch die Lehrkraft
+function symbolSeitMin(id){
+  const t = Object.values(symbolBelegtVon).filter(e => e.symbol === id).map(e => e.seit);
+  return t.length ? Math.floor((Date.now() - Math.min(...t)) / 60000) : 0;
+}
+function symbolDauerText(id){ const m = symbolSeitMin(id); return m < 1 ? 'seit unter 1 Minute' : 'seit ' + m + ' Min'; }
+// Lehrkraft: ein hängendes Symbol für alle Geräte freigeben (das Gerät, das es hält, gibt es ebenfalls ab).
+function symbolFreigeben(id){
+  if(!symbolBelegt[id]) return;
+  const sym = SYMBOLS.find(s => s.id === id);
+  if(!confirm('Das Symbol ' + (sym ? sym.name : '') + ' ist belegt (' + symbolDauerText(id) + '). Für alle Kindgeräte wieder freigeben?\n\nSinnvoll, wenn ein Gerät hängt oder ein Kind das Symbol verlassen hat. Eine bereits gespeicherte Antwort bleibt unberührt.')) return;
+  symbolFreigegeben[id] = Date.now();
+  if(symbolKanal && symbolKanalBereit){ try { symbolKanal.send({ type: 'broadcast', event: 'freigeben', payload: { symbol_id: id } }); } catch(e){} }
+  berechneBelegt();
 }
 function starteSymbolKanal(){
   if(!sitzungscode || !state.sessionActive) return;
@@ -2111,11 +2183,17 @@ function starteSymbolKanal(){
             const k = key + '|' + m.symbol_id; aktuell[k] = true;
             const alt = symbolBelegtVon[k];
             // Uhren verschiedener Geräte weichen ab: maßgeblich ist, wann DIESES Gerät die letzte Meldung gesehen hat.
-            if(!alt) symbolBelegtVon[k] = { symbol: m.symbol_id, zuletzt: m.zuletzt, lokal: jetzt };
+            if(!alt) symbolBelegtVon[k] = { symbol: m.symbol_id, zuletzt: m.zuletzt, lokal: jetzt, seit: jetzt };
             else if(alt.zuletzt !== m.zuletzt){ alt.zuletzt = m.zuletzt; alt.lokal = jetzt; }
           });
         });
         Object.keys(symbolBelegtVon).forEach(k => { if(!aktuell[k]) delete symbolBelegtVon[k]; });   // Gerät hat sich abgemeldet / Verbindung weg
+        berechneBelegt();
+      })
+      .on('broadcast', { event: 'freigeben' }, ({ payload }) => {
+        if(!payload || !payload.symbol_id) return;
+        symbolFreigegeben[payload.symbol_id] = Date.now();
+        if(payload.symbol_id === meinSymbolId) meldeSymbol(null);   // dieses Gerät gibt das Symbol ab
         berechneBelegt();
       })
       .on('broadcast', { event: 'fertig' }, ({ payload }) => {
@@ -2153,6 +2231,7 @@ async function ladeBeantworteteSymbole(){
 setInterval(() => {
   if(meinSymbolId && Date.now() - letzteAktivitaet < SYMBOL_AKTIV_MS) meldeSymbol(meinSymbolId);
   if(symbolKanal) berechneBelegt();
+  if(!istKindGeraet && lkEingeloggt && Object.keys(symbolBelegt).length && document.getElementById('scr-heatmap').classList.contains('visible')) renderHeatmap();   // Minuten aktualisieren
   if(sitzungscode && document.getElementById('scr-symbolauswahl') && document.getElementById('scr-symbolauswahl').classList.contains('visible')) ladeBeantworteteSymbole();
 }, SYMBOL_HERZSCHLAG_MS);
 function cancelSymbol(){ document.getElementById('symbol-confirm').classList.remove('visible'); }
@@ -2209,6 +2288,82 @@ let letzterAudioPfad = null; // wird nach der Transkription gesetzt, s. finishAn
 let letzteSprache = null;    // [NEU 2026-11-03-01] von der Spracherkennung erkannte Sprache (Code), s. finishAnswer()
 function kindSprache(){ return kidSprachWahl || (state.selectedSymbol && childLanguage[state.selectedSymbol.id]) || 'de'; }
 
+// ===== [NEU 2026-11-05-08] Aufnahme begleiten =====
+// Pegelanzeige (zeigt dem Kind, dass das Gerät es hört; Hinweis nach 4 s ohne Ton), Fortschritt während der Erkennung, Vorlesen (Sprachausgabe des Geräts).
+let pegelCtx = null, pegelRaf = 0, erkennungTimer = null;
+function starteLevel(stream){
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext; if(!AC) return;
+    pegelCtx = new AC(); if(pegelCtx.resume) pegelCtx.resume();
+    const an = pegelCtx.createAnalyser(); an.fftSize = 512;
+    pegelCtx.createMediaStreamSource(stream).connect(an);
+    const buf = new Uint8Array(an.fftSize), el = document.getElementById('pegel'), hint = document.getElementById('pegel-hinweis');
+    el.style.display = 'flex'; el.innerHTML = '<span></span>'.repeat(9);
+    const bars = el.children, hist = new Array(9).fill(0), t0 = Date.now(); let laut = false;
+    const loop = () => {
+      an.getByteTimeDomainData(buf);
+      let sum = 0; for(let i = 0; i < buf.length; i++){ const v = (buf[i] - 128) / 128; sum += v * v; }
+      const rms = Math.sqrt(sum / buf.length);
+      hist.push(Math.min(1, rms * 6)); hist.shift();
+      for(let i = 0; i < bars.length; i++) bars[i].style.height = (6 + hist[i] * 56) + 'px';
+      if(rms > 0.02) laut = true;
+      hint.textContent = (!laut && Date.now() - t0 > 4000) ? 'Ich höre noch nichts. Sprich etwas lauter oder geh näher ans Gerät.' : '';
+      pegelRaf = requestAnimationFrame(loop);
+    };
+    loop();
+  } catch(e){ /* Pegel ist nur Zusatz */ }
+}
+function stoppeLevel(){
+  cancelAnimationFrame(pegelRaf); pegelRaf = 0;
+  try { if(pegelCtx) pegelCtx.close(); } catch(e){}
+  pegelCtx = null;
+  const el = document.getElementById('pegel'); if(el){ el.style.display = 'none'; el.innerHTML = ''; }
+  const h = document.getElementById('pegel-hinweis'); if(h) h.textContent = '';
+}
+function zeigeErkennungStatus(an){
+  clearTimeout(erkennungTimer);
+  const el = document.getElementById('erkennung-status'); if(!el) return;
+  if(!an){ el.style.display = 'none'; el.innerHTML = ''; return; }
+  const punkte = '<span class="punkte"><span>●</span><span>●</span><span>●</span></span>';
+  el.style.display = 'block';
+  el.innerHTML = 'Ich schreibe auf, was du gesagt hast ' + punkte;
+  erkennungTimer = setTimeout(() => { el.innerHTML = 'Das dauert etwas länger. Gleich geht es weiter ' + punkte; }, 8000);
+}
+// Vorlesen: nur anbieten, wenn das Gerät eine Stimme für die Sprache hat (Stimmen und Sprachen sind je Gerät verschieden).
+function stimmeFuer(lang){
+  try {
+    const l = String(lang || 'de').toLowerCase();
+    return window.speechSynthesis.getVoices().find(v => v.lang && v.lang.toLowerCase().replace('_', '-').split('-')[0] === l) || null;
+  } catch(e){ return null; }
+}
+function vorlesenMoeglich(lang){ return ('speechSynthesis' in window) && !!stimmeFuer(lang); }
+function stoppeVorlesen(){
+  try { window.speechSynthesis.cancel(); } catch(e){}
+  document.querySelectorAll('.vorlesen-btn.liest').forEach(b => b.classList.remove('liest'));
+}
+function lies(text, lang, btnId){
+  const v = stimmeFuer(lang); if(!v || !text) return;
+  const war = document.getElementById(btnId) && document.getElementById(btnId).classList.contains('liest');
+  stoppeVorlesen(); if(war) return;   // zweites Tippen = Stopp
+  const u = new SpeechSynthesisUtterance(text); u.voice = v; u.lang = v.lang; u.rate = 0.9;
+  const b = document.getElementById(btnId); if(b) b.classList.add('liest');
+  u.onend = u.onerror = () => { if(b) b.classList.remove('liest'); };
+  window.speechSynthesis.speak(u);
+}
+let aufgabeAnzeigeSprache = 'de';
+function liesAufgabeVor(){ lies(document.getElementById('aufnahme-anweisung').textContent, aufgabeAnzeigeSprache, 'vorlesen-aufgabe'); }
+function liesAntwortVor(){ lies(document.getElementById('transcript-edit').value, letzteSprache || kindSprache(), 'vorlesen-antwort'); }
+function aktualisiereVorlesenKnoepfe(){
+  const a = document.getElementById('vorlesen-aufgabe'), b = document.getElementById('vorlesen-antwort');
+  if(a) a.style.display = vorlesenMoeglich(aufgabeAnzeigeSprache) ? 'inline-flex' : 'none';
+  if(b){
+    const t = (document.getElementById('transcript-edit').value || '').trim();
+    b.style.display = (t && !/^\(/.test(t) && vorlesenMoeglich(letzteSprache || kindSprache())) ? 'inline-flex' : 'none';
+  }
+}
+if('speechSynthesis' in window){ try { window.speechSynthesis.addEventListener('voiceschanged', aktualisiereVorlesenKnoepfe); } catch(e){} }
+document.getElementById('transcript-edit').addEventListener('input', aktualisiereVorlesenKnoepfe);
+
 async function toggleRecord(){
   const btn = document.getElementById('record-btn');
   const icon = document.getElementById('record-icon');
@@ -2229,12 +2384,14 @@ async function toggleRecord(){
       aufnahmeMimeType = mediaRecorder.mimeType || 'audio/webm';
       mediaRecorder.ondataavailable = (e) => { if(e.data.size > 0) audioChunks.push(e.data); };
       mediaRecorder.start();
+      stoppeVorlesen(); starteLevel(stream);
       state.isRecording = true;
       btn.className = 'kid-record-btn rec-laeuft';
       icon.className = 'ti ti-player-stop';
       label.textContent = 'Tippe zum Beenden';
       document.getElementById('rec-anzeige').style.display = 'block';
     } catch(e){
+      stoppeLevel();
       btn.className = 'kid-record-btn rec-bereit';
       icon.className = 'ti ti-microphone';
       label.textContent = 'Tippe zum Aufnehmen';
@@ -2247,6 +2404,7 @@ async function toggleRecord(){
     icon.className = 'ti ti-loader-2';
     btn.className = 'kid-record-btn rec-wartet';
     document.getElementById('rec-anzeige').style.display = 'none';
+    stoppeLevel(); zeigeErkennungStatus(true);
     mediaRecorder.stop();
     mediaRecorder.stream.getTracks().forEach(t => t.stop());
 
@@ -2280,9 +2438,11 @@ async function toggleRecord(){
       } catch(e){
         text = "(Spracherkennung fehlgeschlagen -- bitte nochmal versuchen oder tippen)";
       }
+      zeigeErkennungStatus(false);
       document.getElementById('record-area').style.display='none';
       document.getElementById('review-area').style.display='block';
       document.getElementById('transcript-edit').value = text;
+      aktualisiereVorlesenKnoepfe();
       zeigeUebersetzungImReview(text);
       aktualisiereKidDebug();
     };
@@ -2352,7 +2512,8 @@ async function zeigeUebersetzungImReview(text, istBearbeitung){
   }
 }
 function rerecord(){
-  clearTimeout(reviewTimer);
+  clearTimeout(reviewTimer); stoppeVorlesen(); zeigeErkennungStatus(false); stoppeLevel();
+  document.getElementById('vorlesen-antwort').style.display = 'none';
   document.getElementById('review-de').style.display = 'none'; reviewUebersetzungsId++; reviewUebersetzung = null;
   document.getElementById('review-area').style.display='none';
   document.getElementById('record-area').style.display= state.mode==='speak' ? 'block' : 'none';
@@ -2365,6 +2526,7 @@ function rerecord(){
   if(state.mode==='type'){ document.getElementById('review-area').style.display='block'; document.getElementById('transcript-edit').value=''; }
 }
 async function finishAnswer(){
+  stoppeVorlesen();
   const text = document.getElementById('transcript-edit').value || "(keine Antwort)";
   const name = state.selectedSymbol ? state.selectedSymbol.name : "Neu";
   const wahl = HAT_WAHL ? state.aktuelleWahl : null;
@@ -2745,6 +2907,7 @@ function moveSlot(i, dir){
 // + die von der Lehrkraft für dieses Kind gesetzte Sprache. Die Wahl bestimmt die Anzeige der Aufgabenstellung
 // UND die Kandidatensprache der Spracherkennung (kindSprache()).
 let kidSprachWahl = null;
+function aktuelleAnzeigeSpracheSetzen(lang){ aufgabeAnzeigeSprache = lang || 'de'; stoppeVorlesen(); aktualisiereVorlesenKnoepfe(); }
 function sprachenFuerKind(){
   const liste = ['de'];
   (AUFGABE_UEBERSETZUNGEN || []).forEach(u => { if(!liste.includes(u.sprache)) liste.push(u.sprache); });
@@ -2772,7 +2935,7 @@ function renderSprachauswahl(){
   });
 }
 function setSprache(lang){
-  kidSprachWahl = lang; aktualisiereKidDebug();
+  kidSprachWahl = lang; aktuelleAnzeigeSpracheSetzen(lang); aktualisiereKidDebug();
   document.getElementById('aufnahme-anweisung').textContent = uebersetzungFuerSprache(lang) || AUFGABE_TEXT;
   sprachenFuerKind().forEach(k=>{
     const btn = document.getElementById('sprache-'+k);
@@ -3451,7 +3614,7 @@ function renderHeatmap(){
     return;
   }
 
-  canvas.style.height = '260px';
+  canvas.style.height = Math.round(Math.max(260, Math.min(480, canvas.clientWidth * 0.42))) + 'px';   // [NEU -08] wächst mit der Breite
   canvas.style.minHeight = '';
   canvas.style.display = 'block';
   canvas.style.padding = '0';
@@ -3500,6 +3663,7 @@ function renderHeatmap(){
       el.style.color = '#fff';
       el.style.position = 'relative';
       el.innerHTML = `<div style="position:absolute; top:-14px; font-size:var(--fs-body); letter-spacing:1px;">•••</div><div>${s.name}</div>`;
+      if(symbolBelegt[s.id]){ el.title = 'arbeitet gerade ' + symbolDauerText(s.id) + ' – antippen zum Freigeben'; el.style.cursor = 'pointer'; el.onclick = () => symbolFreigeben(s.id); }
     } else {
       el.style.background = 'var(--surface-1)';
       el.style.border = '1px dashed var(--border-strong)';
@@ -3538,7 +3702,7 @@ function renderAntwortenliste(){
       return `<div class="pool-item"><span style="width:10px; height:10px; border-radius:3px; background:var(--surface-2); border:1.5px solid var(--border-strong); box-sizing:border-box; flex-shrink:0;"></span><b style="font-size:var(--fs-small); width:64px; flex-shrink:0;">${e.symbol.name}</b><span class="ts" style="font-size:var(--fs-micro);">schriftlich bearbeitet (ohne digitales Tool)</span></div>`;
     }
     if(!e.antwort){
-      return `<div class="pool-item"><span style="width:10px; height:10px; border-radius:3px; border:1px dashed var(--border-strong); flex-shrink:0;"></span><b style="font-size:var(--fs-small); width:64px; flex-shrink:0;">${e.symbol.name}</b><span class="ts" style="font-size:var(--fs-micro);">noch keine Antwort</span></div>`;
+      return `<div class="pool-item"><span style="width:10px; height:10px; border-radius:3px; border:1px dashed var(--border-strong); flex-shrink:0;"></span><b style="font-size:var(--fs-small); width:64px; flex-shrink:0;">${e.symbol.name}</b><span class="ts" style="font-size:var(--fs-micro);">${symbolBelegt[e.symbol.id] ? 'arbeitet gerade (' + symbolDauerText(e.symbol.id) + ')' : 'noch keine Antwort'}</span>${symbolBelegt[e.symbol.id] ? `<button class="navbtn" style="font-size:var(--fs-micro); padding:3px 9px; margin-left:auto;" onclick="symbolFreigeben('${e.symbol.id}')">Symbol freigeben</button>` : ''}</div>`;
     }
     const cat = CATS[e.antwort.cat];
     const fn = didaktischeFunktion(e.antwort.cat);

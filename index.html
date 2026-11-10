@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Denkwege</title>
-<meta name="app-version" content="2026-11-05-03">
+<meta name="app-version" content="2026-11-10-01">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
@@ -601,9 +601,10 @@
   <!-- LOGIN / KLASSENRAUM -->
   <!-- START: ROLLENWAHL -->
   <div id="scr-start" class="screen" style="text-align:center; padding-top:40px;">
-    <div style="font-size:var(--fs-title); font-weight:500; margin-bottom:20px;">Wer bist du?</div>
-    <button class="btn btn-primary" style="margin-bottom:10px; padding:16px;" onclick="show('lk-login')"><i class="ti ti-chalkboard"></i> Ich bin Lehrkraft</button>
-    <button class="btn" style="padding:16px;" onclick="show('code-eingabe')"><i class="ti ti-child"></i> Ich bin Schüler:in</button>
+    <div style="font-size:var(--fs-title); font-weight:500; margin-bottom:6px;">Willkommen bei Denkwege</div>
+    <div class="ts" style="font-size:var(--fs-small); margin-bottom:20px;">Bitte wählen Sie, wie Sie starten möchten.</div>
+    <button class="btn btn-primary" style="margin-bottom:10px; padding:16px;" onclick="show('lk-login')"><i class="ti ti-chalkboard"></i> Ich bin Lehrkraft (Anmeldung)</button>
+    <button class="btn" style="padding:16px;" onclick="show('code-eingabe')"><i class="ti ti-child"></i> Ich bin Schüler:in (mit Bilder-Code)</button>
   </div>
 
   <!-- CODE-EINGABE (Kind, falls ohne QR-Link angekommen) — Symbole statt Buchstaben tippen,
@@ -630,6 +631,8 @@
     </div>
     <div id="lk-login-fehler" class="ts" style="display:none; color:var(--fill-danger); font-size:var(--fs-small); margin-bottom:10px;"></div>
     <button class="btn btn-primary" onclick="lkAnmelden()"><i class="ti ti-login"></i> Anmelden</button>
+    <div class="ts" style="font-size:var(--fs-small); margin-top:14px; line-height:1.5;">Noch keinen Zugang? Der Zugang wird für Sie eingerichtet und braucht etwas Vorlauf.
+      <a href="mailto:corinna.hankeln@math.tu-dortmund.de?subject=Denkwege%3A%20Zugang%20anfragen" style="color:inherit;">Zugang per E-Mail anfragen</a></div>
   </div>
 
   <div id="scr-login" class="screen">
@@ -1057,7 +1060,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_WOnHYkefrIzOY-tigGqPKg_Dvjf73Gc";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Version dieser Datei (JJJJ-MM-TT-NN). Bei JEDER Änderung hochzählen und im Änderungsprotokoll des Projektkontexts eintragen.
-const APP_VERSION = "2026-11-05-08";
+const APP_VERSION = "2026-11-10-01";
 (function(){ const el = document.getElementById('app-version'); if(el) el.textContent = 'v' + APP_VERSION; console.info('Denkwege', APP_VERSION); })();
 function getUrlParam(name){ return new URLSearchParams(window.location.search).get(name); }
 
@@ -1605,9 +1608,22 @@ async function lkAnmelden(){
   const passwort = document.getElementById('lk-passwort').value;
   const fehler = document.getElementById('lk-login-fehler');
   fehler.style.display = 'none';
-  const { data, error } = await sb.auth.signInWithPassword({ email, password: passwort });
+  if(!email || !passwort){
+    fehler.textContent = !email ? 'Bitte geben Sie Ihren Zugangsnamen ein.' : 'Bitte geben Sie Ihr Passwort ein.';
+    fehler.style.display = 'block';
+    return;
+  }
+  let data = null, error = null;
+  try { ({ data, error } = await sb.auth.signInWithPassword({ email, password: passwort })); }
+  catch(e){ error = { message: String(e), status: 0 }; }
   if(error){
-    fehler.textContent = 'Anmeldung fehlgeschlagen -- Zugangsname oder Passwort prüfen.';
+    const msg = String(error.message || '').toLowerCase();
+    let text;
+    if(!navigator.onLine || error.status === 0 || /fetch|network/.test(msg)) text = 'Keine Verbindung. Bitte prüfen Sie Ihr Internet und versuchen Sie es noch einmal.';
+    else if(error.status === 429 || /rate|too many/.test(msg)) text = 'Zu viele Versuche. Bitte warten Sie einen Moment und versuchen Sie es dann noch einmal.';
+    else if(/invalid login|invalid_credentials|credentials/.test(msg)) text = 'Zugangsname oder Passwort stimmt nicht. Bitte prüfen Sie beides, auch Groß- und Kleinschreibung.';
+    else text = 'Die Anmeldung hat nicht geklappt (' + String(error.message || error.status || 'unbekannt').slice(0, 80) + '). Bitte versuchen Sie es noch einmal.';
+    fehler.textContent = text;
     fehler.style.display = 'block';
     return;
   }

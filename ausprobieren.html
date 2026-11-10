@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Denkwege ausprobieren</title>
-<meta name="app-version" content="2026-10-28-01">
+<meta name="app-version" content="2026-11-10-02">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
@@ -543,6 +543,16 @@
   .st-punkte span:nth-child(2) { animation-delay:.2s; } .st-punkte span:nth-child(3) { animation-delay:.4s; }
   @keyframes st-punkt { 0%,80%,100% { opacity:.25; } 40% { opacity:1; } }
   @media (prefers-reduced-motion: reduce) { .st-rec-laeuft, .st-punkte span { animation:none; } .st-pegel span { transition:none; } }
+  /* [NEU 2026-11-10-02] Umschauen-Modus (nach der Studie): Beispielklasse, eigene Antwort live einordnen */
+  body.umschauen .st-leiste { display:none !important; }
+  body.umschauen #scr-dashboard > button.btn-primary { display:none; }
+  .st-um-wahl { display:flex; gap:8px; margin:10px 0; }
+  .st-um-wahl button { flex:1; border:1px solid var(--border); background:var(--surface-1); border-radius:var(--radius); padding:10px 8px; font-size:var(--fs-small); cursor:pointer; min-height:44px; }
+  .st-um-wahl button.aktiv { background:var(--fill-accent); color:var(--on-accent, #fff); border-color:var(--fill-accent); font-weight:600; }
+  #st-um-ergebnis { margin-top:12px; font-size:var(--fs-small); line-height:1.5; }
+  #st-um-ergebnis .st-um-kat { display:flex; align-items:center; gap:8px; font-weight:600; font-size:var(--fs-body); margin-bottom:4px; }
+  #st-umschauen-modal .modal { max-width:560px; text-align:left; }
+  .st-spaeter { border:1px solid var(--border-accent); }
   /* Antwortübersicht breiter wie im Tool; Liste ab 900 px zweispaltig (Reihenfolge bleibt zeilenweise) */
   .app:has(#scr-heatmap.visible) { max-width:1240px; }
   @media (min-width: 900px) { #antworten-liste { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); column-gap:18px; align-items:start; } }
@@ -667,7 +677,31 @@
     <h2 class="scr-title">Vielen Dank!</h2>
     <div class="card" id="st-debrief" style="font-size:var(--fs-body); line-height:1.55;"></div>
     <div class="card" id="st-status" style="font-size:var(--fs-small);"></div>
-    <a id="st-link-tool" class="btn" style="display:block; text-align:center; text-decoration:none; color:inherit;" href="./">Denkwege jetzt frei ausprobieren</a>
+    <div class="card">
+      <div style="font-weight:600; margin-bottom:4px;">Jetzt umschauen</div>
+      <div class="ts" style="font-size:var(--fs-small); margin-bottom:10px; line-height:1.5;">Sehen Sie sich die Beispielklasse noch einmal in Ruhe an. Dort sind alle Einordnungen korrekt. Außerdem können Sie eine <b>eigene Antwort eintippen</b> und live vom Tool einordnen lassen. Es wird nichts gespeichert.</div>
+      <button class="btn btn-primary" onclick="stUmschauenStarten()"><i class="ti ti-eye"></i> Beispielklasse ansehen und eigene Antwort einordnen</button>
+    </div>
+    <div class="card st-spaeter">
+      <div style="font-weight:600; margin-bottom:4px;">Später mehr: Denkwege mit Ihrer Klasse ausprobieren</div>
+      <div class="ts" style="font-size:var(--fs-small); margin-bottom:10px; line-height:1.5;">Wenn Sie Interesse haben, Denkwege selbst im Unterricht zu testen, schreiben Sie uns gern kurz. Das braucht etwas Vorlauf, weil wir Ihnen einen Zugang einrichten. Diese Anfrage hat nichts mit Ihren Antworten in dieser Erhebung zu tun und wird nicht damit verknüpft.</div>
+      <a class="btn" style="display:block; text-align:center; text-decoration:none; color:inherit;" href="mailto:corinna.hankeln@math.tu-dortmund.de?subject=Denkwege%3A%20Interesse%20am%20Ausprobieren%20mit%20meiner%20Klasse&amp;body=Guten%20Tag%2C%0A%0Aich%20interessiere%20mich%20daf%C3%BCr%2C%20Denkwege%20mit%20meiner%20Klasse%20auszuprobieren.%0A%0AName%3A%0ASchule%3A%0AJahrgangsstufe%3A%0AUngef%C3%A4hrer%20Zeitraum%3A%0A%0AViele%20Gr%C3%BC%C3%9Fe"><i class="ti ti-mail"></i> Interesse per E-Mail melden</a>
+    </div>
+  </div>
+
+  <div class="modal-bg" id="st-umschauen-modal">
+    <div class="modal">
+      <div style="font-size:var(--fs-body); font-weight:600; margin-bottom:6px;">Eigene Antwort einordnen lassen</div>
+      <div class="ts" style="font-size:var(--fs-small); line-height:1.5; margin-bottom:8px;">Tippen Sie eine Antwort, so wie ein Kind sie geben könnte. Das Tool ordnet sie live ein, genau wie im Unterricht. Dafür wird der Text an die KI gesendet; er wird nicht gespeichert.</div>
+      <div class="ts" style="font-size:var(--fs-small);">Hat Lea recht?</div>
+      <div class="st-um-wahl"><button id="st-um-ja" onclick="stUmWahl('ja')">Ja, Lea hat recht</button><button id="st-um-nein" onclick="stUmWahl('nein')">Nein, Lea hat nicht recht</button></div>
+      <textarea id="st-um-text" rows="4" maxlength="500" placeholder="z. B.: Ja, weil …" style="font-size:var(--fs-body); font-family:inherit; width:100%;"></textarea>
+      <div id="st-um-ergebnis" role="status"></div>
+      <div class="row" style="gap:8px; margin-top:12px;">
+        <button class="btn" onclick="stUmschauenModal(false)">Schließen</button>
+        <button class="btn btn-primary" id="st-um-btn" onclick="stUmEinordnen()">Einordnen lassen</button>
+      </div>
+    </div>
   </div>
 
   <div class="modal-bg" id="st-abschluss-modal">
@@ -1129,7 +1163,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_WOnHYkefrIzOY-tigGqPKg_Dvjf73Gc";
 const sb = (window.supabase && window.supabase.createClient) ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 // Version dieser Datei (JJJJ-MM-TT-NN). Bei JEDER Änderung hochzählen und im Änderungsprotokoll des Projektkontexts eintragen.
-const APP_VERSION = "2026-11-10-01"; // Studienseite (ausprobieren.html); Tool-Basis index.html 2026-10-22-02, Verständlichkeits-Überarbeitung (Schrittanzeige, Ablauf-Leiste, Aufnahme-Begleitung) aus index.html 2026-11-05-08
+const APP_VERSION = "2026-11-10-02"; // Studienseite (ausprobieren.html); Tool-Basis index.html 2026-10-22-02, Verständlichkeits-Überarbeitung (Schrittanzeige, Ablauf-Leiste, Aufnahme-Begleitung) aus index.html 2026-11-05-08; seit -10-02: Umschauen-Modus
 (function(){ const el = document.getElementById('app-version'); if(el) el.textContent = 'v' + APP_VERSION; console.info('Denkwege', APP_VERSION); })();
 function getUrlParam(name){ return new URLSearchParams(window.location.search).get(name); }
 
@@ -3442,7 +3476,6 @@ function canvasClick(e){
 const STUDIE = {
   studien_id: "denkwege_lk_planung_2026",
   empfohlene_minuten: 8,
-  link_tool: "./",   // wohin "Denkwege jetzt frei ausprobieren" führt
 
   // Informationstext (HTML erlaubt). Alles in [eckigen Klammern] ausfüllen und die
   // Angaben zu Gladia und Speicherdauer vor dem Einsatz klären.
@@ -3678,6 +3711,7 @@ function stBasis(){
   return { studien_id: STUDIE.studien_id, teilnahme_id: st.teilnahmeId, version: st.version, test: st.test };
 }
 function stLog(typ, details){
+  if(st.umschauen) return;   // [NEU 2026-11-10-02] Umschauen-Modus: nichts protokollieren
   st.puffer.push({ ...stBasis(), phase: st.phase, typ, details: details || {},
     t_client: new Date().toISOString(), ms_seit_start: Date.now() - st.start });
   if(st.puffer.length >= 25) stFlush();
@@ -3704,6 +3738,7 @@ async function stFlush(){
   }
 }
 function stSpeichern(phase, daten){
+  if(st.umschauen) return;   // [NEU -10-02]
   st.offeneAntworten.push({ ...stBasis(), phase, daten });
   stFlush();
 }
@@ -3713,6 +3748,7 @@ function stSpeichern(phase, daten){
 const ST_STAND_KEY = 'denkwege_ausprobieren_stand';
 const ST_STAND_MAX_ALTER_MS = 4 * 60 * 60 * 1000; // älter als 4 Stunden: nicht mehr anbieten
 function stStandSpeichern(){
+  if(st.umschauen) return;   // [NEU -10-02]
   try {
     const ta = document.getElementById('st-begruendung-text');
     localStorage.setItem(ST_STAND_KEY, JSON.stringify({
@@ -4153,7 +4189,7 @@ function stKopfAufbauen(){
     '<div id="st-ablauf">' +
       '<button data-s="heatmap" onclick="stAblaufZu(\'heatmap\')"><span class="nr">1</span> Antwortübersicht</button>' +
       '<button data-s="dashboard" onclick="stAblaufZu(\'dashboard\')"><span class="nr">2</span> Klassengespräch planen</button>' +
-      '<button class="abschluss" onclick="stAbschlussFragen()"><span class="nr">✓</span> Planung abschließen</button>' +
+      '<button class="abschluss" id="st-ablauf-dritter" onclick="stDritterKnopf()"><span class="nr">✓</span> <span id="st-ablauf-dritter-text">Planung abschließen</span></button>' +
     '</div>';
   document.querySelector('.topbar').after(kopf);
 }
@@ -4164,6 +4200,17 @@ function stAblaufZu(ziel){
 function stKopfAktualisieren(id){
   const kopf = document.getElementById('st-kopf'); if(!kopf) return;
   const i = ST_SCHRITTE.findIndex(x => x.id === id);
+  if(st.umschauen){
+    kopf.classList.toggle('sichtbar', id === 'heatmap' || id === 'dashboard');
+    document.getElementById('st-fp-text').innerHTML = '<b>Umschauen</b> · Beispielklasse, nichts wird gespeichert · <a href="#" onclick="stUmschauenBeenden(); return false;" style="color:inherit;">Beenden</a>';
+    document.getElementById('st-fp-balken').style.display = 'none';
+    document.getElementById('st-ablauf-dritter-text').textContent = 'Eigene Antwort einordnen';
+    const ab = document.getElementById('st-ablauf'); ab.classList.toggle('sichtbar', id === 'heatmap' || id === 'dashboard');
+    ab.querySelectorAll('button[data-s]').forEach(b => b.classList.toggle('aktiv', b.getAttribute('data-s') === id));
+    return;
+  }
+  document.getElementById('st-fp-balken').style.display = '';
+  document.getElementById('st-ablauf-dritter-text').textContent = 'Planung abschließen';
   kopf.classList.toggle('sichtbar', i >= 0);
   if(i < 0) return;
   document.getElementById('st-fp-text').innerHTML = 'Schritt <b>' + (i + 1) + ' von ' + ST_SCHRITTE.length + '</b> · ' + ST_SCHRITTE[i].name;
@@ -4203,6 +4250,80 @@ function stStoppePegel(ziel){
   const box = document.getElementById(ST_REC_UI[ziel].btn).parentElement;
   const el = box.querySelector('.st-pegel'), hint = box.querySelector('.st-pegel-hinweis');
   if(el){ el.style.display = 'none'; el.innerHTML = ''; } if(hint) hint.textContent = '';
+}
+
+// ===== [NEU 2026-11-10-02] Umschauen-Modus (nach der Studie) =====
+// Beispielklasse mit den korrekten Einordnungen; eigene Antwort eintippen und live von der KI (Edge Function „kategorisieren“) einordnen lassen.
+// Es wird nichts protokolliert oder gespeichert (stLog, stSpeichern, stStandSpeichern sind im Modus abgeschaltet).
+let stUmWahlWert = null;
+function stDritterKnopf(){ if(st.umschauen) stUmschauenModal(true); else stAbschlussFragen(); }
+function stUmschauenStarten(){
+  st.umschauen = true; st.phase = 'umschauen'; st.planStart = null;
+  document.body.classList.add('umschauen');
+  state.pool = stPoolFuerVersion('A').map(p => { const it = STUDIE.items.find(i => i.name === p.name); return { ...p, cat: it.wahr }; });
+  state.slots = { empfohlen: [], frei: [] }; state.activeTab = 'empfohlen'; state.empfAutomatisch = true;
+  state.empfBloecke = []; state.empfAktivBlock = -1; state.poolFilter = null; state.visibleCount = { frei: 0 };
+  state.freiLayout = 'nebeneinander'; state.answersVisibleOnTafel = false;
+  aktualisiereEmpfehlung();
+  stSitzplanAufbauen();
+  document.querySelector('#scr-dashboard .banner').innerHTML = 'Probieren Sie aus: Antworten austauschen, Schritte überspringen, die Einordnung einer Antwort ändern oder in der Ansicht „Frei“ selbst zusammenstellen. Mit „Eigene Antwort einordnen“ (oben) fügen Sie eine eigene Antwort hinzu.';
+  st.planAnsicht = 'heatmap';
+  show('heatmap');
+}
+function stUmschauenBeenden(){
+  st.umschauen = false; document.body.classList.remove('umschauen'); st.phase = 'ende';
+  stUmschauenModal(false);
+  show('st-ende');
+}
+function stUmschauenModal(an){
+  document.getElementById('st-umschauen-modal').classList.toggle('visible', !!an);
+  if(an){
+    document.getElementById('st-um-ergebnis').innerHTML = '';
+    if(!document.getElementById('st-um-text').value && st.eigene && st.eigene.text_final) document.getElementById('st-um-text').value = st.eigene.text_final;
+    document.getElementById('st-um-btn').disabled = false;
+  }
+}
+function stUmWahl(w){
+  stUmWahlWert = w;
+  document.getElementById('st-um-ja').classList.toggle('aktiv', w === 'ja');
+  document.getElementById('st-um-nein').classList.toggle('aktiv', w === 'nein');
+}
+async function stUmEinordnen(){
+  const erg = document.getElementById('st-um-ergebnis'), btn = document.getElementById('st-um-btn');
+  const text = document.getElementById('st-um-text').value.trim();
+  if(!stUmWahlWert){ erg.textContent = 'Bitte wählen Sie zuerst „Ja“ oder „Nein“, so wie ein Kind es zuerst auswählt.'; return; }
+  if(text.length < 3){ erg.textContent = 'Bitte tippen Sie eine kurze Antwort.'; return; }
+  btn.disabled = true; erg.textContent = 'Das Tool ordnet Ihre Antwort ein …';
+  const wahl = stUmWahlWert;
+  const kategorien = Object.entries(CATS).filter(([id, k]) => !k.gueltig_fuer || k.gueltig_fuer === wahl)
+    .map(([id, k]) => ({ kategorie_id: id, bezeichnung: k.label, kurzdefinition: k.def, referenzbeispiele: k.beispiele }));
+  const prompt = wahl === 'ja' ? KLASSIFIKATIONS_PROMPT_JA : KLASSIFIKATIONS_PROMPT_NEIN;
+  let cat = null;
+  try {
+    const { data, error } = await sb.functions.invoke('kategorisieren', { body: { transkript: text, aufgabe_id: AUFGABE_ID, wahl, prompt, kategorien } });
+    if(!error && data && data.kategorie && CATS[data.kategorie]) cat = data.kategorie;
+  } catch(e){ /* unten behandelt */ }
+  btn.disabled = false;
+  if(!cat){ erg.textContent = 'Die Einordnung ist gerade nicht erreichbar. Bitte versuchen Sie es in einem Moment noch einmal.'; return; }
+  const k = CATS[cat];
+  erg.innerHTML = '<div class="st-um-kat"><span class="' + k.color + '" style="display:inline-block;width:14px;height:14px;border-radius:4px;"></span>' + escapeHtml(k.label) + '</div>' +
+    '<div>' + escapeHtml(k.def || '') + '</div><div class="ts" style="margin-top:6px;">Ihre Antwort steht jetzt als „Sie“ im Sitzplan und in der Antwortliste. Wie im Unterricht ist die Einordnung ein Vorschlag: Sie können sie dort ändern.</div>';
+  stUmAntwortEinfuegen(text, cat, wahl);
+}
+function stUmAntwortEinfuegen(text, cat, wahl){
+  const vorhanden = SYMBOLS.find(sy => sy.name === 'Sie');
+  state.pool = state.pool.filter(p => p.name !== 'Sie');
+  state.pool.push({ name: 'Sie', cat, quote: text, wahl });
+  if(!vorhanden){
+    const sym = { id: 'kind_sie', icon: '⭐', name: 'Sie' };
+    SYMBOLS.push(sym); consentState[sym.id] = true; childLanguage[sym.id] = 'de';
+    sitzplanState.placed[sym.id] = { x: 50, y: 88 };
+  }
+  stHeatmapStatusSync();
+  state.empfAutomatisch = true; state.empfBloecke = [];
+  aktualisiereEmpfehlung();
+  if(document.getElementById('scr-heatmap').classList.contains('visible')) renderHeatmap();
+  else if(document.getElementById('scr-dashboard').classList.contains('visible')) renderDashboard();
 }
 // --- 3a Eigene Antwort (vor Auftrag und Antwortübersicht) ---
 function stEigeneVorbereiten(){
@@ -4278,7 +4399,6 @@ function stEndeRendern(){
     Das ist keine Bewertung Ihrer Person: Auch im echten Unterricht wird eine KI immer wieder danebenliegen, und genau dafür wollen wir das Tool besser machen.</p>
     <p style="margin-bottom:4px;">Diese Einordnungen waren falsch:</p><ul style="padding-left:20px; margin-top:0;">${liste}</ul>
     <p style="margin-bottom:0;"><b>Bitte verraten Sie das noch nicht</b> den anderen, solange sie noch planen.</p>`;
-  document.getElementById('st-link-tool').href = STUDIE.link_tool;
   stRenderStatus();
   stFlush();
 }

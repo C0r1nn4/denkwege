@@ -515,6 +515,37 @@
   .st-warn { color:#9b2c24; font-weight:600; }
   /* Tafel-Fenster und Versionsanzeige gehören nicht in die Studie */
   body.studie #app-version, body.studie #tafel-fenster-btn, body.studie .role-switch-mini { display:none !important; }
+
+  /* ===== [NEU 2026-11-10-01] Verständlichkeit: Schrittanzeige, Ablauf-Leiste, Aufnahme-Begleitung, Breite der Antwortübersicht ===== */
+  #st-kopf { display:none; background:var(--surface-1); border-bottom:1px solid var(--border); padding:8px 14px 10px; }
+  #st-kopf.sichtbar { display:block; }
+  .st-fp-text { font-size:var(--fs-small); color:var(--text-secondary); margin-bottom:6px; }
+  .st-fp-text b { color:var(--text-primary); }
+  .st-fp-balken { display:flex; gap:4px; }
+  .st-fp-balken span { flex:1; height:6px; border-radius:3px; background:var(--surface-2); border:1px solid var(--border); }
+  .st-fp-balken span.fertig { background:var(--fill-accent); border-color:var(--fill-accent); opacity:.55; }
+  .st-fp-balken span.aktuell { background:var(--fill-accent); border-color:var(--fill-accent); }
+  #st-ablauf { display:none; gap:6px; margin-top:10px; }
+  #st-ablauf.sichtbar { display:flex; }
+  #st-ablauf button { flex:1; min-width:0; border:1px solid var(--border); background:var(--surface-2); color:var(--text-secondary); border-radius:999px; padding:8px 6px; font-size:var(--fs-small); cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; min-height:44px; }
+  #st-ablauf button .nr { display:inline-flex; width:22px; height:22px; border-radius:50%; background:var(--surface-0, var(--surface-1)); align-items:center; justify-content:center; font-weight:700; font-size:var(--fs-micro); flex-shrink:0; }
+  #st-ablauf button.aktiv { background:var(--fill-accent); color:var(--on-accent, #fff); border-color:var(--fill-accent); font-weight:600; }
+  #st-ablauf button.aktiv .nr { background:var(--surface-2); color:var(--text-primary); }
+  #st-ablauf button.abschluss { border-color:var(--border-accent); color:var(--text-accent); font-weight:600; }
+  body.studie #scr-dashboard > button.btn { margin-left:auto; margin-right:auto; }
+  .st-ueberschrift { font-size:var(--fs-small); font-weight:600; margin:2px 0 6px; }
+  .st-rec-laeuft { background:var(--fill-danger) !important; border-color:var(--fill-danger) !important; color:#fff !important; animation: st-rec-puls 1.4s infinite ease-in-out; }
+  @keyframes st-rec-puls { 0%,100% { box-shadow:0 0 0 0 rgba(200,50,50,.45); } 50% { box-shadow:0 0 0 10px rgba(200,50,50,0); } }
+  .st-pegel { display:none; align-items:flex-end; justify-content:center; gap:5px; height:48px; margin-top:12px; }
+  .st-pegel span { width:9px; height:5px; border-radius:5px; background:var(--fill-danger); transition:height .08s linear; }
+  .st-pegel-hinweis { min-height:1.3em; margin-top:6px; font-size:var(--fs-small); color:var(--text-secondary); }
+  .st-punkte span { display:inline-block; animation: st-punkt 1.2s infinite ease-in-out; }
+  .st-punkte span:nth-child(2) { animation-delay:.2s; } .st-punkte span:nth-child(3) { animation-delay:.4s; }
+  @keyframes st-punkt { 0%,80%,100% { opacity:.25; } 40% { opacity:1; } }
+  @media (prefers-reduced-motion: reduce) { .st-rec-laeuft, .st-punkte span { animation:none; } .st-pegel span { transition:none; } }
+  /* Antwortübersicht breiter wie im Tool; Liste ab 900 px zweispaltig (Reihenfolge bleibt zeilenweise) */
+  .app:has(#scr-heatmap.visible) { max-width:1240px; }
+  @media (min-width: 900px) { #antworten-liste { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); column-gap:18px; align-items:start; } }
 </style>
 </head>
 <body>
@@ -574,6 +605,7 @@
     <div id="st-eigen-aufnahme-bereich" class="card" style="text-align:center; display:none;">
       <button id="st-eigen-rec-btn" class="btn btn-primary" onclick="stAufnahmeToggle('eigen')"><i class="ti ti-microphone"></i> <span id="st-eigen-rec-label">Aufnahme starten</span></button>
       <div id="st-eigen-rec-status" class="ts" style="font-size:var(--fs-small); margin-top:8px;">Tipp: Halten Sie das Gerät nah an den Mund oder nutzen Sie Kopfhörer mit Mikrofon.</div>
+      <div class="st-pegel" aria-hidden="true"></div><div class="st-pegel-hinweis" role="status"></div>
       <div style="margin-top:8px;"><span class="ts" style="font-size:var(--fs-micro); text-decoration:underline; cursor:pointer;" onclick="stZuTextWechseln(false,'eigen')">Lieber tippen</span></div>
     </div>
     <div id="st-eigen-text-bereich" style="display:none;">
@@ -601,6 +633,7 @@
     <div id="st-aufnahme-bereich" class="card" style="text-align:center; display:none;">
       <button id="st-rec-btn" class="btn btn-primary" onclick="stAufnahmeToggle()"><i class="ti ti-microphone"></i> <span id="st-rec-label">Aufnahme starten</span></button>
       <div id="st-rec-status" class="ts" style="font-size:var(--fs-small); margin-top:8px;">Tipp: Halten Sie das Gerät nah an den Mund oder nutzen Sie Kopfhörer mit Mikrofon.</div>
+      <div class="st-pegel" aria-hidden="true"></div><div class="st-pegel-hinweis" role="status"></div>
       <div style="margin-top:8px;"><span class="ts" style="font-size:var(--fs-micro); text-decoration:underline; cursor:pointer;" onclick="stZuTextWechseln()">Lieber tippen</span></div>
     </div>
     <div id="st-text-bereich" style="display:none;">
@@ -1096,7 +1129,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_WOnHYkefrIzOY-tigGqPKg_Dvjf73Gc";
 const sb = (window.supabase && window.supabase.createClient) ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 // Version dieser Datei (JJJJ-MM-TT-NN). Bei JEDER Änderung hochzählen und im Änderungsprotokoll des Projektkontexts eintragen.
-const APP_VERSION = "2026-10-28-01"; // Studienseite (ausprobieren.html); Tool-Basis index.html 2026-10-22-02
+const APP_VERSION = "2026-11-10-01"; // Studienseite (ausprobieren.html); Tool-Basis index.html 2026-10-22-02, Verständlichkeits-Überarbeitung (Schrittanzeige, Ablauf-Leiste, Aufnahme-Begleitung) aus index.html 2026-11-05-08
 (function(){ const el = document.getElementById('app-version'); if(el) el.textContent = 'v' + APP_VERSION; console.info('Denkwege', APP_VERSION); })();
 function getUrlParam(name){ return new URLSearchParams(window.location.search).get(name); }
 
@@ -3917,7 +3950,7 @@ function stWillkommenWeiter(){
   st.audioOk = document.getElementById('st-einw-audio').checked;
   st.code = c.join('');
   stSpeichern('einwilligung', {
-    teilnahme: true, audio: st.audioOk, code: st.code, version_quelle: st.versionQuelle,
+    teilnahme: true, audio: st.audioOk, code: st.code, version_quelle: st.versionQuelle, app_version: APP_VERSION,
     geraet: { ua: navigator.userAgent, breite: window.innerWidth, hoehe: window.innerHeight }
   });
   stPhase('vorab');
@@ -4053,10 +4086,12 @@ async function stAufnahmeToggle(ziel){
       r.recorder.start();
       r.laeuft = true; r.startZeit = Date.now();
       label.textContent = 'Aufnahme beenden';
-      status.textContent = 'Aufnahme läuft …';
+      status.textContent = 'Aufnahme läuft … Tippen Sie auf „Aufnahme beenden“, wenn Sie fertig sind.';
+      btn.classList.add('st-rec-laeuft'); stStartePegel(ziel, r.stream);
       stLog('aufnahme_start', { ziel });
     } catch(e){
       status.textContent = u.mikFehler;
+      btn.classList.remove('st-rec-laeuft'); stStoppePegel(ziel);
       stLog('aufnahme_fehler', { ziel, fehler: String(e) });
       stZuTextWechseln(true, ziel);
     }
@@ -4064,8 +4099,9 @@ async function stAufnahmeToggle(ziel){
   }
   r.laeuft = false;
   btn.disabled = true;
+  btn.classList.remove('st-rec-laeuft'); stStoppePegel(ziel);
   label.textContent = 'Wird verschriftlicht …';
-  status.textContent = 'Das kann bis zu einer Minute dauern.';
+  status.innerHTML = 'Ich schreibe auf, was Sie gesagt haben <span class="st-punkte"><span>●</span><span>●</span><span>●</span></span><br>Das kann bis zu einer Minute dauern.';
   r.recorder.onstop = async () => {
     r.stream.getTracks().forEach(t => t.stop());
     const blob = new Blob(r.chunks, { type: r.mime });
@@ -4094,6 +4130,79 @@ async function stAufnahmeToggle(ziel){
     stStandSpeichern();
   };
   r.recorder.stop();
+}
+
+// ===== [NEU 2026-11-10-01] Verständlichkeit =====
+// (1) Schrittanzeige über alle Bildschirme der Studie, (2) Ablauf-Leiste in der Planung (Übersicht · Gespräch planen · Abschließen),
+// (3) Aufnahme begleiten: Pegel, Hinweis bei Stille, deutlicher Aufnahmezustand, Fortschritt der Verschriftlichung.
+const ST_SCHRITTE = [
+  { id:'st-willkommen', name:'Information und Einwilligung' },
+  { id:'st-vorab', name:'Zu Ihrer Person' },
+  { id:'st-eigene', name:'Ihre eigene Antwort' },
+  { id:'st-auftrag', name:'Ihre Aufgabe' },
+  { id:'heatmap', name:'Antwortübersicht' },
+  { id:'dashboard', name:'Klassengespräch planen' },
+  { id:'st-begruendung', name:'Ihre Begründung' },
+  { id:'st-nach', name:'Ihre Einschätzung' },
+  { id:'st-kodieren', name:'Antworten selbst einordnen' }
+];
+function stKopfAufbauen(){
+  const kopf = document.createElement('div');
+  kopf.id = 'st-kopf';
+  kopf.innerHTML = '<div class="st-fp-text" id="st-fp-text"></div><div class="st-fp-balken" id="st-fp-balken">' + ST_SCHRITTE.map(() => '<span></span>').join('') + '</div>' +
+    '<div id="st-ablauf">' +
+      '<button data-s="heatmap" onclick="stAblaufZu(\'heatmap\')"><span class="nr">1</span> Antwortübersicht</button>' +
+      '<button data-s="dashboard" onclick="stAblaufZu(\'dashboard\')"><span class="nr">2</span> Klassengespräch planen</button>' +
+      '<button class="abschluss" onclick="stAbschlussFragen()"><span class="nr">✓</span> Planung abschließen</button>' +
+    '</div>';
+  document.querySelector('.topbar').after(kopf);
+}
+function stAblaufZu(ziel){
+  if(ziel === 'dashboard'){ if(!document.getElementById('scr-dashboard').classList.contains('visible')) stZumDashboard(); }
+  else if(!document.getElementById('scr-heatmap').classList.contains('visible')){ stLog('zur_heatmap', { von: 'dashboard' }); st.planAnsicht = 'heatmap'; show('heatmap'); }
+}
+function stKopfAktualisieren(id){
+  const kopf = document.getElementById('st-kopf'); if(!kopf) return;
+  const i = ST_SCHRITTE.findIndex(x => x.id === id);
+  kopf.classList.toggle('sichtbar', i >= 0);
+  if(i < 0) return;
+  document.getElementById('st-fp-text').innerHTML = 'Schritt <b>' + (i + 1) + ' von ' + ST_SCHRITTE.length + '</b> · ' + ST_SCHRITTE[i].name;
+  document.querySelectorAll('#st-fp-balken span').forEach((b, k) => { b.className = k < i ? 'fertig' : (k === i ? 'aktuell' : ''); });
+  const ablauf = document.getElementById('st-ablauf');
+  const inPlanung = id === 'heatmap' || id === 'dashboard';
+  ablauf.classList.toggle('sichtbar', inPlanung);
+  ablauf.querySelectorAll('button[data-s]').forEach(b => b.classList.toggle('aktiv', b.getAttribute('data-s') === id));
+}
+// Aufnahme begleiten
+const stPegel = {};
+function stStartePegel(ziel, stream){
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext; if(!AC) return;
+    const u = ST_REC_UI[ziel], box = document.getElementById(u.btn).parentElement;
+    let el = box.querySelector('.st-pegel'), hint = box.querySelector('.st-pegel-hinweis');
+    el.style.display = 'flex'; el.innerHTML = '<span></span>'.repeat(9);
+    const ctx = new AC(); if(ctx.resume) ctx.resume();
+    const an = ctx.createAnalyser(); an.fftSize = 512; ctx.createMediaStreamSource(stream).connect(an);
+    const buf = new Uint8Array(an.fftSize), bars = el.children, hist = new Array(9).fill(0), t0 = Date.now(); let laut = false;
+    const z = { ctx, raf: 0 }; stPegel[ziel] = z;
+    const loop = () => {
+      an.getByteTimeDomainData(buf);
+      let sum = 0; for(let i = 0; i < buf.length; i++){ const v = (buf[i] - 128) / 128; sum += v * v; }
+      const rms = Math.sqrt(sum / buf.length);
+      hist.push(Math.min(1, rms * 6)); hist.shift();
+      for(let i = 0; i < bars.length; i++) bars[i].style.height = (5 + hist[i] * 43) + 'px';
+      if(rms > 0.02) laut = true;
+      hint.textContent = (!laut && Date.now() - t0 > 4000) ? 'Ich höre noch nichts. Sprechen Sie etwas lauter oder halten Sie das Gerät näher an den Mund.' : '';
+      z.raf = requestAnimationFrame(loop);
+    };
+    loop();
+  } catch(e){ /* Pegel ist nur Zusatz */ }
+}
+function stStoppePegel(ziel){
+  const z = stPegel[ziel]; if(z){ cancelAnimationFrame(z.raf); try { z.ctx.close(); } catch(e){} delete stPegel[ziel]; }
+  const box = document.getElementById(ST_REC_UI[ziel].btn).parentElement;
+  const el = box.querySelector('.st-pegel'), hint = box.querySelector('.st-pegel-hinweis');
+  if(el){ el.style.display = 'none'; el.innerHTML = ''; } if(hint) hint.textContent = '';
 }
 // --- 3a Eigene Antwort (vor Auftrag und Antwortübersicht) ---
 function stEigeneVorbereiten(){
@@ -4327,9 +4436,12 @@ function stFortsetzenAnbieten(d){
 // --- Start ---
 function studieStarten(){
   document.body.classList.add('studie');
+  stKopfAufbauen();
+  const showOriginal = show;
+  show = function(id){ const r = showOriginal(id); stKopfAktualisieren(id); return r; };
   if(STUDIE.aufgabe && !aktiviereAufgabe(STUDIE.aufgabe)){ console.error('Studienaufgabe konnte nicht geladen werden'); }
   wendeAufgabeAufUIAn();
-  document.querySelector('#scr-dashboard .banner').innerHTML = 'Planen Sie das Klassengespräch so, wie Sie es in Ihrem Unterricht tun würden.<br><b>Hinweis:</b> In der Tafelansicht, die Sie den Lernenden zeigen, ist jeweils nur die Antwort der Lernenden zu sehen.';
+  document.querySelector('#scr-dashboard .banner').innerHTML = 'Planen Sie das Klassengespräch so, wie Sie es in Ihrem Unterricht tun würden.<br><b>Hinweis:</b> Auf der Tafel sehen die Lernenden später nur die Antwort selbst, ohne Namen und ohne Einordnung. Mit „Planung abschließen“ (oben oder unten) beenden Sie diesen Schritt.';
   // Kurze Erklärung, wie die beiden Ansichten funktionieren
   const empfHilfe = document.createElement('div');
   empfHilfe.className = 'st-hilfe';
@@ -4371,6 +4483,14 @@ function studieStarten(){
   hmHilfe.className = 'st-hilfe';
   hmHilfe.textContent = 'Hier sehen Sie auf einen Blick, wie die Klasse geantwortet hat. Tippen Sie auf ein Kind, um seine Antwort zu lesen. Im nächsten Schritt planen Sie im Dashboard das Klassengespräch.';
   hm.querySelector('.scr-title').after(hmHilfe);
+  // [NEU 2026-11-10-01] Beschriftungen verständlicher: das Feld heißt „Sitzplan der Klasse“ (nicht „Tafel“), Sitzungs-Begriffe entfallen
+  const sitzplanKopf = hm.querySelector('#heatmap-canvas').previousElementSibling;
+  if(sitzplanKopf){ const lab = sitzplanKopf.querySelector('span'); if(lab) lab.innerHTML = '<i class="ti ti-layout-grid"></i> Sitzplan der Klasse – jedes Feld ist ein Kind'; }
+  const fortschr = document.getElementById('heatmap-fortschritt'); if(fortschr) fortschr.style.display = 'none';
+  const prioLeiste = document.getElementById('prioritaets-leiste');
+  if(prioLeiste){ const h = document.createElement('div'); h.className = 'st-ueberschrift'; h.textContent = 'Überblick: Wie viele Antworten gehören wohin? (Antippen zeigt nur diese Kinder)'; prioLeiste.before(h); }
+  const stRenderHmOrig = window.renderHeatmap;
+  window.renderHeatmap = function(){ const r = stRenderHmOrig(); const lg = document.getElementById('heatmap-legende'); if(lg){ lg.querySelectorAll(':scope > span').forEach(sp => { if(/offen|läuft|keine Einwilligung/.test(sp.textContent)) sp.style.display = 'none'; }); } return r; };
   const sortSel = document.getElementById('liste-sortierung');
   if(sortSel) sortSel.addEventListener('change', () => stLog('liste_sortierung', { wert: sortSel.value }));
   const zurueckHm = dash.querySelector(`[onclick="show('heatmap')"]`);
@@ -4398,7 +4518,7 @@ function studieStarten(){
   // Begründungstext laufend im Zwischenstand sichern
   document.getElementById('st-begruendung-text').addEventListener('input', () => stStandSpeichern());
   document.getElementById('st-eigen-text').addEventListener('input', () => stStandSpeichern());
-  stLog('start', { version_quelle: st.versionQuelle, url: location.href.split('?')[0] });
+  stLog('start', { version_quelle: st.versionQuelle, app_version: APP_VERSION, url: location.href.split('?')[0] });
   show('st-willkommen');
   const gespeichert = stStandLoeschenFallsTestwechsel(stStandLaden());
   if(gespeichert && gespeichert.st.phase !== 'willkommen') stFortsetzenAnbieten(gespeichert);

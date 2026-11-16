@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Denkwege ausprobieren</title>
-<meta name="app-version" content="2026-11-10-02">
+<meta name="app-version" content="2026-11-16-01">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
@@ -594,6 +594,7 @@
     </div>
     <div id="st-fehler-willkommen" class="st-fehler"></div>
     <button class="btn btn-primary" onclick="stWillkommenWeiter()">Los geht’s</button>
+    <div class="ts" style="font-size:var(--fs-small); line-height:1.5; margin-top:12px; text-align:center;">Sie möchten nicht teilnehmen? Dann schließen Sie einfach dieses Fenster. Bis zu Ihrem Einverständnis wird nichts an uns übertragen.</div>
   </div>
 
   <div id="scr-st-vorab" class="screen">
@@ -1163,7 +1164,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_WOnHYkefrIzOY-tigGqPKg_Dvjf73Gc";
 const sb = (window.supabase && window.supabase.createClient) ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 // Version dieser Datei (JJJJ-MM-TT-NN). Bei JEDER Änderung hochzählen und im Änderungsprotokoll des Projektkontexts eintragen.
-const APP_VERSION = "2026-11-10-02"; // Studienseite (ausprobieren.html); Tool-Basis index.html 2026-10-22-02, Verständlichkeits-Überarbeitung (Schrittanzeige, Ablauf-Leiste, Aufnahme-Begleitung) aus index.html 2026-11-05-08; seit -10-02: Umschauen-Modus
+const APP_VERSION = "2026-11-16-01"; // Studienseite (ausprobieren.html); Tool-Basis index.html 2026-10-22-02, Verständlichkeits-Überarbeitung (Schrittanzeige, Ablauf-Leiste, Aufnahme-Begleitung) aus index.html 2026-11-05-08; seit -10-02: Umschauen-Modus
 (function(){ const el = document.getElementById('app-version'); if(el) el.textContent = 'v' + APP_VERSION; console.info('Denkwege', APP_VERSION); })();
 function getUrlParam(name){ return new URLSearchParams(window.location.search).get(name); }
 
@@ -3719,6 +3720,7 @@ function stLog(typ, details){
 }
 async function stFlush(){
   if(st.sendet) return;
+  if(st.phase === 'willkommen') return;   // [NEU 2026-11-16-01] vor dem Einverständnis wird nichts gesendet (Ereignisse bleiben im Speicher und gehen erst danach raus)
   st.sendet = true;
   try {
     if(st.offeneAntworten.length){
@@ -3985,11 +3987,11 @@ function stWillkommenWeiter(){
   fehler.textContent = '';
   st.audioOk = document.getElementById('st-einw-audio').checked;
   st.code = c.join('');
+  stPhase('vorab');   // vor dem Speichern, damit stFlush (sendet erst nach Einverständnis) die Einwilligung gleich mitnimmt
   stSpeichern('einwilligung', {
     teilnahme: true, audio: st.audioOk, code: st.code, version_quelle: st.versionQuelle, app_version: APP_VERSION,
     geraet: { ua: navigator.userAgent, breite: window.innerWidth, hoehe: window.innerHeight }
   });
-  stPhase('vorab');
   show('st-vorab');
 }
 // --- 2 Vorab ---
@@ -4133,7 +4135,7 @@ async function stAufnahmeToggle(ziel){
     }
     return;
   }
-  r.laeuft = false;
+  r.laeuft = false; r.wartet = true;   // [NEU 2026-11-16-01] Verschriftlichung läuft: „Weiter“ erst danach
   btn.disabled = true;
   btn.classList.remove('st-rec-laeuft'); stStoppePegel(ziel);
   label.textContent = 'Wird verschriftlicht …';
@@ -4160,6 +4162,7 @@ async function stAufnahmeToggle(ziel){
     document.getElementById(u.text).style.display = 'block';
     document.getElementById(u.hinweis).textContent = 'So haben wir Sie verstanden. Sie können den Text korrigieren oder ergänzen.';
     if(text) ta.value = ta.value ? ta.value.trimEnd() + ' ' + text : text;
+    r.wartet = false;
     btn.disabled = false;
     label.textContent = 'Weitere Aufnahme hinzufügen';
     status.textContent = fehlerText ? u.nochmal : '';
@@ -4338,6 +4341,7 @@ function stEigeneVorbereiten(){
 function stEigeneWeiter(){
   const fehler = document.getElementById('st-fehler-eigene');
   if(st.recEigen.laeuft){ fehler.textContent = 'Bitte beenden Sie zuerst die Aufnahme.'; return; }
+  if(st.recEigen.wartet){ fehler.textContent = 'Einen Moment bitte: Ihre Aufnahme wird noch verschriftlicht.'; return; }
   const text = document.getElementById('st-eigen-text').value.trim();
   if(!text){ fehler.textContent = 'Bitte sprechen Sie Ihre Antwort kurz ein oder tippen Sie sie.'; return; }
   fehler.textContent = '';
@@ -4351,6 +4355,7 @@ function stEigeneWeiter(){
 }
 function stBegruendungWeiter(){
   if(st.rec.laeuft){ document.getElementById('st-fehler-begruendung').textContent = 'Bitte beenden Sie zuerst die Aufnahme.'; return; }
+  if(st.rec.wartet){ document.getElementById('st-fehler-begruendung').textContent = 'Einen Moment bitte: Ihre Aufnahme wird noch verschriftlicht.'; return; }
   const text = document.getElementById('st-begruendung-text').value.trim();
   if(!text){ document.getElementById('st-fehler-begruendung').textContent = 'Bitte geben Sie eine kurze Begründung ein oder sprechen Sie sie ein.'; return; }
   document.getElementById('st-fehler-begruendung').textContent = '';
@@ -4408,8 +4413,9 @@ function stRenderStatus(){
   const offen = st.offeneAntworten.length + st.puffer.length;
   el.innerHTML = offen === 0
     ? '<i class="ti ti-circle-check"></i> Alle Daten sind übertragen. Sie können das Fenster schließen.'
-    : `<div style="margin-bottom:8px;"><i class="ti ti-wifi-off"></i> ${offen} Datenpakete sind noch nicht übertragen. Bitte schließen Sie das Fenster noch nicht.</div>
-       <button class="btn" onclick="stFlush()">Erneut senden</button>`;
+    : `<div style="margin-bottom:8px;"><i class="ti ti-wifi-off"></i> ${offen} Datenpakete sind noch nicht übertragen. Bitte prüfen Sie Ihre Internetverbindung und tippen Sie auf „Erneut senden“.</div>
+       <button class="btn" onclick="stFlush()">Erneut senden</button>
+       <div class="ts" style="font-size:var(--fs-micro); margin-top:8px; line-height:1.4;">Klappt es nicht, können Sie das Fenster schließen: Die Daten bleiben bis zu 4 Stunden auf diesem Gerät. Öffnen Sie diese Seite dann auf demselben Gerät noch einmal und wählen Sie „Abschlussseite ansehen“, dann wird weitergesendet.</div>`;
 }
 
 // --- Prüfbericht (ausprobieren.html?pruefen=1) ---

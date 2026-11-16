@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Denkwege</title>
-<meta name="app-version" content="2026-11-10-01">
+<meta name="app-version" content="2026-11-16-02">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
@@ -173,7 +173,11 @@
   /* [NEU] Kleine, dezente Rollen-Umschaltung unten rechts -- fest positioniert, damit sie
      immer erreichbar bleibt, aber optisch zurücktritt (kein Vorführ-Hinweis mehr im
      Fließtext, stattdessen als Tooltip). */
-  .role-switch-mini { position:fixed; bottom:8px; right:8px; display:flex; gap:4px; z-index:20; opacity:0.55; transition:opacity 0.15s; }
+  /* [NEU 2026-11-16-01] Rollen-Umschalter nur noch mit ?demo=1 (sonst konnten Kinder in die Lehrkraft-Oberfläche geraten) */
+  .role-switch-mini { display:none; }
+  .kid-zurueck { display:none; margin:0 auto 12px; }
+  #scr-aufnahme:has(#record-btn:not(.rec-bereit)) #aufnahme-zurueck, #scr-aufnahme:has(#record-area[style*="none"]) #aufnahme-zurueck { display:none !important; }
+  body.demo .role-switch-mini { position:fixed; bottom:8px; right:8px; display:flex; gap:4px; z-index:20; opacity:0.55; transition:opacity 0.15s; }
   .role-switch-mini:hover, .role-switch-mini:focus-within { opacity:1; }
   .role-switch-mini button { font-size:var(--fs-micro); padding:4px 7px; }
 
@@ -583,6 +587,7 @@
   </div>
   <div class="lk-leiste" id="lk-leiste">
     <span class="lk-klasse" id="lk-leiste-klasse"><i class="ti ti-chalkboard"></i> </span>
+    <button class="navbtn" onclick="show('login')" title="Zur Klassenraum-Übersicht (Verwaltung, Sitzplan, Aufgabenwahl); laufende Sitzungen bleiben offen"><i class="ti ti-school"></i> Klassenraum</button>
     <button class="navbtn" onclick="zeigeOffeneSitzungen()" title="Alle noch nicht beendeten Sitzungen Ihres Klassenraums"><i class="ti ti-list-check"></i> Offene Sitzungen<span class="lk-badge leer" id="lk-offene-badge">0</span></button>
     <button class="navbtn" onclick="lkAbmeldenFrage()"><i class="ti ti-logout"></i> Abmelden</button>
   </div>
@@ -636,7 +641,7 @@
   </div>
 
   <div id="scr-login" class="screen">
-    <button class="navbtn" style="margin-bottom:10px;" onclick="lkAbmelden()"><i class="ti ti-logout"></i> Abmelden</button>
+    <button class="navbtn" style="margin-bottom:10px;" onclick="lkAbmeldenFrage()"><i class="ti ti-logout"></i> Abmelden</button>
     <h2 class="scr-title">Klassenraum wählen</h2>
     <div class="card row" onclick="show('pool')" style="cursor:pointer;">
       <div class="icon-circle c-blue"><i class="ti ti-school"></i></div>
@@ -688,8 +693,9 @@
     </div>
     <div id="aufgabe-sitzplan-warning" class="banner" style="display:none;">
       <i class="ti ti-alert-triangle"></i> Sitzplan noch nicht eingerichtet — die Antwortübersicht kann während der Erarbeitung dann nichts im Sitzplan anzeigen.
-      <button class="navbtn" style="margin-top:6px;" onclick="show('sitzplan')">Zurück zum Sitzplan →</button>
+      <button class="navbtn" style="margin-top:6px;" onclick="show('sitzplan')">Sitzplan einrichten →</button>
     </div>
+    <div id="aufgabe-laufende-sitzung" class="banner" style="display:none;"></div>
     <button class="btn btn-primary" onclick="startSitzung()"><i class="ti ti-player-play"></i> Sitzung starten</button>
     <div class="ts" style="font-size:var(--fs-micro); margin-top:10px; text-align:center;">→ Kinder arbeiten jetzt parallel an ihren eigenen Geräten (Rolle "Kind" oben)</div>
   </div>
@@ -703,6 +709,8 @@
     </div>
     <div class="grid4" id="symbol-grid" style="margin-bottom:16px;"></div>
     <div id="symbol-legende" class="ts">🔒 jemand ist gerade dran · ✓ schon fertig. Graue Bilder kannst du trotzdem antippen.</div>
+    <!-- [NEU 2026-11-16-01] Ausweg für Kindgeräte: neuer Code (nächste Stunde, andere Station, beendete Sitzung) -->
+    <div style="margin-top:22px;"><button class="navbtn" id="symbol-anderer-code" onclick="kindAndererCode()"><i class="ti ti-keyboard"></i> Anderen Code eingeben</button></div>
   </div>
 
   <!-- [NEU] "Bist du das?" jetzt als echtes Pop-up statt als Karte unterhalb der
@@ -727,6 +735,7 @@
 
   <!-- KIND: AUFNAHME -->
   <div id="scr-aufnahme" class="screen" style="text-align:center;">
+   <button class="navbtn kid-zurueck" id="aufnahme-zurueck" style="display:block;" onclick="aufnahmeZurueck()"><i class="ti ti-arrow-left"></i> Anderes Bild wählen</button>
    <div id="aufnahme-raster"><div id="aufnahme-links">
     <div class="card c-blue">
       <div id="aufnahme-anweisung" class="t" style="font-size:var(--fs-lead); font-weight:600; line-height:1.35; margin-bottom:10px;">Wie würdest du die Zahl 6 T 2 H 42 Z 5 E in die Stellenwerttafel und als Zahl schreiben? Erkläre.</div>
@@ -1060,7 +1069,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_WOnHYkefrIzOY-tigGqPKg_Dvjf73Gc";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Version dieser Datei (JJJJ-MM-TT-NN). Bei JEDER Änderung hochzählen und im Änderungsprotokoll des Projektkontexts eintragen.
-const APP_VERSION = "2026-11-10-01";
+const APP_VERSION = "2026-11-16-02";
 (function(){ const el = document.getElementById('app-version'); if(el) el.textContent = 'v' + APP_VERSION; console.info('Denkwege', APP_VERSION); })();
 function getUrlParam(name){ return new URLSearchParams(window.location.search).get(name); }
 
@@ -1080,6 +1089,7 @@ function generateCode(){
 }
 let sitzungscode = getUrlParam('code') || null;
 const istKindGeraet = getUrlParam('geraet') === 'kind';
+if(getUrlParam('demo') === '1') document.body.classList.add('demo');   // [NEU 2026-11-16-01] Rollen-Umschalter nur zum Vorführen
 let codeEingabe = []; // getippte Ziffern (max. 3), bevor gegen Supabase geprüft wird
 
 let antwortKanal = null; // laufendes Realtime-Abo der aktuellen Sitzung (wird bei Wechsel/Abmeldung entfernt)
@@ -1703,15 +1713,24 @@ function aktualisiereLkLeiste(screenId){
 }
 // Holt alle nicht beendeten Sitzungen des eigenen Klassenraums samt Antwortzahl.
 async function ladeOffeneSitzungen(){
-  const { data, error } = await sb.from('sitzungen').select('code, aufgabe_id, aufgabe_konfiguration')
-    .eq('klassenraum', aktiveKlassenraum).is('beendet_am', null);
-  if(error){ console.error('Offene Sitzungen konnten nicht geladen werden:', error.message); return null; }
-  const liste = data || [];
-  if(liste.length){
-    const { data: ant } = await sb.from('antworten').select('sitzungscode').in('sitzungscode', liste.map(x=>x.code));
-    const zaehler = {}; (ant||[]).forEach(a => { zaehler[a.sitzungscode] = (zaehler[a.sitzungscode]||0) + 1; });
-    liste.forEach(x => { x.antworten = zaehler[x.code] || 0; });
-  }
+  // [GEÄNDERT 2026-11-16-01] Netzfehler und Hänger abgefangen (10 s), Ergebnis dann null statt endlos „Lädt…“
+  let liste;
+  try {
+    const abfrage = (async () => {
+      const { data, error } = await sb.from('sitzungen').select('code, aufgabe_id, aufgabe_konfiguration')
+        .eq('klassenraum', aktiveKlassenraum).is('beendet_am', null);
+      if(error){ console.error('Offene Sitzungen konnten nicht geladen werden:', error.message); return null; }
+      const l = data || [];
+      if(l.length){
+        const { data: ant } = await sb.from('antworten').select('sitzungscode').in('sitzungscode', l.map(x=>x.code));
+        const zaehler = {}; (ant||[]).forEach(a => { zaehler[a.sitzungscode] = (zaehler[a.sitzungscode]||0) + 1; });
+        l.forEach(x => { x.antworten = zaehler[x.code] || 0; });
+      }
+      return l;
+    })();
+    liste = await Promise.race([abfrage, new Promise(res => setTimeout(() => res(null), 10000))]);
+  } catch(e){ console.error('Offene Sitzungen:', e); return null; }
+  if(liste === null) return null;
   const badge = document.getElementById('lk-offene-badge');
   if(badge){ badge.textContent = liste.length; badge.classList.toggle('leer', liste.length === 0); }
   return liste;
@@ -1722,10 +1741,10 @@ function sitzungTitel(x){
 }
 async function zeigeOffeneSitzungen(){
   const body = document.getElementById('sitzungen-modal-body');
-  body.innerHTML = '<div class="ts">Lädt…</div>';
+  body.innerHTML = '<div class="ts">Lädt…</div><button class="btn" style="margin-top:12px;" onclick="schliesseSitzungenModal()">Schließen</button>';
   document.getElementById('sitzungen-modal').classList.add('visible');
   const liste = await ladeOffeneSitzungen();
-  if(liste === null){ body.innerHTML = '<div class="ts">Sitzungen konnten nicht geladen werden.</div><button class="btn" style="margin-top:12px;" onclick="schliesseSitzungenModal()">Schließen</button>'; return; }
+  if(liste === null){ body.innerHTML = '<div class="ts">Sitzungen konnten nicht geladen werden (keine Verbindung?). Bitte später noch einmal versuchen.</div><button class="btn" style="margin-top:12px;" onclick="zeigeOffeneSitzungen()">Noch einmal versuchen</button> <button class="btn" style="margin-top:12px;" onclick="schliesseSitzungenModal()">Schließen</button>'; return; }
   const zeilen = liste.length ? liste.map(x => {
     const aktuell = x.code === sitzungscode && state.sessionActive;
     return `<div class="sitzung-zeile${aktuell?' aktuell':''}">
@@ -2029,6 +2048,12 @@ function show(id){
     ladeAufgabenAdminListe();
   }
   if(id==='aufgabe'){
+    const hinweisLaeuft = document.getElementById('aufgabe-laufende-sitzung');
+    if(hinweisLaeuft){
+      const laeuft = state.sessionActive && sitzungscode && !istKindGeraet;
+      hinweisLaeuft.style.display = laeuft ? 'block' : 'none';
+      if(laeuft) hinweisLaeuft.innerHTML = '<i class="ti ti-info-circle"></i> Es läuft schon eine Sitzung (' + codeAlsSymbole(sitzungscode) + '). „Sitzung starten“ legt eine <b>neue</b> Sitzung mit eigenem Code an; die laufende bleibt offen und ist über „Offene Sitzungen“ wieder erreichbar.';
+    }
     document.getElementById('aufgabe-sitzplan-warning').style.display = Object.keys(sitzplanState.placed).length>0 ? 'none' : 'block';
     const ohneEinwilligung = SYMBOLS.filter(s=>!consentState[s.id]).length;
     document.getElementById('aufgabe-kinder-status').textContent =
@@ -2054,31 +2079,33 @@ async function generiereFreienCode(){
   return generateCode(); // extrem unwahrscheinlicher Fall -- lieber weitermachen als haengen bleiben
 }
 async function startSitzung(){
+  // [GEÄNDERT 2026-11-16-01] Jede Aufgabe bekommt eine NEUE Sitzung mit eigenem Code. Eine bisher geöffnete Sitzung
+  // läuft weiter (Kindgeräte können ihr weiter beitreten) und ist über „Offene Sitzungen“ wieder erreichbar.
+  // Vorher wurde der alte Code weiterverwendet; Antworten und Kategorien zweier Aufgaben vermischten sich.
+  const vorherCode = sitzungscode, vorherAktiv = state.sessionActive;
+  sitzungscode = null;
   state.sessionActive = true;
   await syncKinderMitSupabase(); // stellt sicher, dass jedes Kind eine feste ID hat, bevor Antworten reinkommen
-
-  // Einen evtl. aus der URL übernommenen (alten) Code nur weiterverwenden, wenn er
-  // wirklich zu einer noch laufenden Sitzung DIESER Klasse gehört -- sonst immer einen
-  // frischen, kollisionsfreien Code ziehen.
-  if(sitzungscode){
-    const { data } = await sb.from('sitzungen').select('klassenraum,beendet_am').eq('code', sitzungscode).maybeSingle();
-    if(!data || data.beendet_am || data.klassenraum !== aktiveKlassenraum) sitzungscode = null;
-  }
-  if(!sitzungscode){
-    sitzungscode = await generiereFreienCode();
-    history.replaceState(null, '', '?code='+sitzungscode);
-  }
+  const neuerCode = await generiereFreienCode();
 
   const { error } = await sb.from('sitzungen').upsert(
-    { code: sitzungscode, klassenraum: aktiveKlassenraum, aufgabe_id: AUFGABE_ID, beendet_am: null, aufgabe_konfiguration: AKTUELLE_AUFGABE_KONFIGURATION },
+    { code: neuerCode, klassenraum: aktiveKlassenraum, aufgabe_id: AUFGABE_ID, beendet_am: null, aufgabe_konfiguration: AKTUELLE_AUFGABE_KONFIGURATION },
     { onConflict: 'code' }
   );
-  if(error) alert('Sitzung konnte nicht angelegt werden: ' + error.message);
+  if(error){
+    alert('Sitzung konnte nicht angelegt werden: ' + error.message + '\nBitte Verbindung prüfen und noch einmal „Sitzung starten“ tippen.');
+    sitzungscode = vorherCode; state.sessionActive = vorherAktiv;   // alte Ansicht bleibt unverändert
+    return;
+  }
+  sitzungscode = neuerCode;
+  history.replaceState(null, '', '?code='+sitzungscode);
   state.pool = []; // echte Sitzung startet mit leerem Pool statt Demo-Daten
   state.slots = { empfohlen: [], frei: [] };
   state.empfBloecke = [];
   state.empfAktivBlock = -1;
   state.empfAutomatisch = true; // frische Sitzung -- Empfehlung darf sich wieder automatisch befüllen
+  state.activeTab = 'empfohlen'; state.poolFilter = null; state.visibleCount = { frei: 0 }; state.answersVisibleOnTafel = false;
+  SYMBOLS.forEach(s => { state.heatmapStatus[s.id] = null; });
   document.getElementById('sitzungscode-anzeige').textContent = codeAlsSymbole(sitzungscode);
   ladeUndAboniereAntworten();
   show('heatmap');
@@ -2250,6 +2277,24 @@ setInterval(() => {
   if(!istKindGeraet && lkEingeloggt && Object.keys(symbolBelegt).length && document.getElementById('scr-heatmap').classList.contains('visible')) renderHeatmap();   // Minuten aktualisieren
   if(sitzungscode && document.getElementById('scr-symbolauswahl') && document.getElementById('scr-symbolauswahl').classList.contains('visible')) ladeBeantworteteSymbole();
 }, SYMBOL_HERZSCHLAG_MS);
+// [NEU 2026-11-16-01] Ausweg auf dem Kindgerät: Sitzung verlassen und einen neuen Code eingeben
+function kindAndererCode(){
+  stoppeSymbolKanal();
+  state.sessionActive = false; sitzungscode = null; state.selectedSymbol = null;
+  document.getElementById('symbol-confirm').classList.remove('visible');
+  history.replaceState(null, '', istKindGeraet ? '?geraet=kind' : window.location.pathname);
+  show('code-eingabe');
+}
+// [NEU 2026-11-16-01] Falsches Bild gewählt: zurück zur Auswahl, solange noch nichts aufgenommen wird
+function aufnahmeZurueck(){
+  const rb = document.getElementById('record-btn');
+  const ra = document.getElementById('record-area');
+  const done = document.getElementById('done-area');
+  if(state.isRecording || (rb && !rb.classList.contains('rec-bereit'))) return;
+  if(ra && ra.style.display === 'none' && done && done.style.display === 'none') return;   // Antwort liegt zur Kontrolle vor: nicht verwerfen
+  state.selectedSymbol = null;
+  show('symbolauswahl');
+}
 function cancelSymbol(){ document.getElementById('symbol-confirm').classList.remove('visible'); }
 function confirmSymbol(){
   document.getElementById('symbol-confirm').classList.remove('visible');
@@ -2336,6 +2381,8 @@ function stoppeLevel(){
   const el = document.getElementById('pegel'); if(el){ el.style.display = 'none'; el.innerHTML = ''; }
   const h = document.getElementById('pegel-hinweis'); if(h) h.textContent = '';
 }
+// [NEU 2026-11-16-02] Zeitlimit für die Spracherkennung: nach 3 Minuten ohne Antwort Abbruch, das Kind kann neu aufnehmen oder tippen.
+const ERKENNUNG_ZEITLIMIT_MS = 180000;
 function zeigeErkennungStatus(an){
   clearTimeout(erkennungTimer);
   const el = document.getElementById('erkennung-status'); if(!el) return;
@@ -2428,6 +2475,8 @@ async function toggleRecord(){
       const audioBlob = new Blob(audioChunks, { type: aufnahmeMimeType });
       let text = "";
       letzterAudioPfad = null; letzteSprache = null;
+      const erkennungAbbruch = new AbortController();
+      const erkennungZeitlimit = setTimeout(() => erkennungAbbruch.abort(), ERKENNUNG_ZEITLIMIT_MS);   // [NEU 2026-11-16-02]
       try {
         // sitzungscode mitschicken, damit die Edge Function das Audio serverseitig
         // (kein zusätzlicher Datenverkehr im Schulnetz) fürs spätere Prüfen der
@@ -2442,7 +2491,8 @@ async function toggleRecord(){
             'apikey': SUPABASE_ANON_KEY,
             'Content-Type': aufnahmeMimeType
           },
-          body: audioBlob
+          body: audioBlob,
+          signal: erkennungAbbruch.signal
         });
         const daten = await antwort.json();
         if(daten.transkript) text = daten.transkript;
@@ -2452,8 +2502,11 @@ async function toggleRecord(){
         letzteSprache = daten.sprache || null;
         letzterRohtext = text;
       } catch(e){
-        text = "(Spracherkennung fehlgeschlagen -- bitte nochmal versuchen oder tippen)";
+        text = (e && e.name === 'AbortError')
+          ? "(Die Spracherkennung braucht zu lange -- bitte nochmal aufnehmen oder tippen)"
+          : "(Spracherkennung fehlgeschlagen -- bitte nochmal versuchen oder tippen)";
       }
+      clearTimeout(erkennungZeitlimit);
       zeigeErkennungStatus(false);
       document.getElementById('record-area').style.display='none';
       document.getElementById('review-area').style.display='block';
@@ -4041,7 +4094,15 @@ if(istTafelFenster){
   document.querySelector('.topbar').style.display = 'none';
   state.sessionActive = true;
   ladeKinderlisteFuerSitzung(sitzungscode).then(async geladen => {
-    if(!geladen){ alert('Die Kinderliste konnte nicht geladen werden -- bitte über den QR-Code/Link neu starten oder die Lehrkraft informieren.'); return; }
+    if(!geladen){
+      // [GEÄNDERT 2026-11-16-01] statt Hinweisfenster und leerer Seite: zur Code-Eingabe mit Erklärung (Sitzung beendet / Adresse alt)
+      stoppeSymbolKanal(); state.sessionActive = false; sitzungscode = null;
+      history.replaceState(null, '', '?geraet=kind');
+      show('code-eingabe');
+      const f = document.getElementById('code-eingabe-fehler');
+      f.textContent = 'Diese Sitzung ist nicht mehr offen. Tippe die drei Bilder von der Tafel.'; f.style.display = 'block';
+      return;
+    }
     await ladeAufgabeFuerSitzung(sitzungscode);
     show('symbolauswahl');
   });

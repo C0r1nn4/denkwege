@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Denkwege ausprobieren</title>
-<meta name="app-version" content="2026-11-19-03-studi">
+<meta name="app-version" content="2026-11-26-01-studi">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
@@ -615,7 +615,6 @@
     </div>
     <div class="card">
       <label class="st-check"><input type="checkbox" id="st-einw-teilnahme"><span>Ich habe die Informationen gelesen und bin einverstanden, dass meine Angaben wie beschrieben gespeichert und ausgewertet werden.</span></label>
-      <label class="st-check"><input type="checkbox" id="st-einw-audio"><span>Ich bin einverstanden, meine Begründung einzusprechen. Sie wird automatisch verschriftlicht und die Audiodatei wird gespeichert. Ohne Häkchen tippen Sie Ihre Begründung.</span></label>
     </div>
     <div class="card">
       <div style="font-weight:600; margin-bottom:4px;">Ihr persönlicher Code</div>
@@ -641,9 +640,13 @@
   <div id="scr-st-eigene" class="screen">
     <h2 class="scr-title">Zuerst: Ihre eigene Antwort</h2>
     <div class="card" style="font-size:var(--fs-body); line-height:1.55;">
-      <p style="margin-top:0;">Bevor Sie sehen, wie Kinder geantwortet haben: Beantworten Sie bitte diese Aufgabe kurz selbst.</p>
+      <p style="margin-top:0;">Bevor Sie sehen, wie Kinder geantwortet haben: Beantworten Sie bitte diese Aufgabe selbst, so wie ein Kind sie dem Tablet erklären würde.</p>
       <div class="quote-box" id="st-eigene-aufgabe" style="font-size:var(--fs-body); margin-bottom:12px;"></div>
-      <p style="margin-bottom:0;">Sprechen Sie Ihre Antwort ein, so wie ein Kind sie dem Tablet erklären würde. So probieren Sie gleich die Spracheingabe aus, mit der die Kinder im Tool arbeiten.</p>
+      <p style="margin-bottom:0;"><b>1.</b> Wählen Sie, ob Lea recht hat. <b>2.</b> Erklären Sie Ihren Lösungsweg <b>möglichst ausführlich</b>: Was rechnen Sie, und warum?</p>
+    </div>
+    <div class="card" style="padding:12px 16px;">
+      <div style="font-size:var(--fs-small); margin-bottom:6px;">Hat Lea recht?</div>
+      <div class="st-um-wahl"><button id="st-eigen-ja" onclick="stEigeneWahl('ja')">Ja, Lea hat recht</button><button id="st-eigen-nein" onclick="stEigeneWahl('nein')">Nein, Lea hat nicht recht</button></div>
     </div>
     <div id="st-eigen-aufnahme-bereich" class="card" style="text-align:center; display:none;">
       <button id="st-eigen-rec-btn" class="btn btn-primary" onclick="stAufnahmeToggle('eigen')"><i class="ti ti-microphone"></i> <span id="st-eigen-rec-label">Aufnahme starten</span></button>
@@ -655,7 +658,7 @@
       <div id="st-eigen-text-hinweis" class="ts" style="font-size:var(--fs-small); margin-bottom:6px;"></div>
       <textarea id="st-eigen-text" rows="5" style="font-size:var(--fs-body); font-family:inherit;"></textarea>
     </div>
-    <div class="ts" style="font-size:var(--fs-small); line-height:1.5; margin:12px 0;"><i class="ti ti-info-circle"></i> <b>Hinweis:</b> Wie das Tool Ihre eigene Antwort live einordnet, können Sie erst am Ende ausprobieren: nachdem Sie die Antwortübersicht zum ersten Mal angesehen und Ihre Einschätzung abgegeben haben.</div>
+    <div class="ts" style="font-size:var(--fs-small); line-height:1.5; margin:12px 0;"><i class="ti ti-info-circle"></i> <b>Hinweis:</b> Ihre Antwort wird wie die Antworten der Kinder von einer KI eingeordnet. Dafür wird der Text an einen KI-Dienst gesendet. Sie erscheint gleich in der Antwortübersicht als „Sie“.</div>
     <div id="st-fehler-eigene" class="st-fehler"></div>
     <button class="btn btn-primary" onclick="stEigeneWeiter()">Weiter</button>
   </div>
@@ -663,7 +666,7 @@
   <div id="scr-st-auftrag" class="screen">
     <h2 class="scr-title">Ihre Aufgabe</h2>
     <div class="card" id="st-auftrag-text" style="font-size:var(--fs-body); line-height:1.55;"></div>
-    <button class="btn btn-primary" onclick="stPlanungStarten()">Los geht’s: zur Antwortübersicht</button>
+    <button class="btn btn-primary" id="st-auftrag-start" onclick="stPlanungStartenWarten()">Los geht’s: zur Antwortübersicht</button>
   </div>
 
   <div id="scr-st-begruendung" class="screen">
@@ -710,31 +713,6 @@
     <h2 class="scr-title">Vielen Dank!</h2>
     <div class="card" id="st-debrief" style="font-size:var(--fs-body); line-height:1.55;"></div>
     <div class="card" id="st-status" style="font-size:var(--fs-small);"></div>
-    <div class="card">
-      <div style="font-weight:600; margin-bottom:4px;">Jetzt umschauen</div>
-      <div class="ts" style="font-size:var(--fs-small); margin-bottom:10px; line-height:1.5;">Sehen Sie sich die Beispielklasse noch einmal in Ruhe an. Dort sind alle Einordnungen korrekt. Außerdem können Sie eine <b>eigene Antwort eintippen</b> und live vom Tool einordnen lassen. Es wird nichts gespeichert.</div>
-      <button class="btn btn-primary" onclick="stUmschauenStarten()"><i class="ti ti-eye"></i> Beispielklasse ansehen und eigene Antwort einordnen</button>
-    </div>
-    <div class="card st-spaeter">
-      <div style="font-weight:600; margin-bottom:4px;">Später mehr: Denkwege in Praktikum oder Unterricht ausprobieren</div>
-      <div class="ts" style="font-size:var(--fs-small); margin-bottom:10px; line-height:1.5;">Wenn Sie Interesse haben, Denkwege selbst mit einer Klasse zu testen (z. B. im Praxissemester), schreiben Sie uns gern kurz. Das braucht etwas Vorlauf, weil wir Ihnen einen Zugang einrichten. Diese Anfrage hat nichts mit Ihren Antworten in dieser Erhebung zu tun und wird nicht damit verknüpft.</div>
-      <a class="btn" style="display:block; text-align:center; text-decoration:none; color:inherit;" href="mailto:corinna.hankeln@math.tu-dortmund.de?subject=Denkwege%3A%20Interesse%20am%20Ausprobieren%20mit%20meiner%20Klasse&amp;body=Guten%20Tag%2C%0A%0Aich%20interessiere%20mich%20daf%C3%BCr%2C%20Denkwege%20mit%20meiner%20Klasse%20auszuprobieren.%0A%0AName%3A%0ASchule%3A%0AJahrgangsstufe%3A%0AUngef%C3%A4hrer%20Zeitraum%3A%0A%0AViele%20Gr%C3%BC%C3%9Fe"><i class="ti ti-mail"></i> Interesse per E-Mail melden</a>
-    </div>
-  </div>
-
-  <div class="modal-bg" id="st-umschauen-modal">
-    <div class="modal">
-      <div style="font-size:var(--fs-body); font-weight:600; margin-bottom:6px;">Eigene Antwort einordnen lassen</div>
-      <div class="ts" style="font-size:var(--fs-small); line-height:1.5; margin-bottom:8px;">Tippen Sie eine Antwort, so wie ein Kind sie geben könnte. Das Tool ordnet sie live ein, genau wie im Unterricht. Dafür wird der Text an die KI gesendet; er wird nicht gespeichert.</div>
-      <div class="ts" style="font-size:var(--fs-small);">Hat Lea recht?</div>
-      <div class="st-um-wahl"><button id="st-um-ja" onclick="stUmWahl('ja')">Ja, Lea hat recht</button><button id="st-um-nein" onclick="stUmWahl('nein')">Nein, Lea hat nicht recht</button></div>
-      <textarea id="st-um-text" rows="4" maxlength="500" placeholder="z. B.: Ja, weil …" style="font-size:var(--fs-body); font-family:inherit; width:100%;"></textarea>
-      <div id="st-um-ergebnis" role="status"></div>
-      <div class="row" style="gap:8px; margin-top:12px;">
-        <button class="btn" onclick="stUmschauenModal(false)">Schließen</button>
-        <button class="btn btn-primary" id="st-um-btn" onclick="stUmEinordnen()">Einordnen lassen</button>
-      </div>
-    </div>
   </div>
 
   <div class="modal-bg" id="st-hilfe-modal" onclick="if(event.target===this) stHilfeSchliessen()">
@@ -1203,7 +1181,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_WOnHYkefrIzOY-tigGqPKg_Dvjf73Gc";
 const sb = (window.supabase && window.supabase.createClient) ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 // Version dieser Datei (JJJJ-MM-TT-NN). Bei JEDER Änderung hochzählen und im Änderungsprotokoll des Projektkontexts eintragen.
-const APP_VERSION = "2026-11-19-03-studi"; /* Variante für Studierende, Basis ausprobieren.html 2026-11-16-01 */ // // Studienseite (ausprobieren.html); Tool-Basis index.html 2026-10-22-02, Verständlichkeits-Überarbeitung (Schrittanzeige, Ablauf-Leiste, Aufnahme-Begleitung) aus index.html 2026-11-05-08; seit -10-02: Umschauen-Modus
+const APP_VERSION = "2026-11-26-01-studi"; /* Variante für Studierende, Basis ausprobieren.html 2026-11-16-01 */ // // Studienseite (ausprobieren.html); Tool-Basis index.html 2026-10-22-02, Verständlichkeits-Überarbeitung (Schrittanzeige, Ablauf-Leiste, Aufnahme-Begleitung) aus index.html 2026-11-05-08; seit -10-02: Umschauen-Modus
 (function(){ const el = document.getElementById('app-version'); if(el) el.textContent = 'v' + APP_VERSION; console.info('Denkwege', APP_VERSION); })();
 function getUrlParam(name){ return new URLSearchParams(window.location.search).get(name); }
 
@@ -3514,20 +3492,22 @@ function canvasClick(e){
 
 // ---------- 1. KONFIGURATION ----------
 const STUDIE = {
+  standard_version: 'A',   // [STUDI 2026-11-26] ohne ?v=… immer Version A (wie bei den Lehrkräften am 18.11.); ?v=B bleibt möglich
+  eigene_einordnen: true,  // [STUDI 2026-11-26] eigene Antwort wird von der KI eingeordnet und erscheint als „Sie“
   studien_id: "denkwege_studierende_2026",   // [STUDI] eigene ID: trennt die Daten in studie_antworten / studie_events von der Lehrkräfte-Erhebung
   empfohlene_minuten: 8,
 
   // Informationstext (HTML erlaubt). Alles in [eckigen Klammern] ausfüllen und die
   // Angaben zu Gladia und Speicherdauer vor dem Einsatz klären.
   infotext: `<p style="margin-top:0;"><b>Worum geht es?</b> Sie planen als angehende Lehrkraft mit Denkwege ein Klassengespräch, so wie Sie es sich für Ihren eigenen Unterricht vorstellen. Uns interessiert, wie Lehramtsstudierende mit dem Dashboard arbeiten, damit wir das Tool weiterentwickeln können. Dafür werten wir Ihre Angaben auch wissenschaftlich aus. Worauf wir dabei besonders schauen, erzählen wir Ihnen am Ende.</p>
-    <p><b>Ablauf (ca. 20 Minuten):</b> kurze Fragen zu Ihrer Person, Planung eines Klassengesprächs im Tool, eine kurze gesprochene oder getippte Begründung, einige Einschätzungsfragen und das Einordnen einiger Schülerantworten.</p>
+    <p><b>Ablauf (ca. 20 Minuten):</b> kurze Fragen zu Ihrer Person, eine eigene getippte Antwort auf die Schulaufgabe (die das Tool einordnet), Planung eines Klassengesprächs im Tool, eine kurze getippte Begründung, einige Einschätzungsfragen und das Einordnen einiger Schülerantworten.</p>
     <p><b>Freiwillig:</b> Das Mitmachen ist freiwillig. Sie können jederzeit ohne Angabe von Gründen abbrechen. [Falls zutreffend ergänzen: Die Teilnahme hat keinen Einfluss auf Ihre Leistungsbewertung in der Veranstaltung.]</p>
     <details style="margin-top:8px;"><summary style="cursor:pointer; font-weight:600;">Informationen zum Datenschutz</summary>
     <p><b>Verantwortlich:</b> [Name], TU Dortmund, IEEM, [Adresse], [E-Mail]. Datenschutzbeauftragte:r der TU Dortmund: [Kontakt].</p>
-    <p><b>Welche Daten?</b> Ihre Antworten, Ihre Bedienschritte im Tool mit Zeitstempel, Gerätetyp und Bildschirmgröße sowie, wenn Sie zustimmen, eine Audioaufnahme Ihrer Begründung und deren automatische Verschriftlichung. Wir fragen nicht nach Ihrem Namen.</p>
-    <p><b>Wozu?</b> Ausschließlich für wissenschaftliche Auswertungen und die Weiterentwicklung des Tools. Ergebnisse werden nur zusammengefasst veröffentlicht, ohne Rückschluss auf einzelne Personen. Kurze Zitate aus Begründungen können anonymisiert in Publikationen erscheinen.</p>
+    <p><b>Welche Daten?</b> Ihre Antworten, Ihre Bedienschritte im Tool mit Zeitstempel, Gerätetyp und Bildschirmgröße sowie die Texte, die Sie eintippen. Es gibt keine Audioaufnahmen. Den Text Ihrer eigenen Antwort sendet diese Seite zur Einordnung an einen KI-Dienst (ki:connect.nrw) [Angaben zu Anbieter, Standort und Speicherung ergänzen]. Wir fragen nicht nach Ihrem Namen.</p>
+    <p><b>Wozu?</b> Ausschließlich für wissenschaftliche Auswertungen und die Weiterentwicklung des Tools. Ergebnisse werden nur zusammengefasst veröffentlicht, ohne Rückschluss auf einzelne Personen. Kurze Zitate aus Begründungen und eigenen Antworten können anonymisiert in Publikationen erscheinen.</p>
     <p><b>Rechtsgrundlage:</b> Ihre Einwilligung (Art. 6 Abs. 1 lit. a DSGVO).</p>
-    <p><b>Wo und wie lange?</b> Speicherung bei Supabase [Serverstandort ergänzen]. Die Verschriftlichung der Audioaufnahme erfolgt über den Dienst Gladia [Sitz und Serverstandort ergänzen]. Audioaufnahmen löschen wir nach Prüfung der Verschriftlichung, spätestens am [Datum]. Die übrigen Daten werden [Dauer] aufbewahrt.</p>
+    <p><b>Wo und wie lange?</b> Speicherung bei Supabase [Serverstandort ergänzen]. Die Einordnung Ihrer eigenen Antwort erfolgt über ki:connect.nrw [Standort und Speicherdauer beim Anbieter ergänzen]. Die Daten werden [Dauer] aufbewahrt.</p>
     <p style="margin-bottom:0;"><b>Ihre Rechte:</b> Sie können Ihre Einwilligung jederzeit widerrufen und Auskunft, Berichtigung oder Löschung verlangen. Nennen Sie dazu einfach Ihren persönlichen Code (siehe unten) per E-Mail an [E-Mail]. Sie haben außerdem ein Beschwerderecht bei der Aufsichtsbehörde (LDI NRW).</p>
     </details>`,
 
@@ -3720,8 +3700,8 @@ function stUuid(){
 const ST_URL_V = (getUrlParam('v') || '').toUpperCase();
 const st = {
   teilnahmeId: stUuid(),
-  version: STUDIE.versionen[ST_URL_V] ? ST_URL_V : (Math.random() < 0.5 ? 'A' : 'B'),
-  versionQuelle: STUDIE.versionen[ST_URL_V] ? 'url' : 'zufall',
+  version: STUDIE.versionen[ST_URL_V] ? ST_URL_V : (STUDIE.standard_version || (Math.random() < 0.5 ? 'A' : 'B')),
+  versionQuelle: STUDIE.versionen[ST_URL_V] ? 'url' : (STUDIE.standard_version ? 'standard' : 'zufall'),
   test: getUrlParam('test') === '1',
   start: Date.now(),
   phase: 'willkommen',
@@ -3901,6 +3881,10 @@ function stPoolFuerVersion(v){
 }
 function stDatensatzLaden(){
   state.pool = stPoolFuerVersion(st.version);
+  // [STUDI 2026-11-26] Eigene Antwort der Person als „Sie“ ans Ende (nur wenn die Einordnung geklappt hat)
+  if(STUDIE.eigene_einordnen && st.eigene && st.eigene.ki && st.eigene.ki.kat){
+    state.pool.push({ name: 'Sie', cat: st.eigene.ki.kat, quote: st.eigene.text_final, wahl: st.eigene.wahl || null });
+  }
   state.slots = { empfohlen: [], frei: [] };
   state.activeTab = 'empfohlen';
   state.empfAutomatisch = true;
@@ -3924,6 +3908,10 @@ function stSitzplanAufbauen(){
     childLanguage[sym.id] = 'de';
     sitzplanState.placed[sym.id] = { x: xs[i % 4], y: ys[Math.floor(i / 4) % 4] };
   });
+  if(state.pool.some(p => p.name === 'Sie')){
+    SYMBOLS.push({ id: 'kind_sie', icon: '⭐', name: 'Sie' }); consentState.kind_sie = true; childLanguage.kind_sie = 'de';
+    sitzplanState.placed.kind_sie = { x: 50, y: 88 };
+  }
   stHeatmapStatusSync();
 }
 function stHeatmapStatusSync(){
@@ -4063,7 +4051,7 @@ function stWillkommenWeiter(){
   if(!teil){ fehler.textContent = 'Bitte bestätigen Sie zuerst Ihr Einverständnis.'; return; }
   if(c.some(x => x.length !== 2)){ fehler.textContent = 'Bitte füllen Sie alle drei Felder des Codes mit je zwei Zeichen aus.'; return; }
   fehler.textContent = '';
-  st.audioOk = document.getElementById('st-einw-audio').checked;
+  st.audioOk = false;   // [STUDI 2026-11-26] keine Aufnahme mehr: Eigene Antwort und Begründung werden getippt
   st.code = c.join('');
   stPhase('vorab');   // vor dem Speichern, damit stFlush (sendet erst nach Einverständnis) die Einwilligung gleich mitnimmt
   stSpeichern('einwilligung', {
@@ -4131,7 +4119,7 @@ function stAbschlussAbbrechen(){
   stLog('abschluss_abgebrochen', {});
 }
 function stUmkodiertAlle(){
-  const start = (st.initialSnapshot && st.initialSnapshot.pool) || [];
+  const start = ((st.initialSnapshot && st.initialSnapshot.pool) || []).filter(a => a.name !== 'Sie');   // [STUDI] eigene Antwort getrennt (eigene_antwort_einordnung)
   return start.map(a => ({ name: a.name, ki: a.kategorie, final: stKatVon(a.name), wahr: stWahr(a.name) }))
     .filter(x => x.final && x.final !== x.ki)
     .map(x => ({ ...x, richtig_umkodiert: x.wahr ? x.final === x.wahr : null, urspruenglich_richtig: x.wahr ? x.ki === x.wahr : null }));
@@ -4151,6 +4139,9 @@ function stPlanungAbschliessen(){
     fehler_auswertung: fehler,
     // [NEU 2026-10-28-01] alle Antworten, deren Einordnung am Ende von der ursprünglichen KI-Einordnung abweicht (auch ursprünglich richtig eingeordnete)
     umkodiert_alle: stUmkodiertAlle(),
+    // [STUDI 2026-11-26] eigene Antwort: Einordnung der KI, Endeinordnung, Öffnungen, im Plan?
+    eigene_antwort_einordnung: (st.eigene && st.eigene.ki) ? { ki: st.eigene.ki.kat, final: stKatVon('Sie'), umkodiert: !!st.eigene.ki.kat && stKatVon('Sie') !== st.eigene.ki.kat,
+      geoeffnet: st.oeffnungen['Sie'] || 0, im_plan: stPlanNamen().includes('Sie'), fehler: st.eigene.ki.fehler || null } : null,
     anzahl_umkodiert: stUmkodiertAlle().length,
     fehler_korrekt_umkodiert: fehler.filter(f => f.korrekt_umkodiert).length,
     plan_enthaelt_fehlkategorie: fehler.some(f => f.im_plan_mit_falscher_kategorie)
@@ -4186,7 +4177,7 @@ const ST_REC_UI = {
            nochmal:'Die Verschriftlichung hat nicht geklappt. Nehmen Sie bitte erneut auf oder tippen Sie.' },
   eigen: { btn:'st-eigen-rec-btn', label:'st-eigen-rec-label', status:'st-eigen-rec-status', ta:'st-eigen-text',
            text:'st-eigen-text-bereich', hinweis:'st-eigen-text-hinweis', aufnahme:'st-eigen-aufnahme-bereich',
-           tippHinweis:'Tippen Sie Ihre Antwort hier ein.', mikFehler:'Das Mikrofon konnte nicht gestartet werden. Bitte tippen Sie Ihre Antwort.',
+           tippHinweis:'Erklären Sie möglichst ausführlich, wie Sie vorgehen und warum.', mikFehler:'Das Mikrofon konnte nicht gestartet werden. Bitte tippen Sie Ihre Antwort.',
            nochmal:'Die Verschriftlichung hat nicht geklappt. Nehmen Sie bitte erneut auf oder tippen Sie.' }
 };
 function stRecZustand(ziel){ return ziel === 'eigen' ? st.recEigen : st.rec; }
@@ -4434,20 +4425,67 @@ function stEigeneVorbereiten(){
     stZuTextWechseln(true, 'eigen');
   }
 }
+let stEigeneWahlWert = null;
+function stEigeneWahl(w){
+  stEigeneWahlWert = w;
+  document.getElementById('st-eigen-ja').classList.toggle('aktiv', w === 'ja');
+  document.getElementById('st-eigen-nein').classList.toggle('aktiv', w === 'nein');
+}
 function stEigeneWeiter(){
   const fehler = document.getElementById('st-fehler-eigene');
-  if(st.recEigen.laeuft){ fehler.textContent = 'Bitte beenden Sie zuerst die Aufnahme.'; return; }
-  if(st.recEigen.wartet){ fehler.textContent = 'Einen Moment bitte: Ihre Aufnahme wird noch verschriftlicht.'; return; }
+  if(!stEigeneWahlWert){ fehler.textContent = 'Bitte wählen Sie zuerst „Ja“ oder „Nein“.'; return; }
   const text = document.getElementById('st-eigen-text').value.trim();
-  if(!text){ fehler.textContent = 'Bitte sprechen Sie Ihre Antwort kurz ein oder tippen Sie sie.'; return; }
+  if(!text){ fehler.textContent = 'Bitte tippen Sie Ihre Antwort.'; return; }
+  // [STUDI 2026-11-26] Einmal nachfragen, wenn die Erklärung sehr kurz ist (bessere Einordnung durch die KI)
+  if(text.length < 40 && !st.eigeneKurzGewarnt){
+    st.eigeneKurzGewarnt = true; stLog('eigene_kurz_hinweis', { zeichen: text.length });
+    fehler.textContent = 'Das ist recht kurz. Können Sie Ihren Gedankengang noch etwas ausführlicher erklären? Mit „Weiter“ geht es sonst so weiter.'; return;
+  }
   fehler.textContent = '';
   st.eigene = {
-    modus: st.eigeneModus, text_final: text, transkripte_roh: st.recEigen.roh,
-    anzahl_aufnahmen: st.recEigen.anzahl, audio_pfade: st.recEigen.pfade,
+    modus: 'text', wahl: stEigeneWahlWert, text_final: text, transkripte_roh: [],
+    anzahl_aufnahmen: 0, audio_pfade: [],
     dauer_ms: Date.now() - st.eigeneStart
   };
-  stLog('eigene_antwort_abgegeben', { modus: st.eigene.modus, zeichen: text.length, anzahl_aufnahmen: st.eigene.anzahl_aufnahmen });
+  stLog('eigene_antwort_abgegeben', { modus: 'text', wahl: st.eigene.wahl, zeichen: text.length });
+  if(STUDIE.eigene_einordnen) stEigeneEinordnenStarten();
   show('st-auftrag');
+}
+// [STUDI 2026-11-26] Die eigene Antwort wird im Hintergrund von der KI eingeordnet (Edge Function „kategorisieren“,
+// wie im Tool) und später als „Sie“ ans Ende der Antwortliste gestellt (Reihenfolge der Kinder und Empfehlung bleiben unverändert).
+function stEigeneEinordnenStarten(){
+  if(!st.eigene || (st.eigene.ki && st.eigene.ki.kat) || st.eigeneKiPromise) return st.eigeneKiPromise;
+  st.eigeneKiPromise = (async () => {
+    const t0 = Date.now(), wahl = st.eigene.wahl;
+    const kategorien = Object.entries(CATS).filter(([id, k]) => !k.gueltig_fuer || k.gueltig_fuer === wahl)
+      .map(([id, k]) => ({ kategorie_id: id, bezeichnung: k.label, kurzdefinition: k.def, referenzbeispiele: k.beispiele }));
+    const prompt = wahl === 'ja' ? KLASSIFIKATIONS_PROMPT_JA : KLASSIFIKATIONS_PROMPT_NEIN;
+    let kat = null, grund = null;
+    try {
+      const antwort = await Promise.race([
+        sb.functions.invoke('kategorisieren', { body: { transkript: st.eigene.text_final, aufgabe_id: AUFGABE_ID, wahl, prompt, kategorien } }),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('zeitlimit')), 20000))
+      ]);
+      const { data, error } = antwort;
+      if(!error && data && data.kategorie && CATS[data.kategorie]) kat = data.kategorie; else grund = error ? String(error.message || error).slice(0, 80) : 'keine_kategorie';
+    } catch(e){ grund = String(e && e.message || e).slice(0, 80); }
+    st.eigene.ki = kat ? { kat, ms: Date.now() - t0 } : { kat: null, fehler: grund, ms: Date.now() - t0 };
+    stLog('eigene_einordnung', { kategorie: kat, fehler: grund, ms: Date.now() - t0 });
+    const satz = document.getElementById('st-sie-satz'); if(satz) satz.style.display = kat ? '' : 'none';
+    stStandSpeichern();
+    return kat;
+  })();
+  return st.eigeneKiPromise;
+}
+// Der Knopf „Los geht’s“ wartet kurz, falls die Einordnung noch läuft (höchstens 12 s), und startet dann die Planung.
+async function stPlanungStartenWarten(){
+  const btn = document.getElementById('st-auftrag-start');
+  if(STUDIE.eigene_einordnen && st.eigene && !(st.eigene.ki)){
+    btn.disabled = true; const alt = btn.textContent; btn.textContent = 'Einen Moment, Ihre Antwort wird eingeordnet …';
+    await Promise.race([stEigeneEinordnenStarten(), new Promise(r => setTimeout(r, 12000))]);
+    btn.disabled = false; btn.textContent = alt;
+  }
+  stPlanungStarten();
 }
 function stBegruendungWeiter(){
   if(st.rec.laeuft){ document.getElementById('st-fehler-begruendung').textContent = 'Bitte beenden Sie zuerst die Aufnahme.'; return; }
@@ -4495,10 +4533,11 @@ function stEndeRendern(){
   const liste = stFehlerItems().map(f =>
     `<li style="margin-bottom:6px;"><b>${escapeHtml(f.name)}</b>: vom Tool als „${escapeHtml(CATS[f.ki].label)}“ eingeordnet, richtig wäre „${escapeHtml(CATS[f.wahr].label)}“. ${escapeHtml(f.hinweis)}</li>`).join('');
   document.getElementById('st-debrief').innerHTML = `
-    <p style="margin-top:0;">Worauf wir geschaut haben: Das Tool hat vier der 16 Antworten <b>absichtlich falsch</b> eingeordnet.
+    <p style="margin-top:0;">Worauf wir geschaut haben: Das Tool hat vier der 16 Kinderantworten <b>absichtlich falsch</b> eingeordnet.${(st.eigene && st.eigene.ki && st.eigene.ki.kat) ? ' Die Einordnung Ihrer eigenen Antwort stammt dagegen wirklich von der KI.' : ''}
     Uns interessiert, wann automatische Einordnungen übernommen und wann sie geprüft oder korrigiert werden.
     Das ist keine Bewertung Ihrer Person: Auch im echten Unterricht wird eine KI immer wieder danebenliegen, und genau dafür wollen wir das Tool besser machen.</p>
     <p style="margin-bottom:4px;">Diese Einordnungen waren falsch:</p><ul style="padding-left:20px; margin-top:0;">${liste}</ul>
+    ${(st.eigene && st.eigene.ki && st.eigene.ki.kat && CATS[st.eigene.ki.kat]) ? `<p>Ihre eigene Antwort hat die KI als „${escapeHtml(CATS[st.eigene.ki.kat].label)}“ eingeordnet.</p>` : ''}
     <p style="margin-bottom:0;"><b>Bitte verraten Sie das noch nicht</b> den anderen, solange sie noch planen.</p>`;
   stRenderStatus();
   stFlush();
@@ -4728,7 +4767,7 @@ function studieStarten(){
   document.getElementById('st-auftrag-text').innerHTML = `
     <p style="margin-top:0;">Stellen Sie sich vor: Ihre Klasse hat gerade diese Aufgabe bearbeitet und ihre Lösungswege ins Tablet eingesprochen.</p>
     <div class="quote-box" style="font-size:var(--fs-body); margin-bottom:12px;">${escapeHtml(AUFGABE_TEXT)}</div>
-    <p>Die KI hat die 16 Antworten eingeordnet und schlägt eine Reihenfolge für das Klassengespräch vor.</p>
+    <p>Die KI hat die Antworten eingeordnet und schlägt eine Reihenfolge für das Klassengespräch vor.<span id="st-sie-satz"> Ihre eigene Antwort steht als „Sie“ mit in der Liste.</span></p>
     <p><b>Ihre Aufgabe:</b> Planen Sie das Klassengespräch, so wie Sie es in Ihrem Unterricht tun würden oder tun möchten.</p>
     <div class="st-karte" style="margin-bottom:0;"><div class="st-karte-titel">So läuft es (etwa ${STUDIE.empfohlene_minuten} Minuten)</div>${stAblaufZeilenHtml()}</div>`;
   stRenderFragen('st-vorab-felder', STUDIE.vorab_fragen);

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Denkwege ausprobieren</title>
-<meta name="app-version" content="2026-11-16-01">
+<meta name="app-version" content="2026-11-19-03-studi">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
@@ -542,6 +542,38 @@
   .st-punkte span { display:inline-block; animation: st-punkt 1.2s infinite ease-in-out; }
   .st-punkte span:nth-child(2) { animation-delay:.2s; } .st-punkte span:nth-child(3) { animation-delay:.4s; }
   @keyframes st-punkt { 0%,80%,100% { opacity:.25; } 40% { opacity:1; } }
+  /* ===== [STUDI 2026-11-19-02] Handy-Darstellung (nur Breite, keine Geräteerkennung) ===== */
+  @media (max-width: 600px) {
+    .vgl-grid { grid-template-columns: minmax(0, 1fr) !important; }
+    #st-ablauf { gap:4px; }
+    #st-ablauf button { padding:6px 4px; font-size:var(--fs-micro); line-height:1.15; gap:4px; text-align:left; min-height:44px; }
+    #st-ablauf button .nr { width:18px; height:18px; }
+  }
+  @media (max-width: 400px) {
+    #st-ablauf button .nr { display:none; }
+    #st-ablauf button { justify-content:center; text-align:center; }
+  }
+  @media (max-width: 680px) {
+    #scr-dashboard .navbtn, #scr-dashboard .btn, #scr-dashboard .seg-btn { min-height: 44px; }
+    #scr-dashboard .impuls > summary { padding: 12px 0; }
+    #scr-dashboard #empfohlen-area .navbtn, #scr-dashboard #frei-area .navbtn { min-height: 44px; }
+  }
+  /* ===== [STUDI 2026-11-19-03] Einführung in der Seite: Vorspann, Dashboard-Karte, Hilfe-Knopf ===== */
+  .st-fp-zeile { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px; }
+  .st-fp-zeile .st-fp-text { margin-bottom:0; }
+  #st-hilfe-btn { display:none; flex-shrink:0; border:1px solid var(--border-accent); background:var(--surface-1); color:var(--text-accent); border-radius:999px; padding:4px 12px; font-size:var(--fs-small); font-weight:600; cursor:pointer; min-height:32px; }
+  .st-chip { display:inline-block; border:1px solid var(--border); background:var(--surface-1); border-radius:var(--radius); padding:3px 9px; font-size:var(--fs-small); font-weight:500; color:var(--text-primary); line-height:1.3; }
+  .st-chip.akzent { background:var(--fill-accent); border-color:var(--fill-accent); color:var(--on-accent); }
+  .st-karte { background:var(--surface-2); border:1px solid var(--border-accent); border-radius:var(--radius); padding:12px; margin:0 0 12px; }
+  .st-karte-titel { font-weight:600; font-size:var(--fs-body); margin:0 0 8px; }
+  .st-zeilen { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px; }
+  .st-zeilen li { display:flex; gap:10px; align-items:flex-start; font-size:var(--fs-small); line-height:1.4; color:var(--text-secondary); }
+  .st-zeilen .nr { flex-shrink:0; width:22px; height:22px; border-radius:50%; background:var(--fill-accent); color:var(--on-accent); font-weight:700; font-size:var(--fs-micro); display:inline-flex; align-items:center; justify-content:center; margin-top:1px; }
+  .st-zeilen .chips { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:3px; }
+  .st-karte .btn { margin-top:12px; }
+  #st-hilfe-modal .modal { max-width:420px; text-align:left; max-height:92vh; padding:14px; }
+  #st-hilfe-modal .st-zeilen { gap:8px; }
+  @media (max-width: 680px) { #st-hilfe-btn { min-height:44px; } .st-karte .btn { min-height:44px; } }
   @media (prefers-reduced-motion: reduce) { .st-rec-laeuft, .st-punkte span { animation:none; } .st-pegel span { transition:none; } }
   /* [NEU 2026-11-10-02] Umschauen-Modus (nach der Studie): Beispielklasse, eigene Antwort live einordnen */
   body.umschauen .st-leiste { display:none !important; }
@@ -684,8 +716,8 @@
       <button class="btn btn-primary" onclick="stUmschauenStarten()"><i class="ti ti-eye"></i> Beispielklasse ansehen und eigene Antwort einordnen</button>
     </div>
     <div class="card st-spaeter">
-      <div style="font-weight:600; margin-bottom:4px;">Später mehr: Denkwege mit Ihrer Klasse ausprobieren</div>
-      <div class="ts" style="font-size:var(--fs-small); margin-bottom:10px; line-height:1.5;">Wenn Sie Interesse haben, Denkwege selbst im Unterricht zu testen, schreiben Sie uns gern kurz. Das braucht etwas Vorlauf, weil wir Ihnen einen Zugang einrichten. Diese Anfrage hat nichts mit Ihren Antworten in dieser Erhebung zu tun und wird nicht damit verknüpft.</div>
+      <div style="font-weight:600; margin-bottom:4px;">Später mehr: Denkwege in Praktikum oder Unterricht ausprobieren</div>
+      <div class="ts" style="font-size:var(--fs-small); margin-bottom:10px; line-height:1.5;">Wenn Sie Interesse haben, Denkwege selbst mit einer Klasse zu testen (z. B. im Praxissemester), schreiben Sie uns gern kurz. Das braucht etwas Vorlauf, weil wir Ihnen einen Zugang einrichten. Diese Anfrage hat nichts mit Ihren Antworten in dieser Erhebung zu tun und wird nicht damit verknüpft.</div>
       <a class="btn" style="display:block; text-align:center; text-decoration:none; color:inherit;" href="mailto:corinna.hankeln@math.tu-dortmund.de?subject=Denkwege%3A%20Interesse%20am%20Ausprobieren%20mit%20meiner%20Klasse&amp;body=Guten%20Tag%2C%0A%0Aich%20interessiere%20mich%20daf%C3%BCr%2C%20Denkwege%20mit%20meiner%20Klasse%20auszuprobieren.%0A%0AName%3A%0ASchule%3A%0AJahrgangsstufe%3A%0AUngef%C3%A4hrer%20Zeitraum%3A%0A%0AViele%20Gr%C3%BC%C3%9Fe"><i class="ti ti-mail"></i> Interesse per E-Mail melden</a>
     </div>
   </div>
@@ -702,6 +734,13 @@
         <button class="btn" onclick="stUmschauenModal(false)">Schließen</button>
         <button class="btn btn-primary" id="st-um-btn" onclick="stUmEinordnen()">Einordnen lassen</button>
       </div>
+    </div>
+  </div>
+
+  <div class="modal-bg" id="st-hilfe-modal" onclick="if(event.target===this) stHilfeSchliessen()">
+    <div class="modal">
+      <div id="st-hilfe-inhalt"></div>
+      <button class="btn btn-primary" style="margin-top:14px;" onclick="stHilfeSchliessen()">Schließen</button>
     </div>
   </div>
 
@@ -1164,7 +1203,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_WOnHYkefrIzOY-tigGqPKg_Dvjf73Gc";
 const sb = (window.supabase && window.supabase.createClient) ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 // Version dieser Datei (JJJJ-MM-TT-NN). Bei JEDER Änderung hochzählen und im Änderungsprotokoll des Projektkontexts eintragen.
-const APP_VERSION = "2026-11-16-01"; // Studienseite (ausprobieren.html); Tool-Basis index.html 2026-10-22-02, Verständlichkeits-Überarbeitung (Schrittanzeige, Ablauf-Leiste, Aufnahme-Begleitung) aus index.html 2026-11-05-08; seit -10-02: Umschauen-Modus
+const APP_VERSION = "2026-11-19-03-studi"; /* Variante für Studierende, Basis ausprobieren.html 2026-11-16-01 */ // // Studienseite (ausprobieren.html); Tool-Basis index.html 2026-10-22-02, Verständlichkeits-Überarbeitung (Schrittanzeige, Ablauf-Leiste, Aufnahme-Begleitung) aus index.html 2026-11-05-08; seit -10-02: Umschauen-Modus
 (function(){ const el = document.getElementById('app-version'); if(el) el.textContent = 'v' + APP_VERSION; console.info('Denkwege', APP_VERSION); })();
 function getUrlParam(name){ return new URLSearchParams(window.location.search).get(name); }
 
@@ -2372,7 +2411,7 @@ function renderEmpfohlen(){
           <button class="navbtn" style="font-size:var(--fs-micro); flex-shrink:0;" onclick="empfSchrittUeberspringen(${i})">überspringen</button>
         </div>
         ${b.kategorieAbweichend ? `<div class="ts" style="font-size:var(--fs-micro); color:var(--text-warning); margin-bottom:6px;"><i class="ti ti-alert-triangle"></i> weicht von der empfohlenen Abfolge ab</div>` : ''}
-        <div style="display:${b.namen.length>1?'grid':'block'}; grid-template-columns:${b.namen.length>1?'repeat(2,minmax(0,1fr))':'none'}; gap:8px;">
+        <div class="${b.namen.length>1?'vgl-grid':''}" style="display:${b.namen.length>1?'grid':'block'}; grid-template-columns:${b.namen.length>1?'repeat(2,minmax(0,1fr))':'none'}; gap:8px;">
           ${kartenHtml}
         </div>
       </div>`;
@@ -3475,14 +3514,14 @@ function canvasClick(e){
 
 // ---------- 1. KONFIGURATION ----------
 const STUDIE = {
-  studien_id: "denkwege_lk_planung_2026",
+  studien_id: "denkwege_studierende_2026",   // [STUDI] eigene ID: trennt die Daten in studie_antworten / studie_events von der Lehrkräfte-Erhebung
   empfohlene_minuten: 8,
 
   // Informationstext (HTML erlaubt). Alles in [eckigen Klammern] ausfüllen und die
   // Angaben zu Gladia und Speicherdauer vor dem Einsatz klären.
-  infotext: `<p style="margin-top:0;"><b>Worum geht es?</b> Sie planen mit Denkwege ein Klassengespräch, so wie im eigenen Unterricht. Uns interessiert, wie Lehrkräfte mit dem Dashboard arbeiten, damit wir das Tool weiterentwickeln können. Dafür werten wir Ihre Angaben auch wissenschaftlich aus. Worauf wir dabei besonders schauen, erzählen wir Ihnen am Ende.</p>
+  infotext: `<p style="margin-top:0;"><b>Worum geht es?</b> Sie planen als angehende Lehrkraft mit Denkwege ein Klassengespräch, so wie Sie es sich für Ihren eigenen Unterricht vorstellen. Uns interessiert, wie Lehramtsstudierende mit dem Dashboard arbeiten, damit wir das Tool weiterentwickeln können. Dafür werten wir Ihre Angaben auch wissenschaftlich aus. Worauf wir dabei besonders schauen, erzählen wir Ihnen am Ende.</p>
     <p><b>Ablauf (ca. 20 Minuten):</b> kurze Fragen zu Ihrer Person, Planung eines Klassengesprächs im Tool, eine kurze gesprochene oder getippte Begründung, einige Einschätzungsfragen und das Einordnen einiger Schülerantworten.</p>
-    <p><b>Freiwillig:</b> Das Mitmachen ist freiwillig. Sie können jederzeit ohne Angabe von Gründen abbrechen.</p>
+    <p><b>Freiwillig:</b> Das Mitmachen ist freiwillig. Sie können jederzeit ohne Angabe von Gründen abbrechen. [Falls zutreffend ergänzen: Die Teilnahme hat keinen Einfluss auf Ihre Leistungsbewertung in der Veranstaltung.]</p>
     <details style="margin-top:8px;"><summary style="cursor:pointer; font-weight:600;">Informationen zum Datenschutz</summary>
     <p><b>Verantwortlich:</b> [Name], TU Dortmund, IEEM, [Adresse], [E-Mail]. Datenschutzbeauftragte:r der TU Dortmund: [Kontakt].</p>
     <p><b>Welche Daten?</b> Ihre Antworten, Ihre Bedienschritte im Tool mit Zeitstempel, Gerätetyp und Bildschirmgröße sowie, wenn Sie zustimmen, eine Audioaufnahme Ihrer Begründung und deren automatische Verschriftlichung. Wir fragen nicht nach Ihrem Namen.</p>
@@ -3638,10 +3677,15 @@ const STUDIE = {
   // Situativ angepasste Kurzfassung (5 Items), s. nach_fragen.
   likert_pole: ["stimme überhaupt nicht zu", "stimme voll zu"],
   vorab_fragen: [
-    { id:"status", typ:"auswahl", text:"Was trifft auf Sie zu?", optionen:["Lehrkraft","Lehrkraft im Vorbereitungsdienst (Referendariat)","Lehramtsstudierende:r","andere"] },
-    { id:"berufsjahre", typ:"zahl", text:"Seit wie vielen Jahren unterrichten Sie (inkl. Referendariat)? Studierende tragen 0 ein.", min:0, max:50 },
-    { id:"schulform", typ:"auswahl", text:"An welcher Schulform unterrichten Sie hauptsächlich, und haben Sie Mathematik studiert?", optionen:["Grundschule, Mathematik studiert","Grundschule, Mathematik fachfremd","Förderschule","Haupt-, Real- oder Gesamtschule","Gymnasium","andere"] },
-    { id:"ki_nutzung", typ:"auswahl", text:"Wie oft nutzen Sie KI-Anwendungen (z. B. ChatGPT) für Ihre Arbeit?", optionen:["nie","seltener als monatlich","etwa monatlich","etwa wöchentlich","(fast) täglich"] },
+    // [STUDI] Fragen für Lehramtsstudierende (ersetzen status/berufsjahre/schulform der Lehrkräfte-Version).
+    // ki_nutzung, ki_einst_1 und ki_einst_2 bleiben mit denselben IDs, damit beide Erhebungen vergleichbar sind.
+    { id:"status", typ:"auswahl", text:"Was trifft auf Sie zu?", optionen:["Lehramtsstudierende:r im Bachelor","Lehramtsstudierende:r im Master","Lehramtsstudierende:r (anderer Studiengang, z. B. Quereinstieg)","andere"] },
+    { id:"semester", typ:"zahl", text:"In welchem Fachsemester sind Sie (Lehramt insgesamt)?", min:1, max:30 },
+    { id:"studienstufe", typ:"auswahl", text:"Für welche Schulform studieren Sie, und studieren Sie Mathematik?", optionen:["Grundschule, Mathematik studiert","Grundschule, Mathematik nicht studiert","Haupt-, Real- oder Gesamtschule","Gymnasium","Förderschule / Sonderpädagogik","andere"] },
+    { id:"praxis", typ:"auswahl", text:"Welche Praxiserfahrung im Unterricht haben Sie bisher? (Wählen Sie die umfangreichste.)", optionen:["noch keine","Orientierungs- oder Eignungspraktikum","Fachpraktikum oder Praxissemester","Praxissemester und weitere Unterrichtserfahrung"] },
+    { id:"schule_neben", typ:"auswahl", text:"Arbeiten Sie neben dem Studium an einer Schule (z. B. Vertretung, Förderunterricht, OGS, Nachhilfe)?", optionen:["nein","ja, gelegentlich","ja, regelmäßig, bis 10 Stunden pro Woche","ja, regelmäßig, mehr als 10 Stunden pro Woche"] },
+    { id:"unterricht_mathe_jahre", typ:"zahl", text:"Wie viele Jahre haben Sie insgesamt schon eigenverantwortlich unterrichtet (auch stundenweise, z. B. als Vertretung)? Wenn noch gar nicht: 0.", min:0, max:50 },
+    { id:"ki_nutzung", typ:"auswahl", text:"Wie oft nutzen Sie KI-Anwendungen (z. B. ChatGPT) für Ihr Studium oder Ihre Arbeit?", optionen:["nie","seltener als monatlich","etwa monatlich","etwa wöchentlich","(fast) täglich"] },
     { id:"ki_einst_1", typ:"likert", text:"KI-Anwendungen können Lehrkräften beim Einschätzen von Lernständen sinnvoll helfen." },
     { id:"ki_einst_2", typ:"likert", text:"Ergebnissen von KI-Systemen begegne ich eher skeptisch." }
   ],
@@ -3657,12 +3701,12 @@ const STUDIE = {
     { id:"tai_4", typ:"likert", text:"Wenn ich mich bei meiner Planung auf die Einordnungen des Tools verlassen habe, war ich sicher, dass sie stimmen." },
     { id:"tai_6", typ:"likert", umgepolt:true, text:"Ich war den Einordnungen des Tools gegenüber misstrauisch." },
     { id:"tai_7", typ:"likert", text:"Das Tool hat die Antworten besser eingeordnet, als es eine unerfahrene Person gekonnt hätte." },
-    { id:"nutzen_1", typ:"likert", text:"Ich kann mir vorstellen, das Tool in meinem Unterricht einzusetzen." },
+    { id:"nutzen_1", typ:"likert", text:"Ich kann mir vorstellen, das Tool in meinem (späteren) Unterricht einzusetzen." },
     // [GEÄNDERT] "trefferquote" und "anders_eingeordnet" entfernt; stattdessen zwei offene
     // Tool-Feedback-Fragen -- bewusst NACH den Vertrauensitems (kein Priming) und VOR der
     // Aufklärung (Urteil über das erlebte Tool, nicht über die Manipulation).
     { id:"feedback_hilfreich", typ:"text", pflicht:false, text:"Was hat Ihnen bei der Planung mit Denkwege am meisten geholfen, und was hat eher gestört? (optional)" },
-    { id:"feedback_nutzbar", typ:"text", pflicht:false, text:"Was müsste sich ändern, damit Sie Denkwege in Ihrem eigenen Unterricht tatsächlich nutzen würden? (optional)" }
+    { id:"feedback_nutzbar", typ:"text", pflicht:false, text:"Was müsste sich ändern, damit Sie Denkwege in Ihrem (späteren) Unterricht tatsächlich nutzen würden? (optional)" }
   ]
 };
 
@@ -3747,7 +3791,7 @@ function stSpeichern(phase, daten){
 // --- Zwischenstand im Browser (nur localStorage, keine Datenbank) ---
 // Wird die Seite neu geladen oder versehentlich geschlossen, kann man an derselben Stelle
 // mit derselben Teilnahme-ID weitermachen. Noch nicht gesendete Daten werden dann nachgesendet.
-const ST_STAND_KEY = 'denkwege_ausprobieren_stand';
+const ST_STAND_KEY = 'denkwege_studi_stand';   // [STUDI] eigener Schlüssel, damit der Zwischenstand der Lehrkräfte-Seite (gleiche Domain) nicht angeboten wird
 const ST_STAND_MAX_ALTER_MS = 4 * 60 * 60 * 1000; // älter als 4 Stunden: nicht mehr anbieten
 function stStandSpeichern(){
   if(st.umschauen) return;   // [NEU -10-02]
@@ -3891,6 +3935,40 @@ function stHeatmapStatusSync(){
 const stRenderHeatmapOrig = window.renderHeatmap;
 window.renderHeatmap = function(){ stHeatmapStatusSync(); return stRenderHeatmapOrig(); };
 function stAktuelleAnsicht(){ const v = document.querySelector('.screen.visible'); return v ? v.id.replace('scr-', '') : null; }
+// [STUDI 2026-11-19-03] Einführung in der Seite (die Lehrkräfte-Erhebung bekam sie mündlich)
+function stChip(t, akzent){ return '<span class="st-chip' + (akzent ? ' akzent' : '') + '">' + t + '</span>'; }
+function stZeile(nr, chips, text){ return '<li><span class="nr">' + nr + '</span><div><div class="chips">' + chips + '</div>' + text + '</div></li>'; }
+function stAblaufZeilenHtml(){
+  return '<ul class="st-zeilen">' +
+    stZeile(1, stChip('Antwortübersicht'), 'Sehen, was die Kinder gesagt haben und wie die KI es eingeordnet hat.') +
+    stZeile(2, stChip('Klassengespräch planen'), 'Die KI schlägt Schritte vor. Sie entscheiden: übernehmen, ändern oder frei gestalten.') +
+    stZeile(3, stChip('Planung abschließen', true), 'Wenn Ihr Plan steht.') + '</ul>';
+}
+function stDashZeilenHtml(){
+  return '<ul class="st-zeilen">' +
+    stZeile('a', stChip('Andere Antwort einsetzen'), 'Eine andere Kinderantwort in den Schritt holen.') +
+    stZeile('b', stChip('Antwort öffnen / Einordnung ändern'), 'Zitat lesen, Einordnung ändern.') +
+    stZeile('c', stChip('überspringen') + stChip('Frei'), 'Schritt weglassen, oder das Gespräch ganz selbst zusammenstellen.') + '</ul>';
+}
+function stKarteGezeigt(){
+  if(st.umschauen || st.hilfeKarteZu || st.hilfeKarteT0 || state.activeTab !== 'empfohlen') return;
+  st.hilfeKarteT0 = Date.now(); stLog('hilfe_karte', { aktion: 'gezeigt' });
+}
+function stKarteSchliessen(){
+  st.hilfeKarteZu = true;
+  stLog('hilfe_karte', { aktion: 'verstanden', dauer_ms: st.hilfeKarteT0 ? Date.now() - st.hilfeKarteT0 : null });
+  document.querySelectorAll('.st-karte-dash').forEach(k => { k.style.display = 'none'; });
+}
+function stHilfeOeffnen(){
+  const ansicht = document.getElementById('scr-dashboard').classList.contains('visible') ? 'dashboard' : 'heatmap';
+  st.hilfeT0 = Date.now(); stLog('hilfe_knopf', { aktion: 'auf', ansicht });
+  document.getElementById('st-hilfe-inhalt').innerHTML = '<div class="st-karte-titel">So läuft die Planung</div>' + stAblaufZeilenHtml() + '<div class="st-karte-titel" style="margin-top:14px;">Im Dashboard</div>' + stDashZeilenHtml();
+  document.getElementById('st-hilfe-modal').classList.add('visible');
+}
+function stHilfeSchliessen(){
+  document.getElementById('st-hilfe-modal').classList.remove('visible');
+  stLog('hilfe_knopf', { aktion: 'zu', dauer_ms: st.hilfeT0 ? Date.now() - st.hilfeT0 : null });
+}
 function stZumDashboard(){
   stLog('zum_dashboard', { von: 'heatmap' });
   st.planAnsicht = 'dashboard';
@@ -4006,7 +4084,21 @@ function stVorabWeiter(){
   show('st-eigene');
 }
 // --- 3 Auftrag -> Planung ---
+// [STUDI] Bildschirm während der Planung wachhalten (Handy). Kein Fehler, wenn die API fehlt.
+let stWakeLock = null;
+async function stWachhalten(an){
+  try{
+    if(!an){ if(stWakeLock){ await stWakeLock.release(); } stWakeLock = null; return; }
+    if(!('wakeLock' in navigator) || stWakeLock) return;
+    stWakeLock = await navigator.wakeLock.request('screen');
+    stWakeLock.addEventListener('release', () => { stWakeLock = null; });
+  }catch(e){ stWakeLock = null; }
+}
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible' && st && st.phase === 'planung') stWachhalten(true);
+});
 function stPlanungStarten(){
+  stWachhalten(true);
   stDatensatzLaden();
   st.initialSnapshot = stSnapshot();
   st.initialSlotNamen = stPlanNamen();
@@ -4045,6 +4137,7 @@ function stUmkodiertAlle(){
     .map(x => ({ ...x, richtig_umkodiert: x.wahr ? x.final === x.wahr : null, urspruenglich_richtig: x.wahr ? x.ki === x.wahr : null }));
 }
 function stPlanungAbschliessen(){
+  stWachhalten(false);
   document.getElementById('st-abschluss-modal').classList.remove('visible');
   const finalSnap = stSnapshot();
   const fehler = stFehlerAuswertung();
@@ -4188,9 +4281,9 @@ const ST_SCHRITTE = [
 function stKopfAufbauen(){
   const kopf = document.createElement('div');
   kopf.id = 'st-kopf';
-  kopf.innerHTML = '<div class="st-fp-text" id="st-fp-text"></div><div class="st-fp-balken" id="st-fp-balken">' + ST_SCHRITTE.map(() => '<span></span>').join('') + '</div>' +
+  kopf.innerHTML = '<div class="st-fp-zeile"><div class="st-fp-text" id="st-fp-text"></div><button type="button" id="st-hilfe-btn" onclick="stHilfeOeffnen()">? Hilfe</button></div><div class="st-fp-balken" id="st-fp-balken">' + ST_SCHRITTE.map(() => '<span></span>').join('') + '</div>' +
     '<div id="st-ablauf">' +
-      '<button data-s="heatmap" onclick="stAblaufZu(\'heatmap\')"><span class="nr">1</span> Antwortübersicht</button>' +
+      '<button data-s="heatmap" onclick="stAblaufZu(\'heatmap\')"><span class="nr">1</span> Antwort&shy;übersicht</button>' +
       '<button data-s="dashboard" onclick="stAblaufZu(\'dashboard\')"><span class="nr">2</span> Klassengespräch planen</button>' +
       '<button class="abschluss" id="st-ablauf-dritter" onclick="stDritterKnopf()"><span class="nr">✓</span> <span id="st-ablauf-dritter-text">Planung abschließen</span></button>' +
     '</div>';
@@ -4207,6 +4300,7 @@ function stKopfAktualisieren(id){
     kopf.classList.toggle('sichtbar', id === 'heatmap' || id === 'dashboard');
     document.getElementById('st-fp-text').innerHTML = '<b>Umschauen</b> · Beispielklasse, nichts wird gespeichert · <a href="#" onclick="stUmschauenBeenden(); return false;" style="color:inherit;">Beenden</a>';
     document.getElementById('st-fp-balken').style.display = 'none';
+    document.getElementById('st-hilfe-btn').style.display = 'none';
     document.getElementById('st-ablauf-dritter-text').textContent = 'Eigene Antwort einordnen';
     const ab = document.getElementById('st-ablauf'); ab.classList.toggle('sichtbar', id === 'heatmap' || id === 'dashboard');
     ab.querySelectorAll('button[data-s]').forEach(b => b.classList.toggle('aktiv', b.getAttribute('data-s') === id));
@@ -4215,6 +4309,8 @@ function stKopfAktualisieren(id){
   document.getElementById('st-fp-balken').style.display = '';
   document.getElementById('st-ablauf-dritter-text').textContent = 'Planung abschließen';
   kopf.classList.toggle('sichtbar', i >= 0);
+  document.getElementById('st-hilfe-btn').style.display = (id === 'heatmap' || id === 'dashboard') ? 'inline-flex' : 'none';
+  if(id === 'dashboard') stKarteGezeigt();
   if(i < 0) return;
   document.getElementById('st-fp-text').innerHTML = 'Schritt <b>' + (i + 1) + ' von ' + ST_SCHRITTE.length + '</b> · ' + ST_SCHRITTE[i].name;
   document.querySelectorAll('#st-fp-balken span').forEach((b, k) => { b.className = k < i ? 'fertig' : (k === i ? 'aktuell' : ''); });
@@ -4567,17 +4663,17 @@ function studieStarten(){
   show = function(id){ const r = showOriginal(id); stKopfAktualisieren(id); return r; };
   if(STUDIE.aufgabe && !aktiviereAufgabe(STUDIE.aufgabe)){ console.error('Studienaufgabe konnte nicht geladen werden'); }
   wendeAufgabeAufUIAn();
-  document.querySelector('#scr-dashboard .banner').innerHTML = 'Planen Sie das Klassengespräch so, wie Sie es in Ihrem Unterricht tun würden.<br><b>Hinweis:</b> Auf der Tafel sehen die Lernenden später nur die Antwort selbst, ohne Namen und ohne Einordnung. Mit „Planung abschließen“ (oben oder unten) beenden Sie diesen Schritt.';
+  document.querySelector('#scr-dashboard .banner').innerHTML = 'Planen Sie das Klassengespräch so, wie Sie es in Ihrem Unterricht tun würden. Die Klasse sieht später nur die Antworten, ohne Namen und ohne Einordnung.';
   // Kurze Erklärung, wie die beiden Ansichten funktionieren
   const empfHilfe = document.createElement('div');
-  empfHilfe.className = 'st-hilfe';
-  empfHilfe.innerHTML = 'Jeder Schritt ist ein Baustein Ihres Gesprächs. Sie können die vorgeschlagene Antwort übernehmen, über <b>„Andere Antwort einsetzen“</b> eine andere Antwort in den Baustein legen oder den Schritt überspringen.';
+  empfHilfe.className = 'st-karte st-karte-dash';
+  empfHilfe.innerHTML = '<div class="st-karte-titel">So passen Sie die Schritte an</div>' + stDashZeilenHtml() + '<button class="btn" onclick="stKarteSchliessen()">Verstanden</button>';
   document.getElementById('empfohlen-area').before(empfHilfe);
   const freiHilfe = document.createElement('div');
   freiHilfe.className = 'st-hilfe';
   freiHilfe.innerHTML = 'Hier stellen Sie das Gespräch selbst zusammen: Wählen Sie unten Antworten in der gewünschten Reihenfolge aus.';
   document.getElementById('frei-area').prepend(freiHilfe);
-  const stTabSync = () => { empfHilfe.style.display = state.activeTab === 'empfohlen' ? 'block' : 'none'; };
+  const stTabSync = () => { empfHilfe.style.display = (state.activeTab === 'empfohlen' && !st.hilfeKarteZu) ? 'block' : 'none'; };
   const stRenderDashOrig = window.renderDashboard;
   window.renderDashboard = function(){ const r = stRenderDashOrig(); stTabSync(); return r; };
   // Elemente, die in der Studie nicht gebraucht werden, im Dashboard ausblenden
@@ -4632,11 +4728,9 @@ function studieStarten(){
   document.getElementById('st-auftrag-text').innerHTML = `
     <p style="margin-top:0;">Stellen Sie sich vor: Ihre Klasse hat gerade diese Aufgabe bearbeitet und ihre Lösungswege ins Tablet eingesprochen.</p>
     <div class="quote-box" style="font-size:var(--fs-body); margin-bottom:12px;">${escapeHtml(AUFGABE_TEXT)}</div>
-    <p>Das Tool hat die 16 Antworten mithilfe von KI eingeordnet und schlägt eine Reihenfolge für das Klassengespräch vor.</p>
-    <p><b>Ihre Aufgabe:</b> Planen Sie das anschließende Klassengespräch. Welche Antworten sollen in welcher Reihenfolge besprochen werden?
-    Gehen Sie so vor, wie Sie es in Ihrem eigenen Unterricht tun würden.</p>
-    <p>Im Dashboard können Sie Antworten austauschen, Schritte überspringen, die Einordnung einer Antwort ändern oder das Gespräch in der Ansicht „Frei“ selbst zusammenstellen.</p>
-    <p style="margin-bottom:0;">Sie sehen zuerst eine Übersicht, wie die Klasse geantwortet hat, und planen dann im Dashboard. Dafür haben Sie insgesamt etwa ${STUDIE.empfohlene_minuten} Minuten. Wenn Ihr Plan steht, tippen Sie im Dashboard unten auf „Planung abschließen“.</p>`;
+    <p>Die KI hat die 16 Antworten eingeordnet und schlägt eine Reihenfolge für das Klassengespräch vor.</p>
+    <p><b>Ihre Aufgabe:</b> Planen Sie das Klassengespräch, so wie Sie es in Ihrem Unterricht tun würden oder tun möchten.</p>
+    <div class="st-karte" style="margin-bottom:0;"><div class="st-karte-titel">So läuft es (etwa ${STUDIE.empfohlene_minuten} Minuten)</div>${stAblaufZeilenHtml()}</div>`;
   stRenderFragen('st-vorab-felder', STUDIE.vorab_fragen);
   stRenderFragen('st-nach-felder', STUDIE.nach_fragen);
   stKodierenRendern();
